@@ -28,3 +28,11 @@
 @keyframes event-time{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @media(max-width:600px){.event-panel{padding:19px}.event-panel h1{font-size:22px}.event-map{height:230px}.event-map-node b{font-size:8px;padding:2px 4px}.event-footer{flex-direction:column;align-items:stretch}.event-footer button{width:100%}.garrison-roster{grid-template-columns:1fr}.army-stats{gap:7px}.army-stats span:nth-child(3){display:none}.army-panel{gap:6px}}
 @media(prefers-reduced-motion:reduce){.event-map-node.hit::before{animation:none;opacity:.8}.event-cards .playing-card{animation:none}.event-progress span{animation:none}}
+
+/* Make the active counter card unmistakable even though its owner can see its face. */
+.playing-card.revealable{cursor:pointer;outline:2px solid var(--gold);outline-offset:4px;animation:reveal-prompt 1.25s ease-in-out infinite}
+.playing-card.revealable:hover,.playing-card.revealable.selected{outline-color:#b9fff3;box-shadow:0 0 24px #69ddd877;transform:translateY(-6px)}
+.playing-card.revealable .stance{background:var(--gold);color:#17212a;font-weight:800}
+.playing-card.revealable.selected .stance{background:#9febe2}
+@keyframes reveal-prompt{50%{outline-color:#b9fff3;box-shadow:0 0 18px #69ddd855}}
+@media(prefers-reduced-motion:reduce){.playing-card.revealable{animation:none}}

@@ -73,7 +73,8 @@ export async function counterplayCheck(browser,url='http://127.0.0.1:4173/'){
  assert.equal(saved.active,0);assert.equal(saved.skirmish,skirmish);assert.equal(saved.players.map(p=>p.wins).join(','),'0,0');
  await page.locator('[data-action="next-event"]').click();
  const hidden=page.locator('[data-action="reveal-card"][data-id="'+humanHidden+'"]');assert.equal(await hidden.count(),1);
- await hidden.click();assert.equal(await page.locator('[data-action="reveal"]').isEnabled(),true);await page.locator('[data-action="reveal"]').click();
+ assert.match(await hidden.innerText(),/点击翻开/);assert.match(await page.locator('.battle-actions').innerText(),/暗牌未翻开前不计入当前牌型/);
+ await hidden.click();assert.match(await page.locator('.battle-actions').innerText(),/选择后牌型/);assert.equal(await page.locator('[data-action="reveal"]').isEnabled(),true);await page.locator('[data-action="reveal"]').click();
  saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.players[0].wins,1);
  assert.deepEqual(errors,[]);await page.close();
  return 'AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish';

@@ -20,6 +20,7 @@
       "actual deployment to tactical window and successful blitzkrieg",
       "390px mobile event and battle layout without horizontal overflow",
       "AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish"
+      ,"Counter card is visibly marked, previews the resulting hand, and requires explicit confirmation"
     ],
     "pageErrors": []
   },

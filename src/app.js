@@ -23,14 +23,14 @@ function saved(){try{const value=JSON.parse(localStorage.getItem(STORE));if(valu
 function pause(){if(deadline!==null){remaining=Math.max(0,deadline-Date.now());deadline=null}if(eventEnd!==null){eventRemaining=Math.max(0,eventEnd-Date.now());eventEnd=null}clearTimeout(aiTask)}
 function resume(){if(events.length){eventEnd=Date.now()+(eventRemaining??3000);eventRemaining=null}else if(remaining!==null){deadline=Date.now()+remaining;remaining=null}}
 function showModal(kind){pause();modal=kind;render()}
-function card(c,{hidden=false,selected=false,stance=null,interactive=false,small=false,action='card',peek=false}={}){
+function card(c,{hidden=false,selected=false,stance=null,interactive=false,small=false,action='card',peek=false,revealable=false}={}){
  const color=!hidden&&(c.suit===1||c.suit===3)?'red':'';
  const label=hidden?'未揭示暗牌':face(c)+(SUITS[c.suit]||' ★');
  const tag=interactive?'button':'div';
  const attributes=interactive?' data-action="'+action+'" data-id="'+c.id+'" aria-label="'+esc(label+(stance===true?'，已选明牌':stance===false?'，已选暗牌':'，点击选择'))+'" aria-pressed="'+selected+'"':'';
- return '<'+tag+' class="playing-card '+color+' '+(hidden?'back ':'')+(selected?'selected ':'')+(small?'small ':'')+(stance===false?'concealed ':'')+'"'+attributes+'>'+
+ return '<'+tag+' class="playing-card '+color+' '+(hidden?'back ':'')+(selected?'selected ':'')+(small?'small ':'')+(stance===false?'concealed ':'')+(revealable?'revealable ':'')+'"'+attributes+'>'+
  (hidden?'<span class="card-back-mark">S<span>SHADOWLINE</span></span>':'<span class="card-corner">'+face(c)+'<i>'+(SUITS[c.suit]||'★')+'</i></span><span class="card-suit">'+(SUITS[c.suit]||'★')+'</span><span class="card-bottom">'+face(c)+'</span>')+
- (stance!==null?'<span class="stance">'+(stance?'明部署':'暗部署')+'</span>':'')+(peek?'<span class="peek">已侦察</span>':'')+(c.boost?'<span class="boost">+'+c.boost+'</span>':'')+(!hidden&&newCards.has(c.id)?'<span class="new-card-badge">新</span>':'')+'</'+tag+'>';
+ (stance!==null?'<span class="stance">'+(revealable?(selected?'已选择':'点击翻开'):(stance?'明部署':'暗部署'))+'</span>':'')+(peek?'<span class="peek">已侦察</span>':'')+(c.boost?'<span class="boost">+'+c.boost+'</span>':'')+(!hidden&&newCards.has(c.id)?'<span class="new-card-badge">新</span>':'')+'</'+tag+'>';
 }
 function strategyCard(id,action='choose-strategy',disabled=false){
  const c=strategyById(id);return '<button class="strategy-card" data-action="'+action+'" data-id="'+id+'" '+(disabled?'disabled':'')+'><span class="strategy-top"><span>'+c.icon+'</span><small>'+(c.phase==='battle'?'交锋战术':'战役指令')+'</small></span><h3>'+c.name+'</h3><p>'+c.desc+'</p><span class="strategy-foot">'+(action==='choose-strategy'?'选择此策略 ↗':'单次使用')+'</span></button>';
@@ -90,17 +90,18 @@ function line(p){
  const own=p===v;
  const cards=deployed.length?deployed:own&&['defend','attack'].includes(s.phase)?[...selection].map(([id,open])=>({...s.players[p].hand.find(c=>c.id===id),open,preview:true})):[];
  return '<div class="battle-line '+(own?'own-line':'enemy-line')+'"><div class="line-label"><span>'+(p===b.defender?'防守方 · 平手即胜':'进攻方 · 必须压过')+'</span><b>'+s.players[p].name+'</b><small>'+handName(cards.filter(c=>c.open))+' / '+power(cards.filter(c=>c.open)).join(' · ')+'</small></div><div class="line-cards">'+
- [0,1,2].map(i=>{const c=cards[i];if(!c)return '<div class="card-slot"><span>0'+(i+1)+'</span></div>';const known=own||c.open||s.knowledge[v][c.id];return card(c,{hidden:!known,selected:reveals.has(c.id),stance:c.open,interactive:own&&!c.open&&!c.preview&&s.phase==='counter'&&!isAI(),action:'reveal-card',peek:!own&&!c.open&&known})}).join('')+'</div></div>';
+ [0,1,2].map(i=>{const c=cards[i];if(!c)return '<div class="card-slot"><span>0'+(i+1)+'</span></div>';const known=own||c.open||s.knowledge[v][c.id],revealable=own&&!c.open&&!c.preview&&s.phase==='counter'&&!isAI();return card(c,{hidden:!known,selected:reveals.has(c.id),stance:c.open,interactive:revealable,revealable,action:'reveal-card',peek:!own&&!c.open&&known})}).join('')+'</div></div>';
 }
 function battleView(){
  const b=s.battle,p=viewer(),active=s.active===p&&!isAI();
  const comparing=['counter','tactics'].includes(s.phase),lead=comparing?leading(s):null;
  const chosen=[...selection].map(([id,open])=>({...s.players[p].hand.find(c=>c.id===id),open}));
  const valid=chosen.length>0&&chosen.some(c=>c.open)&&(s.phase!=='attack'||compare(chosen.filter(c=>c.open),opened(s,b.defender))>0);
+ const revealPreview=s.phase==='counter'&&reveals.size?handName(b.lines[p].filter(c=>c.open||reveals.has(c.id))):'';
  return '<section class="battle-area"><div class="battle-heading"><div><div class="eyebrow">交锋 '+String(s.skirmish).padStart(2,'0')+' / SKIRMISH</div><h2>'+(b.field?s.fields.find(f=>f.id===b.field).label:'明暗交锋')+'</h2></div><span class="battle-badge">'+statusText()+'</span></div>'+
  line(1-p)+'<div class="versus"><span></span><b>'+(comparing?lead===p?'己方占优':'己方被压制':'VS')+'</b><span></span></div>'+line(p)+
- '<div class="battle-actions"><div><b>'+(isAI()?'敌方正在推演…':s.phase==='tactics'?'可使用交锋策略，或继续让对方反击。':s.phase==='defend'?'部署 1–3 张牌，至少 1 张为明牌。':s.phase==='attack'?'用明牌压过防线，保留你的暗牌。':'选择 1–2 张己方暗牌反击，或撤退止损。')+'</b><small>'+(s.phase==='counter'?'反超后由对方翻暗牌反击；被压制方无暗牌或撤退时结算。':'手牌点击顺序：选择为明牌 → 改为暗牌 → 取消。')+'</small></div><div>'+
- (s.phase==='tactics'?btn('继续 · 让对方反击 →','continue','primary',!active):s.phase==='counter'?btn('翻开 '+reveals.size+' 张','reveal','primary',!active||reveals.size<1||reveals.size>2):btn('确认部署 →','deploy','primary',!active||!valid))+
+ '<div class="battle-actions"><div><b>'+(isAI()?'敌方正在推演…':s.phase==='tactics'?'可使用交锋策略，或继续让对方反击。':s.phase==='defend'?'部署 1–3 张牌，至少 1 张为明牌。':s.phase==='attack'?'用明牌压过防线，保留你的暗牌。':reveals.size?'选择后牌型：'+revealPreview+'。点击右侧确认翻开。':'点击战线上标有“点击翻开”的暗牌，再确认反击。')+'</b><small>'+(s.phase==='counter'?'暗牌未翻开前不计入当前牌型；反超后由对方继续反击。':'手牌点击顺序：选择为明牌 → 改为暗牌 → 取消。')+'</small></div><div>'+
+ (s.phase==='tactics'?btn('继续 · 让对方反击 →','continue','primary',!active):s.phase==='counter'?btn(reveals.size?'确认翻开 '+reveals.size+' 张 →':'先点击暗牌','reveal','primary',!active||reveals.size<1||reveals.size>2):btn('确认部署 →','deploy','primary',!active||!valid))+
  btn('撤退','fold','secondary',!active)+'</div></div></section>';
 }
 function handTray(){
