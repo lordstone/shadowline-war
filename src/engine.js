@@ -100,6 +100,15 @@ function settle(s,winner){
  startBattle(s,b.defender,b.attacker,null);
  }
 }
+function resolveCounter(s){
+ const winner=leading(s),suppressed=1-winner;
+ if(!s.battle.lines[suppressed].some(c=>!c.open)){
+ log(s,s.players[suppressed].name+'没有战线暗牌，仍被压制。');settle(s,winner);
+ }else{
+ s.phase='counter';s.active=suppressed;
+ log(s,'轮到'+s.players[suppressed].name+'翻开暗牌反击或撤退。');
+ }
+}
 export function reachable(s,p,f){return s.raid||s.fields.some(x=>x.owner===p&&x.links.includes(f.id))}
 function target(s,id){return s.fields.find(x=>x.id===id)}
 function strategyError(s,p,id,fieldId){
@@ -132,9 +141,9 @@ function strategy(s,p,id,fieldId){
  case 'meds_team':pl.hand.push(clean(pl.reserve.splice(Math.floor(random(s)*pl.reserve.length),1)[0]));break;
  case 'spy':{const c=pick(s.battle.lines[enemy].filter(c=>!c.open));s.knowledge[p][c.id]=true;break}
  case 'isr':pick(f.garrison.filter(c=>!c.open)).open=true;break;
- case 'paratrooper':s.battle.lines[p].push({...clean(s.deck.pop()),open:true});if(s.phase==='counter'&&leading(s)===p)settle(s,p);break;
- case 'rank_up':{const c=pick(s.battle.lines[p].filter(c=>c.open&&c.rank+(c.boost||0)<13));c.boost=(c.boost||0)+1;if(s.phase==='counter'&&leading(s)===p)settle(s,p);break}
- case 'scouting':pick(s.battle.lines[enemy].filter(c=>!c.open)).open=true;s.phase='counter';s.active=1-leading(s);break;
+ case 'paratrooper':s.battle.lines[p].push({...clean(s.deck.pop()),open:true});if(s.phase==='counter')resolveCounter(s);break;
+ case 'rank_up':{const c=pick(s.battle.lines[p].filter(c=>c.open&&c.rank+(c.boost||0)<13));c.boost=(c.boost||0)+1;if(s.phase==='counter')resolveCounter(s);break}
+ case 'scouting':pick(s.battle.lines[enemy].filter(c=>!c.open)).open=true;resolveCounter(s);break;
  case 'peace_talk':settle(s,null);break;
  case 'revolution':f.owner=p;f.garrison.push({id:54+s.generated++,rank:1,suit:Math.floor(random(s)*4),open:true});nextCampaign(s);break;
  case 'blitzkrieg':settle(s,leading(s));break;
@@ -197,9 +206,7 @@ function apply(s,p,a){
  if(a.ids.some(id=>!line.some(c=>c.id===id&&!c.open)))return '只能翻开己方尚未揭示的战线牌。';
  for(const c of line)if(a.ids.includes(c.id))c.open=true;
  log(s,s.players[p].name+'翻开 '+a.ids.length+' 张暗牌。');
- if(leading(s)===p)settle(s,p);
- else if(!line.some(c=>!c.open)){log(s,'暗牌耗尽，仍被压制。');settle(s,1-p)}
- // If still suppressed with one hidden card left, the same side must reveal or fold.
+ resolveCounter(s);
  return null;
  }
  return '未知行动。';

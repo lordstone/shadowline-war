@@ -1,7 +1,7 @@
 
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
-import {createGame,act,aiAction} from '../src/engine.js';
+import {createGame,act,aiAction,makeDeck,validate} from '../src/engine.js';
 export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],checks=[];
  page.on('pageerror',e=>errors.push(e.message));
@@ -56,4 +56,25 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  await page.getByRole('button',{name:'暂停',exact:true}).click();await click('close');await drain();
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));checks.push('390px mobile event and battle layout without horizontal overflow');
  assert.deepEqual(errors,[]);await page.close();return {checks,pageErrors:errors};
+}
+
+export async function counterplayCheck(browser,url='http://127.0.0.1:4173/'){
+ const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ let s=createGame({rules:'classic',strategies:false,mode:'ai',first:1,eventSeconds:3});
+ const deck=makeDeck(),take=spec=>spec.map(([rank,suit])=>deck.find(c=>c.rank===rank&&c.suit===suit));
+ s.players[0].hand=take([[4,0],[9,1]]);s.players[1].hand=take([[1,2],[6,3]]);
+ const used=new Set(s.players.flatMap(p=>p.hand.map(c=>c.id)));s.deck=deck.filter(c=>!used.has(c.id));validate(s);
+ for(const p of [1,0])s=act(s,p,{type:'deploy',cards:s.players[p].hand.map((c,i)=>({id:c.id,open:i===0}))}).state;
+ const humanHidden=s.battle.lines[0][1].id,skirmish=s.skirmish;
+ await page.goto(url);await page.evaluate(s=>localStorage.setItem('shadowline-war-v1',JSON.stringify(s)),s);await page.reload();await page.locator('[data-action="load"]').click();
+ await page.locator('.event-reveal').waitFor();
+ let saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));
+ assert.equal(saved.active,0);assert.equal(saved.skirmish,skirmish);assert.equal(saved.players.map(p=>p.wins).join(','),'0,0');
+ await page.locator('[data-action="next-event"]').click();
+ const hidden=page.locator('[data-action="reveal-card"][data-id="'+humanHidden+'"]');assert.equal(await hidden.count(),1);
+ await hidden.click();assert.equal(await page.locator('[data-action="reveal"]').isEnabled(),true);await page.locator('[data-action="reveal"]').click();
+ saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.players[0].wins,1);
+ assert.deepEqual(errors,[]);await page.close();
+ return 'AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish';
 }

@@ -64,10 +64,12 @@ test('attacker must strictly exceed defender; initial attack does not end skirmi
  s=next(s,{type:'deploy',cards:[{id:s.players[1].hand[1].id,open:true}]});
  assert.equal(s.phase,'counter');assert.equal(s.active,0);assert.equal(s.players[1].wins,0);
 });
-test('revealing enough power wins, captured cards move once, concealed cards return',()=>{
+test('counterlead gives opponent a chance; folding then captures cards and returns concealed cards',()=>{
  let s=confrontation();
  const ownOpen=s.battle.lines[0][0].id,ownHidden=s.battle.lines[0][1].id,enemyOpen=s.battle.lines[1][0].id,enemyHidden=s.battle.lines[1][1].id;
  s=next(s,{type:'reveal',ids:[ownHidden]});
+ assert.equal(s.phase,'counter');assert.equal(s.active,1);assert.equal(s.players[0].wins,0);
+ s=next(s,{type:'fold'});
  assert.equal(s.players[0].wins,1);
  assert.deepEqual(new Set(s.players[0].reserve.map(c=>c.id)),new Set([ownOpen,ownHidden,enemyOpen]));
  assert.ok(s.players[1].hand.some(c=>c.id===enemyHidden));
@@ -210,5 +212,41 @@ test('untouched defending garrison returns to its original post and remains priv
  s=next(s,{type:'deploy',cards:[{id:s.players[1].hand.find(c=>c.id!==original.id).id,open:true}]});
  s=next(s,{type:'fold'});validate(s);
  assert.deepEqual(s.fields.find(f=>f.id===enemy.id).garrison,[original]);
+ }
+});
+
+test('successive counterleads allow both sides to reveal until suppressed line is exhausted',()=>{
+ let s=fixture([[1,0],[6,1],[11,2]],[[4,2],[9,3],[13,1]]);
+ s=next(s,{type:'deploy',cards:ids(s.players[0].hand)});
+ s=next(s,{type:'deploy',cards:ids(s.players[1].hand)});
+ const battle=s.skirmish;
+ for(const [p,rank] of [[0,6],[1,9],[0,11]]){
+ s=next(s,{type:'reveal',ids:[s.battle.lines[p].find(c=>c.rank===rank).id]});
+ assert.equal(s.skirmish,battle);assert.equal(s.active,1-p);assert.equal(s.phase,'counter');
+ assert.deepEqual(s.players.map(p=>p.wins),[0,0]);validate(s);
+ }
+ s=next(s,{type:'reveal',ids:[s.battle.lines[1].find(c=>c.rank===13).id]});
+ assert.equal(s.players[1].wins,1);validate(s);
+});
+test('defender tie gives attacker with hidden cards a response instead of victory',()=>{
+ let s=fixture([[1,0],[8,1]],[[1,2],[8,3],[13,2]]);
+ s=next(s,{type:'deploy',cards:ids(s.players[0].hand)});
+ s=next(s,{type:'deploy',cards:s.players[1].hand.map((c,i)=>({id:c.id,open:i<2}))});
+ s=next(s,{type:'reveal',ids:[s.battle.lines[0][1].id]});
+ assert.equal(s.active,1);assert.equal(s.phase,'counter');assert.equal(s.players[0].wins,0);
+ s=next(s,{type:'reveal',ids:[s.battle.lines[1][2].id]});assert.equal(s.players[1].wins,1);
+});
+test('rank-up and paratrooper counterleads preserve the other sides hidden response',()=>{
+ for(const id of ['rank_up','paratrooper']){
+ let s=fixture([[4,0],[8,1]],[[4,2],[7,3]]);
+ s=next(s,{type:'deploy',cards:ids(s.players[0].hand)});
+ s=next(s,{type:'deploy',cards:ids(s.players[1].hand).map((c,i)=>({...c,open:true}))});
+ // Keep one opponent card concealed while keeping its public lead.
+ s.battle.lines[1][0].open=false;
+ if(id==='rank_up')s.battle.lines[0][0].boost=2;
+ if(id==='paratrooper'){const i=s.deck.findIndex(c=>c.rank===13);[s.deck[i],s.deck[s.deck.length-1]]=[s.deck.at(-1),s.deck[i]]}
+ s.players[0].strategies=[id];
+ s=next(s,{type:'strategy',id});assert.equal(s.phase,'counter');assert.equal(s.active,1);
+ assert.deepEqual(s.players.map(p=>p.wins),[0,0]);validate(s);
  }
 });

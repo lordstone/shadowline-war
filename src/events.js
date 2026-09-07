@@ -27,7 +27,7 @@ export function actionEvents(before,after,action,perspective){
  }
  if(action.type==='reveal'){
  const cards=before.battle.lines[actor].filter(c=>action.ids.includes(c.id)).map(c=>({...c,open:true}));
- add('reveal',name(actor)+'翻开暗牌','重新比较当前明牌牌力。',{cards,owner:actor,field:before.battle.field});
+ add('reveal',name(actor)+'翻开暗牌',after.battle&&after.skirmish===before.skirmish?'重新比较明牌牌力。轮到'+name(after.active)+'反击或撤退。':'被压制方已无战线暗牌，交锋结算。',{cards,owner:actor,field:before.battle.field});
  }
  const ended=before.battle&&(!after.battle||before.skirmish!==after.skirmish);
  if(ended){

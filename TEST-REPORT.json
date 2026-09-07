@@ -1,11 +1,11 @@
 {
   "date": "2026-09-07",
-  "tests": 22,
-  "passed": 22,
+  "tests": 25,
+  "passed": 25,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 144,
-  "legalActions": 11754,
+  "legalActions": 11671,
   "browserUIQA": {
     "browser": "Chrome via Playwright",
     "viewports": [
@@ -18,7 +18,8 @@
       "strategy target selection and garrison roster",
       "occupation transfer and hotseat privacy before and after handoff",
       "actual deployment to tactical window and successful blitzkrieg",
-      "390px mobile event and battle layout without horizontal overflow"
+      "390px mobile event and battle layout without horizontal overflow",
+      "AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish"
     ],
     "pageErrors": []
   },
