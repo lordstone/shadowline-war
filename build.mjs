@@ -9,6 +9,7 @@ const modules={
  'shadow/data':'src/data.js',
  'shadow/engine':'src/engine.js',
  'shadow/scene':'src/battlefield.js',
+ 'shadow/events':'src/events.js',
  'shadow/app':'src/app.js'
 };
 const replacements={
@@ -16,6 +17,7 @@ const replacements={
  '../vendor/three.module.min.js':'shadow/three',
  './data.js':'shadow/data',
  './engine.js':'shadow/engine',
+ './events.js':'shadow/events',
  './battlefield.js':'shadow/scene'
 };
 const imports={};

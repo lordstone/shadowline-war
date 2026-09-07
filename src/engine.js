@@ -28,7 +28,7 @@ export function validate(s){
  if(all.length!==54+s.generated)throw Error('牌数不守恒 '+all.length);
  if(s.players.some(p=>p.hand.some(c=>c.boost)))throw Error('临时晋升未清除');
  if(s.battle?.lines.some(l=>l.length>3))throw Error('战线超过三张');
- if(!['draft','campaign','defend','attack','counter','over'].includes(s.phase))throw Error('未知阶段');
+ if(!['draft','campaign','defend','attack','tactics','counter','over'].includes(s.phase))throw Error('未知阶段');
  return true;
 }
 export function createGame(options={}){
@@ -59,7 +59,7 @@ function exhausted(s){
 function score(s,p){return s.players[p].reserve.length+s.fields.filter(f=>f.owner===p).length*3}
 function finish(s,winner,reason){s.phase='over';s.winner=winner;s.reason=reason;s.battle=null;log(s,winner===null?'战局结束：双方平局。':s.players[winner].name+'赢得大局。')}
 function begin(s){s.active=s.opt.first===1?1:0;if(s.opt.rules==='classic')startBattle(s,1-s.active,s.active,null);else{s.phase='campaign';income(s)}}
-function income(s){s.players[s.active].supply=Math.min(30,s.players[s.active].supply+s.fields.filter(f=>f.owner===s.active&&f.blockedUntil<s.round).reduce((n,f)=>n+(f.type==='oil'?2:1),0))}
+function income(s){const p=s.players[s.active],before=p.supply;p.supply=Math.min(30,p.supply+s.fields.filter(f=>f.owner===s.active&&f.blockedUntil<s.round).reduce((n,f)=>n+(f.type==='oil'?2:1),0));log(s,p.name+'收获 '+(p.supply-before)+' 点补给。')}
 function nextCampaign(s){
  s.active=1-s.active;s.turn++;s.round=Math.floor((s.turn-1)/2)+1;s.phase='campaign';s.strategyUsed=false;s.supplyUsed=false;s.raid=false;
  if(exhausted(s))return;
@@ -67,8 +67,9 @@ function nextCampaign(s){
  income(s);
 }
 function startBattle(s,attacker,defender,field){
- if(field){const f=s.fields.find(x=>x.id===field);s.players[defender].hand.push(...f.garrison.map(clean));f.garrison=[]}
- s.skirmish++;s.battle={attacker,defender,field,lines:[[],[]],strategyUsed:[false,false]};s.phase='defend';s.active=defender;s.strategyUsed=false;log(s,'第 '+s.skirmish+' 次交锋：'+s.players[defender].name+'先部署防线。');
+ const garrison=field?structuredClone(s.fields.find(x=>x.id===field).garrison):[];
+ if(field){const f=s.fields.find(x=>x.id===field);s.players[defender].hand.push(...f.garrison.map(clean));for(const c of garrison)if(c.open)s.knowledge[attacker][c.id]=true;f.garrison=[];log(s,f.label+'遭到'+s.players[attacker].name+'入侵；'+garrison.length+' 张驻军牌回到防守方手牌。')}
+ s.skirmish++;s.battle={attacker,defender,field,garrison,lines:[[],[]],strategyUsed:[false,false]};s.phase='defend';s.active=defender;s.strategyUsed=false;log(s,'第 '+s.skirmish+' 次交锋：'+s.players[defender].name+'先部署防线。');
 }
 function settle(s,winner){
  const b=s.battle;
@@ -84,8 +85,11 @@ function settle(s,winner){
  if(winner===b.attacker){f.owner=winner;log(s,s.players[winner].name+'夺取'+f.label+'。')}
  // The occupation marker is a recovered real card, never duplicated.
  const owner=f.owner;
- if(s.players[owner].reserve.length)f.garrison.push({...s.players[owner].reserve.pop(),open:true});
+ const original=owner===b.defender?(b.garrison||[]).find(c=>s.players[owner].hand.some(h=>h.id===c.id)):null;
+ if(original){s.players[owner].hand=s.players[owner].hand.filter(c=>c.id!==original.id);f.garrison.push({...clean(original),open:original.open});}
+ else if(s.players[owner].reserve.length)f.garrison.push({...s.players[owner].reserve.pop(),open:true});
  else if(s.players[owner].hand.length)f.garrison.push({...s.players[owner].hand.pop(),open:false});
+ log(s,f.label+'：'+(original?'原驻军归队':f.garrison.length?'已重新驻防':'暂无驻军')+'。');
  if(winner===b.attacker&&f.capital){finish(s,winner,'夺取敌方首都');return}
  }
  replenish(s);
@@ -102,7 +106,7 @@ function strategyError(s,p,id,fieldId){
  const c=strategyById(id);if(!c||!s.players[p].strategies.includes(id))return '没有这张策略卡。';
  const campaign=s.phase==='campaign';
  if(c.phase==='campaign'&&!campaign)return '这张策略卡只能在地图行动阶段使用。';
- if(c.phase==='battle'&&s.phase!=='counter')return '这张策略卡只能在双方部署后的对抗阶段使用。';
+ if(c.phase==='battle'&&!['tactics','counter'].includes(s.phase))return '双方部署后，在战术窗口或反击阶段使用。';
  if(campaign?s.strategyUsed:s.battle.strategyUsed[p])return '本回合已经使用过策略卡。';
  const enemy=1-p,f=target(s,fieldId),line=s.battle?.lines[p]||[],other=s.battle?.lines[enemy]||[];
  if(['conscription','paratrooper'].includes(id)&&!s.deck.length)return '公共牌库已空。';
@@ -111,6 +115,7 @@ function strategyError(s,p,id,fieldId){
  if(['spy','scouting'].includes(id)&&!other.some(c=>!c.open))return '敌方战线没有暗牌。';
  if(id==='paratrooper'&&line.length>=3)return '战线已满，最多 3 张。';
  if(id==='rank_up'&&!line.some(c=>c.open&&c.rank+(c.boost||0)<13))return '没有可晋升的普通明牌。';
+ if(id==='blitzkrieg'&&leading(s)!==p)return '闪电战需要己方占优；在进攻部署后的战术窗口使用。';
  if(id==='revolution'&&(!f||f.owner!==null))return '请先选择中立据点。';
  if(id==='economic_sanctions'&&(!f||f.owner!==enemy))return '请先选择敌方据点。';
  return null;
@@ -127,9 +132,9 @@ function strategy(s,p,id,fieldId){
  case 'meds_team':pl.hand.push(clean(pl.reserve.splice(Math.floor(random(s)*pl.reserve.length),1)[0]));break;
  case 'spy':{const c=pick(s.battle.lines[enemy].filter(c=>!c.open));s.knowledge[p][c.id]=true;break}
  case 'isr':pick(f.garrison.filter(c=>!c.open)).open=true;break;
- case 'paratrooper':s.battle.lines[p].push({...clean(s.deck.pop()),open:true});if(leading(s)===p)settle(s,p);break;
- case 'rank_up':{const c=pick(s.battle.lines[p].filter(c=>c.open&&c.rank+(c.boost||0)<13));c.boost=(c.boost||0)+1;if(leading(s)===p)settle(s,p);break}
- case 'scouting':pick(s.battle.lines[enemy].filter(c=>!c.open)).open=true;s.active=1-leading(s);break;
+ case 'paratrooper':s.battle.lines[p].push({...clean(s.deck.pop()),open:true});if(s.phase==='counter'&&leading(s)===p)settle(s,p);break;
+ case 'rank_up':{const c=pick(s.battle.lines[p].filter(c=>c.open&&c.rank+(c.boost||0)<13));c.boost=(c.boost||0)+1;if(s.phase==='counter'&&leading(s)===p)settle(s,p);break}
+ case 'scouting':pick(s.battle.lines[enemy].filter(c=>!c.open)).open=true;s.phase='counter';s.active=1-leading(s);break;
  case 'peace_talk':settle(s,null);break;
  case 'revolution':f.owner=p;f.garrison.push({id:54+s.generated++,rank:1,suit:Math.floor(random(s)*4),open:true});nextCampaign(s);break;
  case 'blitzkrieg':settle(s,leading(s));break;
@@ -177,8 +182,13 @@ function apply(s,p,a){
  s.players[p].hand=s.players[p].hand.filter(c=>!line.some(x=>x.id===c.id));s.battle.lines[p]=line;
  log(s,s.players[p].name+'部署 '+line.filter(c=>c.open).length+' 明 / '+line.filter(c=>!c.open).length+' 暗。');
  if(s.phase==='defend'){s.phase='attack';s.active=s.battle.attacker}
- else{s.phase='counter';s.active=s.battle.defender}
+ else{const tactical=s.players[p].strategies.some(id=>strategyById(id)?.phase==='battle');s.phase=tactical?'tactics':'counter';s.active=tactical?p:s.battle.defender}
  return null;
+ }
+ if(s.phase==='tactics'){
+ if(a.type==='continue'){s.phase='counter';s.active=1-leading(s);return null}
+ if(a.type==='fold'){settle(s,1-p);return null}
+ return '使用一张交锋策略，或继续进入反击阶段。';
  }
  if(s.phase==='counter'){
  if(a.type==='fold'){settle(s,1-p);return null}
@@ -208,6 +218,7 @@ export function viewFor(s,p){
  v.draft[1-p]=v.draft[1-p].map(()=>'?');
  v.knowledge[1-p]={};
  for(const f of v.fields)if(f.owner!==p)f.garrison=f.garrison.map(c=>c.open?c:mask(c));
+ if(v.battle&&v.battle.defender!==p)v.battle.garrison=(v.battle.garrison||[]).map(c=>c.open?c:mask(c));
  if(v.battle)v.battle.lines[1-p]=v.battle.lines[1-p].map(c=>c.open||s.knowledge[p][c.id]?c:mask(c));
  return v;
 }
@@ -225,6 +236,10 @@ export function deployments(hand){
 export function aiAction(s,p,level='normal'){
  // Decisions use only the masked public observation and this player's own cards.
  const v=viewFor(s,p),pl=v.players[p],b=v.battle;
+ if(v.phase==='tactics'){
+ for(const id of pl.strategies)if(!canStrategy(s,p,id)&&['blitzkrieg','rank_up','paratrooper','spy','scouting'].includes(id))return {type:'strategy',id};
+ return {type:'continue'};
+ }
  if(v.phase==='draft')return {type:'draft',id:v.draft[p].find(id=>['rank_up','paratrooper','revolution','conscription'].includes(id))||v.draft[p][0]};
  if(v.phase==='campaign'){
  const targets=v.fields.filter(f=>f.owner!==p&&reachable(v,p,f));
@@ -271,6 +286,7 @@ export function aiAction(s,p,level='normal'){
  return {type:'pass'};
 }
 export function timeoutAction(s,p){
+ if(s.phase==='tactics')return {type:'continue'};
  if(s.phase==='draft')return {type:'draft',id:s.draft[p][0]};
  if(s.phase==='campaign')return {type:'pass'};
  if(s.phase==='defend'){const c=[...s.players[p].hand].sort((a,b)=>a.rank-b.rank)[0];return c?{type:'deploy',cards:[{id:c.id,open:true}]}:{type:'fold'}}

@@ -1,0 +1,59 @@
+
+import {strategyById} from './data.js';
+export function actionEvents(before,after,action,perspective){
+ const events=[],actor=before.active,name=p=>after.players[p].name;
+ const field=id=>after.fields.find(f=>f.id===id)||before.fields.find(f=>f.id===id);
+ const visible=(c,p,publicCard=false)=>p===perspective||publicCard||c.open?{...c}:{hidden:true};
+ const add=(kind,title,detail,extra={})=>{if(extra.map)extra.map=extra.map.map(({id,label,x,y,links,owner,capital})=>({id,label,x,y,links,owner,capital}));events.push({kind,title,detail,...extra})};
+ if(action.type==='attack'){
+ const f=field(action.field),stationed=before.fields.find(x=>x.id===f.id).garrison;
+ add('invasion',name(actor)+'发动入侵',f.label+'遭到进攻。防守方先部署，进攻方随后压过防线。',{field:f.id,map:after.fields,owner:actor});
+ if(stationed.length)add('garrison','驻军回到手牌',f.label+'的驻军进入防守方手牌，可用于本次部署。',{field:f.id,cards:stationed.map(c=>visible(c,1-actor)),owner:1-actor});
+ }
+ if(action.type==='occupy'){
+ const f=field(action.field);add('occupation',name(actor)+'占领'+f.label,'所选牌已转为据点驻军，没有丢失。可点击该据点或军团面板查看。',{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
+ }
+ if(action.type==='strategy'){
+ const strategy=strategyById(action.id);
+ add('strategy',name(actor)+'使用「'+strategy.name+'」',strategy.desc,{field:action.field,owner:actor,cards:action.id==='isr'?field(action.field).garrison.filter(c=>c.open):[]});
+ if(action.id==='spy'){
+ const peek=after.battle?.lines[1-actor].filter(c=>after.knowledge[actor][c.id]&&!before.knowledge[actor][c.id])||[];
+ if(actor===perspective&&peek.length)add('cards','密探情报', '仅你可见，敌方暗牌保持未翻开。',{cards:peek,owner:actor});
+ }
+ }
+ if(action.type==='deploy'){
+ const line=after.battle?.lines[actor]||[];
+ add('deployment',name(actor)+'完成部署',line.filter(c=>c.open).length+' 张明牌 / '+line.filter(c=>!c.open).length+' 张暗牌。',{owner:actor,cards:line.map(c=>visible(c,actor)),field:before.battle?.field});
+ }
+ if(action.type==='reveal'){
+ const cards=before.battle.lines[actor].filter(c=>action.ids.includes(c.id)).map(c=>({...c,open:true}));
+ add('reveal',name(actor)+'翻开暗牌','重新比较当前明牌牌力。',{cards,owner:actor,field:before.battle.field});
+ }
+ const ended=before.battle&&(!after.battle||before.skirmish!==after.skirmish);
+ if(ended){
+ const winner=after.players.findIndex((p,i)=>p.wins>before.players[i].wins);
+ add('result',winner<0?'交锋结束 · 双方停火':name(winner)+'赢得交锋',
+ (before.battle.field?field(before.battle.field).label+'：':'')+(winner<0?'各自明牌进入公开牌堆，暗牌收回。':'双方明牌归胜者，未翻开的暗牌各自收回。'),
+ {field:before.battle.field,owner:winner,map:after.fields,cards:winner<0?[]:after.players[winner].reserve.filter(c=>!before.players[winner].reserve.some(d=>d.id===c.id)).map(c=>visible(c,winner,true))});
+ if(before.battle.field){
+ const f=field(before.battle.field);
+ add('garrison',f.label+' · 驻防更新',f.garrison.length?'驻军已留在该据点；手牌、公开牌堆和驻军分别计数。':'当前据点暂无驻军。',{field:f.id,owner:f.owner,cards:f.garrison.map(c=>visible(c,f.owner))});
+ }
+ }
+ for(let p=0;p<2;p++){
+ const gained=after.players[p].supply-before.players[p].supply;
+ if(gained>0){
+ const harvest=after.turn!==before.turn||before.phase==='draft';
+ const sources=harvest?after.fields.filter(f=>f.owner===p&&f.blockedUntil<after.round).map(f=>f.label+' +'+(f.type==='oil'?2:1)).join('、'):'策略援助';
+ add('resources',name(p)+'获得 '+gained+' 点补给',sources+'。当前补给 '+after.players[p].supply+' / 30。',{owner:p});
+ }
+ const fresh=after.players[p].hand.filter(c=>before.deck.some(d=>d.id===c.id));
+ if(fresh.length)add('cards',name(p)+'获得 '+fresh.length+' 张新牌',p===perspective?'这些新牌已加入手牌，并以「新」标记。':'对手获得暗牌，点数保持隐藏。',{owner:p,cards:fresh.map(c=>visible(c,p)),newIds:p===perspective?fresh.map(c=>c.id):[]});
+ if(action.type==='strategy'&&action.id==='meds_team'&&actor===p){
+ const returned=after.players[p].hand.filter(c=>before.players[p].reserve.some(d=>d.id===c.id));
+ if(returned.length)add('cards','医疗分队回收牌','从公开牌堆回到暗牌手牌。',{owner:p,cards:returned.map(c=>visible(c,p)),newIds:p===perspective?returned.map(c=>c.id):[]});
+ }
+ }
+ return events;
+}
+

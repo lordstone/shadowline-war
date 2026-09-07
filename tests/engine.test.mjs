@@ -116,11 +116,11 @@ test('reinforcement is limited to three cards and consumes the public deck',()=>
  t=next(t,{type:'deploy',cards:ids(t.players[0].hand)});t=next(t,{type:'deploy',cards:ids(t.players[1].hand)});
  t.players[0].strategies=['paratrooper'];assert.ok(canStrategy(t,0,'paratrooper'));
 });
-test('rank-up is temporary, scouting reveals, blitzkrieg awards current leader',()=>{
- for(const id of ['rank_up','scouting','blitzkrieg']){
+test('rank-up is temporary and scouting reveals',()=>{
+ for(const id of ['rank_up','scouting']){
  let s=confrontation();s.players[0].strategies=[id];s=next(s,{type:'strategy',id});validate(s);
  if(id==='scouting')assert.ok(s.battle.lines[1].every(c=>c.open));
- if(id==='blitzkrieg')assert.equal(s.players[1].wins,1);
+
  }
 });
 test('all campaign strategy effects preserve cards and enforce target requirements',()=>{
@@ -183,3 +183,32 @@ test('seed matrix: complete AI matches, all maps, modes and strategy settings',(
  console.log('SIMULATION REPORT:',JSON.stringify({matches,actions}));
 });
 
+
+test('leading attacker gets a tactical window; blitz cannot donate a win while suppressed',()=>{
+ let s=confrontation();s.players[0].strategies=['blitzkrieg'];
+ assert.equal(act(s,0,{type:'strategy',id:'blitzkrieg'}).ok,false);
+ assert.deepEqual(s.players[0].strategies,['blitzkrieg']);
+ for(const id of ['blitzkrieg','rank_up','paratrooper','spy','scouting','peace_talk']){
+ let t=fixture([[1,0],[5,1],[8,2]],[[4,2],[7,3],[10,1]]);
+ t.players[1].strategies=[id];
+ t=next(t,{type:'deploy',cards:ids(t.players[0].hand.slice(0,2))});
+ t=next(t,{type:'deploy',cards:ids(t.players[1].hand.slice(0,2))});
+ assert.equal(t.phase,'tactics');assert.equal(t.active,1);
+ const continued=next(t,timeoutAction(t,t.active));assert.equal(continued.phase,'counter');assert.equal(continued.active,0);
+ t=next(t,{type:'strategy',id});validate(t);
+ if(id==='blitzkrieg')assert.equal(t.players[1].wins,1);
+ if(['rank_up','paratrooper','spy'].includes(id)){assert.equal(t.phase,'tactics');assert.equal(t.players[1].wins,0)}
+ }
+});
+test('untouched defending garrison returns to its original post and remains private',()=>{
+ for(const open of [false,true]){
+ let s=createGame({strategies:false,seed:119});
+ const enemy=s.fields.find(f=>f.owner===1),original={...enemy.garrison[0],open};enemy.garrison[0].open=open;
+ s.raid=true;s=next(s,{type:'attack',field:enemy.id});
+ assert.ok(s.players[1].hand.some(c=>c.id===original.id));assert.equal(s.fields.find(f=>f.id===enemy.id).garrison.length,0);
+ const observed=viewFor(s,0).battle.garrison[0];assert.equal('rank' in observed,open);
+ s=next(s,{type:'deploy',cards:[{id:s.players[1].hand.find(c=>c.id!==original.id).id,open:true}]});
+ s=next(s,{type:'fold'});validate(s);
+ assert.deepEqual(s.fields.find(f=>f.id===enemy.id).garrison,[original]);
+ }
+});

@@ -42,5 +42,5 @@ export const MAPS=[
  f('h','西部雷达','town',24,79,['g','a','i']),
  f('i','中央堡垒','town',50,52,['b','d','f','h'])]}
 ];
-export const defaults={mode:'ai',map:'duel',rules:'campaign',difficulty:'normal',timer:0,seed:2026,strategies:true,first:0,maxRounds:80,sound:true};
+export const defaults={mode:'ai',map:'duel',rules:'campaign',difficulty:'normal',timer:0,eventSeconds:3,seed:2026,strategies:true,first:0,maxRounds:80,sound:true};
 export const strategyById=id=>STRATEGIES.find(s=>s.id===id);

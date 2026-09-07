@@ -1,15 +1,32 @@
 {
-  "date": "2026-09-06",
-  "tests": 18,
-  "passed": 18,
+  "date": "2026-09-07",
+  "tests": 22,
+  "passed": 22,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 144,
-  "legalActions": 12020,
-  "browserUIQA": "not performed",
+  "legalActions": 11754,
+  "browserUIQA": {
+    "browser": "Chrome via Playwright",
+    "viewports": [
+      "1440x1000",
+      "390x844"
+    ],
+    "checks": [
+      "AI invasion target, automatic 3-second queue, pause, preserved action timer and returned garrison",
+      "new card face animation and persistent hand marker",
+      "strategy target selection and garrison roster",
+      "occupation transfer and hotseat privacy before and after handoff",
+      "actual deployment to tactical window and successful blitzkrieg",
+      "390px mobile event and battle layout without horizontal overflow"
+    ],
+    "pageErrors": []
+  },
   "standaloneBundle": {
-    "modules": 6,
+    "modules": 7,
     "parseAndLink": "passed",
-    "externalScriptsAndStyles": 0
+    "fileURLStartupAndDraft": "passed",
+    "externalRequests": 0,
+    "pageErrors": []
   }
 }

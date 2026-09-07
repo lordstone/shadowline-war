@@ -14,7 +14,7 @@ for(const [id,uri] of Object.entries(imports)){
 await modules.get('shadow/app').link(id=>{
  assert.ok(modules.has(id),'Every dependency is bundled: '+id);return modules.get(id);
 });
-assert.equal(modules.size,6);
+assert.equal(modules.size,7);
 assert.ok(!/<link[^>]+href=/.test(html));
 assert.ok(!/src="https?:/.test(html));
-console.log('PASS: all six standalone modules parse and link; no external scripts or styles required.');
+console.log('PASS: all seven standalone modules parse and link; no external scripts or styles required.');
