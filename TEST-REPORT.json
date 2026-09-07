@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-06",
+  "tests": 18,
+  "passed": 18,
+  "failed": 0,
+  "threeCardHands": 24804,
+  "simulatedMatches": 144,
+  "legalActions": 12020,
+  "browserUIQA": "not performed",
+  "standaloneBundle": {
+    "modules": 6,
+    "parseAndLink": "passed",
+    "externalScriptsAndStyles": 0
+  }
+}

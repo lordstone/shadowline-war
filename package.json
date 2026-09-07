@@ -1,0 +1,11 @@
+{
+  "name": "shadowline-war",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node tests/engine.test.mjs",
+    "build": "node build.mjs"
+  }
+}
