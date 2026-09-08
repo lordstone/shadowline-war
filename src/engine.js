@@ -29,6 +29,8 @@ export function validate(s){
  if(all.length!==54+s.generated)throw Error('牌数不守恒 '+all.length);
  if(s.players.some(p=>p.hand.some(c=>c.boost)))throw Error('临时晋升未清除');
  if(s.battle?.lines.some(l=>l.length>3))throw Error('战线超过三张');
+ if(s.fields.some(f=>f.garrison.length>3))throw Error('驻军超过三张');
+ if(s.opt.rules==='campaign'&&s.fields.some(f=>f.owner!==null&&!f.capital&&f.garrison.length&&!f.garrison.some(c=>c.open)))throw Error('普通据点必须至少有一张明牌驻军');
  if(s.strategyMarket?.length>3)throw Error('策略市场超过三张');
  if(s.players.some(p=>p.strategies.length>3))throw Error('持有策略超过三张');
  if(!['draft','campaign','defend','attack','tactics','counter','over'].includes(s.phase))throw Error('未知阶段');
@@ -40,9 +42,9 @@ export function createGame(options={}){
  players:[{name:'苍岚军团',hand:[],reserve:[],strategies:[],supply:2,wins:0},{name:opt.mode==='ai'?'赤烬 · 战术 AI':'赤烬军团',hand:[],reserve:[],strategies:[],supply:2,wins:0}],
  deck:[],fields:structuredClone(MAPS.find(m=>m.id===opt.map)?.fields||MAPS[0].fields),
  battle:null,log:[],winner:null,reason:'',draft:[[],[]],drafted:[false,false],turn:1,strategyUsed:false,supplyUsed:false,raid:false,knowledge:[{},{}],
- strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false};
+ strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false};
  s.deck=shuffle(s,makeDeck());for(let i=0;i<12;i++)for(let p=0;p<2;p++)s.players[p].hand.push(s.deck.pop());
- if(opt.rules==='campaign'){for(const f of s.fields.filter(f=>f.capital))f.garrison.push({...s.players[f.owner].hand.pop(),open:false});}
+ if(opt.rules==='campaign'){for(const f of s.fields.filter(f=>f.capital))for(let i=0;i<3;i++)f.garrison.push({...s.players[f.owner].hand.pop(),open:false});}
  else s.fields=[];
  const available=STRATEGIES.filter(c=>opt.rules==='campaign'||c.phase==='battle');
  if(opt.strategies){s.strategyDeck=shuffle(s,available.flatMap(c=>Array(c.count).fill(c.id)));for(let p=0;p<2;p++)s.draft[p]=s.strategyDeck.splice(-3)}
@@ -65,6 +67,8 @@ export function upgradeState(s){
  if(!Array.isArray(s.strategyDiscard))s.strategyDiscard=[];
  if(!Array.isArray(s.strategyLocked))s.strategyLocked=[[],[]];
  if(typeof s.marketBought!=='boolean')s.marketBought=false;
+ if(typeof s.rapidRedeployUsed!=='boolean')s.rapidRedeployUsed=false;
+ if(s.opt.rules==='campaign')for(const f of s.fields)if(f.owner!==null&&!f.capital&&f.garrison.length&&!f.garrison.some(c=>c.open))f.garrison[0].open=true;
  if(s.opt.rules==='campaign'&&s.opt.strategies)fillMarket(s);
  return s;
 }
@@ -81,7 +85,7 @@ function finish(s,winner,reason){s.phase='over';s.winner=winner;s.reason=reason;
 function begin(s){s.active=s.opt.first===1?1:0;if(s.opt.rules==='classic')startBattle(s,1-s.active,s.active,null);else{fillMarket(s);s.phase='campaign';income(s)}}
 function income(s){const p=s.players[s.active],before=p.supply;p.supply=Math.min(30,p.supply+s.fields.filter(f=>f.owner===s.active&&f.blockedUntil<s.round).reduce((n,f)=>n+(f.type==='oil'?2:1),0));log(s,p.name+'收获 '+(p.supply-before)+' 点补给。')}
 function nextCampaign(s){
- s.active=1-s.active;s.turn++;s.round=Math.floor((s.turn-1)/2)+1;s.phase='campaign';s.strategyUsed=false;s.supplyUsed=false;s.marketBought=false;s.raid=false;s.strategyLocked[s.active]=[];
+ s.active=1-s.active;s.turn++;s.round=Math.floor((s.turn-1)/2)+1;s.phase='campaign';s.strategyUsed=false;s.supplyUsed=false;s.marketBought=false;s.rapidRedeployUsed=false;s.raid=false;s.strategyLocked[s.active]=[];
  if(exhausted(s))return;
  if(s.round>s.opt.maxRounds){const a=score(s,0),b=score(s,1);finish(s,a===b?null:a>b?0:1,'达到回合上限：比较公开牌数 + 每块领地 3 分');return}
  if(s.active===(s.opt.first===1?1:0)&&s.round>1&&(s.round-1)%3===0)refreshMarket(s);
@@ -89,28 +93,37 @@ function nextCampaign(s){
 }
 function startBattle(s,attacker,defender,field){
  const garrison=field?structuredClone(s.fields.find(x=>x.id===field).garrison):[];
- if(field){const f=s.fields.find(x=>x.id===field);s.players[defender].hand.push(...f.garrison.map(clean));for(const c of garrison)if(c.open)s.knowledge[attacker][c.id]=true;f.garrison=[];log(s,f.label+'遭到'+s.players[attacker].name+'入侵；'+garrison.length+' 张驻军牌回到防守方手牌。')}
- s.skirmish++;s.battle={attacker,defender,field,garrison,lines:[[],[]],strategyUsed:[false,false]};s.phase='defend';s.active=defender;s.strategyUsed=false;log(s,'第 '+s.skirmish+' 次交锋：'+s.players[defender].name+'先部署防线。');
+ const lines=[[],[]];
+ if(field){const f=s.fields.find(x=>x.id===field);for(const c of garrison)if(c.open)s.knowledge[attacker][c.id]=true;f.garrison=[];lines[defender]=garrison;log(s,f.label+'遭到'+s.players[attacker].name+'入侵；固定驻军直接进入防守战线。')}
+ s.skirmish++;s.battle={attacker,defender,field,garrison,lines,strategyUsed:[false,false]};s.phase=field?'attack':'defend';s.active=field?attacker:defender;s.strategyUsed=false;log(s,'第 '+s.skirmish+' 次交锋：'+(field?s.players[attacker].name+'准备突破固定驻军。':s.players[defender].name+'先部署防线。'));
 }
 function settle(s,winner){
  const b=s.battle;
- for(let p=0;p<2;p++){
- const open=b.lines[p].filter(c=>c.open).map(clean),hidden=b.lines[p].filter(c=>!c.open).map(clean);
- s.players[p].hand.push(...hidden);s.players[winner===null?p:winner].reserve.push(...open);
+ const stationed=line=>line.map(c=>({...clean(c),open:!!c.open}));
+ if(b.field){
+ const f=s.fields.find(x=>x.id===b.field);
+ if(winner===b.attacker){
+  const defeated=b.lines[b.defender];
+  s.players[b.defender].hand.push(...defeated.filter(c=>!c.open).map(clean));
+  s.players[b.attacker].reserve.push(...defeated.filter(c=>c.open).map(clean));
+  f.owner=b.attacker;f.garrison=stationed(b.lines[b.attacker]);
+ }else{
+  const assault=b.lines[b.attacker];
+  s.players[b.attacker].hand.push(...assault.filter(c=>!c.open).map(clean));
+  s.players[winner===null?b.attacker:b.defender].reserve.push(...assault.filter(c=>c.open).map(clean));
+  f.garrison=stationed(b.lines[b.defender]);
+ }
+ }else for(let p=0;p<2;p++){
+  const open=b.lines[p].filter(c=>c.open).map(clean),hidden=b.lines[p].filter(c=>!c.open).map(clean);
+  s.players[p].hand.push(...hidden);s.players[winner===null?p:winner].reserve.push(...open);
  }
  if(winner!==null){s.players[winner].wins++;log(s,s.players[winner].name+'赢得交锋，收取双方明牌。')}
  else log(s,'双方停火，各自回收战线。');
  s.battle=null;s.active=b.attacker;
  if(b.field){
  const f=s.fields.find(x=>x.id===b.field);
- if(winner===b.attacker){f.owner=winner;log(s,s.players[winner].name+'夺取'+f.label+'。')}
- // The occupation marker is a recovered real card, never duplicated.
- const owner=f.owner;
- const original=owner===b.defender?(b.garrison||[]).find(c=>s.players[owner].hand.some(h=>h.id===c.id)):null;
- if(original){s.players[owner].hand=s.players[owner].hand.filter(c=>c.id!==original.id);f.garrison.push({...clean(original),open:original.open});}
- else if(s.players[owner].reserve.length)f.garrison.push({...s.players[owner].reserve.pop(),open:true});
- else if(s.players[owner].hand.length)f.garrison.push({...s.players[owner].hand.pop(),open:false});
- log(s,f.label+'：'+(original?'原驻军归队':f.garrison.length?'已重新驻防':'暂无驻军')+'。');
+ if(winner===b.attacker)log(s,s.players[winner].name+'夺取'+f.label+'，进攻战线转为新驻军。');
+ else log(s,f.label+'的固定驻军守住据点。');
  if(winner===b.attacker&&f.capital){finish(s,winner,'夺取敌方首都');return}
  }
  replenish(s);
@@ -166,6 +179,14 @@ function buyStrategy(s,p,id){
  const error=canBuyStrategy(s,p,id);if(error)return error;
  const c=strategyById(id),i=s.strategyMarket.indexOf(id);s.players[p].supply-=c.price;s.players[p].strategies.push(id);s.strategyLocked[p].push(id);s.strategyMarket.splice(i,1);s.marketBought=true;fillMarket(s);log(s,s.players[p].name+'花费 '+c.price+' 点补给购买「'+c.name+'」，下回合解锁。');return null;
 }
+function garrisonFromHand(s,p,specs,capital){
+ if(!Array.isArray(specs)||specs.length<1||specs.length>3)return {error:'驻军必须选择 1–3 张牌。'};
+ if(new Set(specs.map(c=>c.id)).size!==specs.length)return {error:'不能重复选择同一张驻军牌。'};
+ if(!capital&&!specs.some(c=>c.open))return {error:'普通据点至少需要 1 张明牌驻军。'};
+ const line=specs.map(spec=>{const c=s.players[p].hand.find(c=>c.id===spec.id);return c?{...clean(c),open:!!spec.open}:null});
+ if(line.some(c=>!c))return {error:'只能选择自己的手牌驻军。'};
+ return {line};
+}
 function strategy(s,p,id,fieldId){
  const error=strategyError(s,p,id,fieldId);if(error)return error;
  const pl=s.players[p],enemy=1-p,f=target(s,fieldId),pick=a=>a[Math.floor(random(s)*a.length)];
@@ -207,12 +228,25 @@ function apply(s,p,a){
  }
  if(a.type==='pass'){log(s,s.players[p].name+'结束地图行动。');nextCampaign(s);return null}
  const f=target(s,a.field);
- if(!f||f.owner===p)return '请选择中立或敌方据点。';
+ if(!f)return '请选择地图据点。';
+ if(['reorganize','rapid_redeploy'].includes(a.type)){
+ if(f.owner!==p)return '只能调整己方据点的驻军。';
+ if(a.type==='rapid_redeploy'&&(s.rapidRedeployUsed||s.players[p].supply<3))return s.rapidRedeployUsed?'本回合已经快速换防。':'快速换防需要 3 点补给。';
+ const prepared=garrisonFromHand(s,p,a.cards,f.capital);if(prepared.error)return prepared.error;
+ const selected=new Set(prepared.line.map(c=>c.id));
+ s.players[p].hand=s.players[p].hand.filter(c=>!selected.has(c.id));
+ s.players[p].hand.push(...f.garrison.map(clean));f.garrison=prepared.line;
+ if(a.type==='rapid_redeploy'){s.players[p].supply-=3;s.rapidRedeployUsed=true;log(s,s.players[p].name+'花费 3 点补给，快速调整'+f.label+'驻军。')}
+ else{log(s,s.players[p].name+'整编'+f.label+'驻军并结束地图行动。');nextCampaign(s)}
+ return null;
+ }
+ if(f.owner===p)return '请选择中立或敌方据点。';
  if(!reachable(s,p,f))return '目标必须与己方领地相邻。';
  if(a.type==='occupy'){
  if(f.owner!==null)return '该据点已有驻军，需要发起进攻。';
- const c=s.players[p].hand.find(c=>c.id===a.card);if(!c)return '请选择 1 张手牌作为暗牌驻军。';
- s.players[p].hand=s.players[p].hand.filter(x=>x.id!==c.id);f.owner=p;f.garrison=[{...c,open:false}];
+ const specs=Array.isArray(a.cards)?a.cards:a.card!==undefined?[{id:a.card,open:true}]:[];
+ const prepared=garrisonFromHand(s,p,specs,false);if(prepared.error)return prepared.error;
+ const selected=new Set(prepared.line.map(c=>c.id));s.players[p].hand=s.players[p].hand.filter(c=>!selected.has(c.id));f.owner=p;f.garrison=prepared.line;
  log(s,s.players[p].name+'占领'+f.label+'。');nextCampaign(s);return null;
  }
  if(a.type==='attack'){if(f.owner===null)return '中立据点请使用占领。';startBattle(s,p,1-p,f.id);return null}
@@ -305,7 +339,7 @@ export function aiAction(s,p,level='normal'){
  }
  if(pl.hand.length<10&&pl.supply>=2&&!v.supplyUsed&&v.deck.length)return {type:'supply'};
  if(enemy.length&&(pl.hand.length>=3||!neutral.length))return {type:'attack',field:enemy[0].id};
- if(neutral.length&&pl.hand.length>1)return {type:'occupy',field:neutral[0].id,card:[...pl.hand].sort((a,b)=>a.rank-b.rank)[0].id};
+ if(neutral.length&&pl.hand.length>1)return {type:'occupy',field:neutral[0].id,cards:[{id:[...pl.hand].sort((a,b)=>a.rank-b.rank)[0].id,open:true}]};
  if(enemy.length&&pl.hand.length)return {type:'attack',field:enemy[0].id};
  return {type:'pass'};
  }

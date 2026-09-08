@@ -1,27 +1,26 @@
 {
   "date": "2026-09-07",
-  "tests": 31,
-  "passed": 31,
+  "tests": 33,
+  "passed": 33,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 144,
-  "legalActions": 12383,
+  "legalActions": 8440,
   "browserUIQA": {
     "browser": "Chrome via Playwright",
     "viewports": [
-      "1440x1000",
+      "1440x900",
       "390x844"
     ],
     "checks": [
-      "AI invasion target, automatic 3-second queue, pause, preserved action timer and returned garrison",
+      "AI invasion target, automatic 3-second queue, pause, preserved action timer and fixed three-card garrison",
       "new card face animation and persistent hand marker",
       "strategy target selection and garrison roster",
       "occupation transfer and hotseat privacy before and after handoff",
       "actual deployment to tactical window and successful blitzkrieg",
-      "390px mobile event and battle layout without horizontal overflow",
-      "AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish"
-      ,"Counter card is visibly marked, previews the resulting hand, and requires explicit confirmation",
-      "Public strategy market purchase, refill, animation, supply cost and next-turn unlock"
+      "390px mobile event and battle layout without page overflow",
+      "AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish",
+      "Collapsed strategy shop, purchase, refill, hover tooltip, supply cost and next-turn unlock"
     ],
     "pageErrors": []
   },

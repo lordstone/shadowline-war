@@ -15,14 +15,14 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  let s=createGame({strategies:false,mode:'ai',timer:30,eventSeconds:3,seed:119});s.active=1;s.raid=true;
  await load(s);await page.locator('.event-invasion').waitFor();
  assert.match(await page.locator('.event-map-node.hit').innerText(),/苍岚首都/);
- const invaded=await state();assert.equal(invaded.phase,'defend');
+ const invaded=await state();assert.equal(invaded.phase,'attack');assert.equal(invaded.battle.lines[0].length,3);
  await page.getByRole('button',{name:'暂停',exact:true}).click();await page.waitForTimeout(3200);
  assert.equal(await page.locator('.event-invasion').count(),1);assert.deepEqual(await state(),invaded);
  await click('close');await page.waitForTimeout(400);assert.equal(await page.locator('.event-invasion').count(),1);
  await page.locator('.event-garrison').waitFor({timeout:4000});await drain();
- assert.equal(await page.locator('.hand-tray .playing-card').count(),12);
+ assert.equal(await page.locator('.hand-tray .playing-card').count(),9);
  await page.waitForFunction(()=>/30|29/.test(document.querySelector('#clock')?.textContent));
- checks.push('AI invasion target, automatic 3-second queue, pause, preserved action timer and returned garrison');
+ checks.push('AI invasion target, automatic 3-second queue, pause, preserved action timer and fixed three-card garrison');
  s=createGame({strategies:false,mode:'ai'});s.players[0].strategies=['conscription'];await load(s);await page.locator('[data-action="use-strategy"][data-id="conscription"]').click();
  await click('next-event');assert.equal(await page.locator('.event-cards .playing-card:not(.back)').count(),1);
  assert.equal(await page.locator('.event-cards .new-card-badge').count(),1);await drain();
@@ -30,8 +30,8 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  s=createGame({strategies:false,mode:'ai'});s.players[0].strategies=['isr'];await load(s);await page.locator('[data-action="use-strategy"][data-id="isr"]').click();
  assert.equal(await page.locator('.targeting-note').count(),1);
  const enemy=s.fields.find(f=>f.owner===1);await page.locator('[data-action="focus"][data-id="'+enemy.id+'"]').click();await drain();
- assert.equal((await state()).fields.find(f=>f.id===enemy.id).garrison[0].open,true);
- await page.locator('[data-action="reserve"][data-player="0"]').click();assert.equal(await page.locator('.garrison-roster .playing-card:not(.back)').count(),1);await click('close');
+ assert.ok((await state()).fields.find(f=>f.id===enemy.id).garrison.some(c=>c.open));
+ await page.locator('[data-action="reserve"][data-player="0"]').click();assert.equal(await page.locator('.garrison-roster .playing-card:not(.back)').count(),3);await click('close');
  checks.push('strategy target selection and garrison roster');
  s=createGame({strategies:false,mode:'local',eventSeconds:3});await load(s);
  const center=s.fields.find(f=>f.id==='center_town');const stationed=s.players[0].hand[0].id;
@@ -39,8 +39,8 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  assert.equal(await page.locator('.event-occupation').count(),1);assert.equal(await page.locator('.hand-tray').count(),0);
  await drain();assert.equal(await page.locator('[data-action="ready"]').count(),1);assert.equal(await page.locator('.hand-tray').count(),0);
  await click('ready');await page.locator('[data-action="reserve"][data-player="0"]').click();
- assert.equal(await page.locator('.garrison-roster .playing-card:not(.back)').count(),0);
- assert.equal(await page.locator('.garrison-roster .playing-card.back').count(),2);
+ assert.equal(await page.locator('.garrison-roster .playing-card:not(.back)').count(),1);
+ assert.equal(await page.locator('.garrison-roster .playing-card.back').count(),3);
  checks.push('occupation transfer and hotseat privacy before and after handoff');
  // Reach an actual attacker deployment with a usable blitzkrieg.
  s=createGame({rules:'classic',strategies:false,mode:'local',seed:119});
@@ -54,7 +54,8 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  await page.setViewportSize({width:390,height:844});s=createGame({strategies:false,mode:'ai',eventSeconds:5});s.active=1;s.raid=true;await load(s);await page.locator('.event-invasion').waitFor();
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:fileURLToPath(new URL('../../shadowline-event-mobile.png',import.meta.url)),fullPage:true});
  await page.getByRole('button',{name:'暂停',exact:true}).click();await click('close');await drain();
- assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));checks.push('390px mobile event and battle layout without horizontal overflow');
+ const mobileMetrics=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,width:innerWidth,height:innerHeight,battle:document.querySelector('.battle-area')?.getBoundingClientRect().toJSON(),hand:document.querySelector('.hand-tray')?.getBoundingClientRect().toJSON(),intel:document.querySelector('.intel-panel')?.getBoundingClientRect().toJSON()}));
+ assert.ok(mobileMetrics.scrollWidth<=mobileMetrics.width&&mobileMetrics.scrollHeight<=mobileMetrics.height,JSON.stringify(mobileMetrics));checks.push('390px mobile event and battle layout without page overflow');
  assert.deepEqual(errors,[]);await page.close();return {checks,pageErrors:errors};
 }
 
@@ -81,13 +82,14 @@ export async function counterplayCheck(browser,url='http://127.0.0.1:4173/'){
 }
 
 export async function strategyMarketCheck(browser,url='http://127.0.0.1:4173/'){
- const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  let s=createGame({strategies:false,mode:'local',eventSeconds:1});s.opt.strategies=true;s.players[0].supply=10;s.strategyMarket=['conscription','spy','blitzkrieg'];s.strategyDeck=['rank_up'];s.strategyDiscard=[];s.strategyLocked=[[],[]];s.marketBought=false;
  await page.goto(url);await page.evaluate(s=>localStorage.setItem('shadowline-war-v1',JSON.stringify(s)),s);await page.reload();await page.locator('[data-action="load"]').click();await page.locator('[data-action="ready"]').click();
- assert.equal(await page.locator('.market-card').count(),3);await page.locator('[data-action="buy-strategy"][data-id="conscription"]').click();
+ assert.equal(await page.locator('.strategy-shop-trigger').count(),1);assert.equal(await page.locator('.market-card').count(),0);assert.equal(await page.evaluate(()=>[document.documentElement.scrollWidth<=innerWidth,document.documentElement.scrollHeight<=innerHeight].join(',')),'true,true');
+ await page.locator('[data-action="open-market"]').click();assert.equal(await page.locator('.market-card').count(),3);await page.locator('[data-action="buy-strategy"][data-id="conscription"]').click();
  assert.equal(await page.locator('.event-purchase').count(),1);assert.match(await page.locator('.event-strategy').innerText(),/征召令/);
  let saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.players[0].supply,6);assert.ok(saved.strategyLocked[0].includes('conscription'));assert.equal(saved.strategyMarket.length,3);
- await page.locator('[data-action="next-event"]').click();assert.match(await page.locator('.tactic-note').innerText(),/下一个地图回合/);
+ await page.locator('[data-action="next-event"]').click();assert.match(await page.locator('.strategy-tooltip').textContent(),/下一个地图回合/);await page.locator('.strategy-token').hover();await page.waitForTimeout(220);assert.equal(await page.locator('.strategy-tooltip').isVisible(),true);
  await page.locator('[data-action="pass"]').click();while(await page.locator('.event-screen').count())await page.locator('[data-action="next-event"]').click();await page.locator('[data-action="ready"]').click();await page.locator('[data-action="pass"]').click();while(await page.locator('.event-screen').count())await page.locator('[data-action="next-event"]').click();await page.locator('[data-action="ready"]').click();
  saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.strategyLocked[0].length,0);assert.equal(saved.active,0);assert.deepEqual(errors,[]);await page.close();return 'public three-card market, purchase animation, supply cost, refill, per-turn lock and next-own-turn unlock';
 }

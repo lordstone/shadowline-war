@@ -7,11 +7,14 @@ export function actionEvents(before,after,action,perspective){
  const add=(kind,title,detail,extra={})=>{if(extra.map)extra.map=extra.map.map(({id,label,x,y,links,owner,capital})=>({id,label,x,y,links,owner,capital}));events.push({kind,title,detail,...extra})};
  if(action.type==='attack'){
  const f=field(action.field),stationed=before.fields.find(x=>x.id===f.id).garrison;
- add('invasion',name(actor)+'发动入侵',f.label+'遭到进攻。防守方先部署，进攻方随后压过防线。',{field:f.id,map:after.fields,owner:actor});
- if(stationed.length)add('garrison','驻军回到手牌',f.label+'的驻军进入防守方手牌，可用于本次部署。',{field:f.id,cards:stationed.map(c=>visible(c,1-actor)),owner:1-actor});
+ add('invasion',name(actor)+'发动入侵',f.label+'遭到进攻。固定驻军已进入防线，进攻方必须用明牌严格压过。',{field:f.id,map:after.fields,owner:actor});
+ if(stationed.length)add('garrison','固定驻军迎战',f.label+'的 '+stationed.length+' 张驻军直接组成防守战线，没有回到手牌。',{field:f.id,cards:stationed.map(c=>visible(c,1-actor)),owner:1-actor});
  }
  if(action.type==='occupy'){
  const f=field(action.field);add('occupation',name(actor)+'占领'+f.label,'所选牌已转为据点驻军，没有丢失。可点击该据点或军团面板查看。',{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
+ }
+ if(['reorganize','rapid_redeploy'].includes(action.type)){
+ const f=field(action.field),rapid=action.type==='rapid_redeploy';add('garrison',name(actor)+(rapid?'完成快速换防':'完成驻军整编'),f.label+'现有 '+f.garrison.length+' 张固定驻军；'+(rapid?'消耗 3 点补给，地图行动仍可继续。':'本次地图行动结束。'),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
  }
  if(action.type==='strategy'){
  const strategy=strategyById(action.id);
@@ -37,7 +40,7 @@ export function actionEvents(before,after,action,perspective){
  if(ended){
  const winner=after.players.findIndex((p,i)=>p.wins>before.players[i].wins);
  add('result',winner<0?'交锋结束 · 双方停火':name(winner)+'赢得交锋',
- (before.battle.field?field(before.battle.field).label+'：':'')+(winner<0?'各自明牌进入公开牌堆，暗牌收回。':'双方明牌归胜者，未翻开的暗牌各自收回。'),
+ (before.battle.field?field(before.battle.field).label+'：':'')+(before.battle.field?(winner===before.battle.defender?'固定驻军守住据点；进攻牌按明暗结算。':winner===before.battle.attacker?'进攻战线成为新驻军；原守军按明暗结算。':'停火后固定驻军留守，进攻牌各自收回。'):(winner<0?'各自明牌进入公开牌堆，暗牌收回。':'双方明牌归胜者，未翻开的暗牌各自收回。')),
  {field:before.battle.field,owner:winner,map:after.fields,cards:winner<0?[]:after.players[winner].reserve.filter(c=>!before.players[winner].reserve.some(d=>d.id===c.id)).map(c=>visible(c,winner,true))});
  if(before.battle.field){
  const f=field(before.battle.field);

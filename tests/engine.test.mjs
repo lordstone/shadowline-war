@@ -47,7 +47,8 @@ test('seed reproducibility; classic deals twelve, campaign accounts for garrison
  const a=createGame({rules:'classic',strategies:false});
  assert.equal(a.players[0].hand.length,12);assert.equal(a.deck.length,30);
  const b=createGame({strategies:false});
- assert.equal(b.players[0].hand.length,11);assert.equal(b.fields.flatMap(f=>f.garrison).length,2);
+ assert.equal(b.players[0].hand.length,9);assert.equal(b.fields.flatMap(f=>f.garrison).length,6);
+ for(const f of b.fields.filter(f=>f.capital)){assert.equal(f.garrison.length,3);assert.ok(f.garrison.every(c=>!c.open))}
  assert.equal(cardLocations(b).length,54);
 });
 test('reject wrong player, all-hidden and duplicate deployments without changing state',()=>{
@@ -134,7 +135,7 @@ test('all campaign strategy effects preserve cards and enforce target requiremen
  const r=act(s,0,{type:'strategy',id,field:f.id});assert.equal(r.ok,true,id+': '+r.error);s=r.state;validate(s);
  assert.equal(s.generated,id==='revolution'?1:0);
  assert.equal(s.players[0].strategies.length,0);
- if(id==='isr')assert.equal(s.fields.find(x=>x.id===enemy.id).garrison[0].open,true);
+ if(id==='isr')assert.ok(s.fields.find(x=>x.id===enemy.id).garrison.some(c=>c.open));
  if(id==='airborne_raid')assert.equal(s.raid,true);
  if(id==='economic_sanctions')assert.ok(s.fields.find(x=>x.id===enemy.id).blockedUntil>s.round);
  }
@@ -144,9 +145,11 @@ test('adjacency, supply once per turn, occupation and capture-capital victory',(
  const enemy=s.fields.find(f=>f.owner===1),center=s.fields.find(f=>f.id==='center_town');
  assert.equal(act(s,0,{type:'attack',field:enemy.id}).ok,false);
  s=next(s,{type:'supply'});assert.equal(act(s,0,{type:'supply'}).ok,false);
- s=next(s,{type:'occupy',field:center.id,card:s.players[0].hand[0].id});assert.equal(s.active,1);
+ s=next(s,{type:'occupy',field:center.id,cards:[{id:s.players[0].hand[0].id,open:true}]});assert.equal(s.active,1);
  s=next(s,{type:'pass'});s=next(s,{type:'attack',field:enemy.id});
- assert.equal(s.phase,'defend');assert.equal(s.active,1);
+ assert.equal(s.phase,'attack');assert.equal(s.active,0);assert.equal(s.battle.lines[1].length,3);
+ const assault=s.players[0].hand.sort((a,b)=>a.rank-b.rank).slice(-1).map(c=>({id:c.id,open:true}));
+ s=next(s,{type:'deploy',cards:assault});assert.equal(s.active,1);
  s=next(s,{type:'fold'});assert.equal(s.phase,'over');assert.equal(s.winner,0);assert.match(s.reason,/首都/);validate(s);
 });
 test('AI observation hides ranks, suits, deck order and RNG; secret changes cannot alter decisions',()=>{
@@ -202,17 +205,35 @@ test('leading attacker gets a tactical window; blitz cannot donate a win while s
  if(['rank_up','paratrooper','spy'].includes(id)){assert.equal(t.phase,'tactics');assert.equal(t.players[1].wins,0)}
  }
 });
-test('untouched defending garrison returns to its original post and remains private',()=>{
+test('fixed defending garrison enters battle directly, stays private and remains after holding',()=>{
  for(const open of [false,true]){
  let s=createGame({strategies:false,seed:119});
- const enemy=s.fields.find(f=>f.owner===1),original={...enemy.garrison[0],open};enemy.garrison[0].open=open;
+ const enemy=s.fields.find(f=>f.owner===1);enemy.garrison[0].open=open;const original=structuredClone(enemy.garrison);
  s.raid=true;s=next(s,{type:'attack',field:enemy.id});
- assert.ok(s.players[1].hand.some(c=>c.id===original.id));assert.equal(s.fields.find(f=>f.id===enemy.id).garrison.length,0);
- const observed=viewFor(s,0).battle.garrison[0];assert.equal('rank' in observed,open);
- s=next(s,{type:'deploy',cards:[{id:s.players[1].hand.find(c=>c.id!==original.id).id,open:true}]});
+ assert.ok(original.every(c=>!s.players[1].hand.some(h=>h.id===c.id)));assert.equal(s.fields.find(f=>f.id===enemy.id).garrison.length,0);
+ assert.deepEqual(s.battle.lines[1],original);const observed=viewFor(s,0).battle.lines[1][0];assert.equal('rank' in observed,open);
  s=next(s,{type:'fold'});validate(s);
- assert.deepEqual(s.fields.find(f=>f.id===enemy.id).garrison,[original]);
+ assert.deepEqual(s.fields.find(f=>f.id===enemy.id).garrison,original);
  }
+});
+
+test('ordinary occupation requires one open card and caps fixed garrisons at three',()=>{
+ let s=createGame({strategies:false,seed:44}),f=s.fields.find(f=>f.owner===null),cards=s.players[0].hand.slice(0,4);
+ for(const specs of [cards.slice(0,1).map(c=>({id:c.id,open:false})),cards.map(c=>({id:c.id,open:true}))]){
+  const frozen=structuredClone(s),r=act(s,0,{type:'occupy',field:f.id,cards:specs});assert.equal(r.ok,false);assert.deepEqual(s,frozen);
+ }
+ const specs=cards.slice(0,3).map((c,i)=>({id:c.id,open:i===1}));s=next(s,{type:'occupy',field:f.id,cards:specs});
+ assert.equal(s.fields.find(x=>x.id===f.id).garrison.length,3);assert.equal(s.fields.find(x=>x.id===f.id).garrison.filter(c=>c.open).length,1);validate(s);
+});
+
+test('reorganizing costs a map action; rapid redeployment costs supply and preserves it',()=>{
+ let normal=createGame({strategies:false,seed:55}),cap=normal.fields.find(f=>f.owner===0),replacement=normal.players[0].hand.slice(0,2),oldIds=cap.garrison.map(c=>c.id);
+ normal=next(normal,{type:'reorganize',field:cap.id,cards:replacement.map((c,i)=>({id:c.id,open:i===0}))});assert.equal(normal.active,1);
+ assert.ok(oldIds.every(id=>normal.players[0].hand.some(c=>c.id===id)));assert.deepEqual(normal.fields.find(f=>f.id===cap.id).garrison.map(c=>c.id),replacement.map(c=>c.id));
+ let rapid=createGame({strategies:false,seed:56});cap=rapid.fields.find(f=>f.owner===0);rapid.players[0].supply=5;replacement=rapid.players[0].hand.slice(0,3);
+ rapid=next(rapid,{type:'rapid_redeploy',field:cap.id,cards:replacement.map(c=>({id:c.id,open:false}))});
+ assert.equal(rapid.active,0);assert.equal(rapid.players[0].supply,2);assert.equal(rapid.rapidRedeployUsed,true);assert.ok(rapid.fields.find(f=>f.id===cap.id).garrison.every(c=>!c.open));
+ assert.equal(act(rapid,0,{type:'rapid_redeploy',field:cap.id,cards:[{id:rapid.players[0].hand[0].id,open:false}]}).ok,false);validate(rapid);
 });
 
 test('successive counterleads allow both sides to reveal until suppressed line is exhausted',()=>{
