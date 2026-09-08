@@ -14,7 +14,8 @@ export function power(cards){
  if(flush&&straight)return [5,r[0],0,0];
  if(straight)return [4,r[0],0,0];
  if(flush)return [3,...r];
- if(three&&ordinary&&(r[0]===r[1]||r[1]===r[2]))return [2,r[1],r[0]===r[1]?r[2]:r[0],0];
+ const pair=ordinary&&r.length>=2?r.find((rank,i)=>i<r.length-1&&rank===r[i+1]):undefined;
+ if(pair!==undefined)return [2,pair,r.find(rank=>rank!==pair)||0,0];
  return [1,r[0]||0,r[1]||0,r[2]||0];
 }
 export function compare(a,b){const x=power(a),y=power(b);for(let i=0;i<4;i++){if(x[i]!==y[i])return Math.sign(x[i]-y[i])}return 0}

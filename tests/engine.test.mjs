@@ -1,7 +1,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction} from '../src/engine.js';
+import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
@@ -25,7 +25,7 @@ test('exact ranking, A boundaries and joker exclusions',()=>{
  assert.equal(power([c(1),c(2,1),c(3,2)])[0],4);
  assert.equal(power([c(1),c(5),c(13)])[0],3);
  assert.equal(power([c(6),c(6,1),c(13,2)])[0],2);
- assert.equal(power([c(6),c(6,1)])[0],1);
+ assert.deepEqual(power([c(6),c(6,1)]),[2,6,0,0]);
  assert.equal(power([c(12),c(13,1),c(1,2)])[0],1);
  assert.equal(power([c(8),c(8,1),c(14,4)])[0],1);
  assert.equal(power([c(13),c(14,4),c(15,4)])[0],1);
@@ -249,4 +249,12 @@ test('rank-up and paratrooper counterleads preserve the other sides hidden respo
  s=next(s,{type:'strategy',id});assert.equal(s.phase,'counter');assert.equal(s.active,1);
  assert.deepEqual(s.players.map(p=>p.wins),[0,0]);validate(s);
  }
+});
+
+test('two open cards of the same rank form a pair while a matching concealed card stays excluded',()=>{
+ let s=fixture([[10,0],[10,1],[10,2]],[[12,3],[2,0],[3,0]]);
+ s=next(s,{type:'deploy',cards:s.players[0].hand.map((c,i)=>({id:c.id,open:i>0}))});
+ assert.equal(handName(opened(s,0)),'对子');
+ assert.deepEqual(power(opened(s,0)),[2,10,0,0]);
+ assert.equal(s.battle.lines[0].filter(c=>!c.open).length,1);
 });

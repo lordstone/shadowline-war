@@ -1,11 +1,11 @@
 {
   "date": "2026-09-07",
-  "tests": 25,
-  "passed": 25,
+  "tests": 26,
+  "passed": 26,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 144,
-  "legalActions": 11671,
+  "legalActions": 11499,
   "browserUIQA": {
     "browser": "Chrome via Playwright",
     "viewports": [
