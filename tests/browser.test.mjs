@@ -79,3 +79,15 @@ export async function counterplayCheck(browser,url='http://127.0.0.1:4173/'){
  assert.deepEqual(errors,[]);await page.close();
  return 'AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish';
 }
+
+export async function strategyMarketCheck(browser,url='http://127.0.0.1:4173/'){
+ const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ let s=createGame({strategies:false,mode:'local',eventSeconds:1});s.opt.strategies=true;s.players[0].supply=10;s.strategyMarket=['conscription','spy','blitzkrieg'];s.strategyDeck=['rank_up'];s.strategyDiscard=[];s.strategyLocked=[[],[]];s.marketBought=false;
+ await page.goto(url);await page.evaluate(s=>localStorage.setItem('shadowline-war-v1',JSON.stringify(s)),s);await page.reload();await page.locator('[data-action="load"]').click();await page.locator('[data-action="ready"]').click();
+ assert.equal(await page.locator('.market-card').count(),3);await page.locator('[data-action="buy-strategy"][data-id="conscription"]').click();
+ assert.equal(await page.locator('.event-purchase').count(),1);assert.match(await page.locator('.event-strategy').innerText(),/征召令/);
+ let saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.players[0].supply,6);assert.ok(saved.strategyLocked[0].includes('conscription'));assert.equal(saved.strategyMarket.length,3);
+ await page.locator('[data-action="next-event"]').click();assert.match(await page.locator('.tactic-note').innerText(),/下一个地图回合/);
+ await page.locator('[data-action="pass"]').click();while(await page.locator('.event-screen').count())await page.locator('[data-action="next-event"]').click();await page.locator('[data-action="ready"]').click();await page.locator('[data-action="pass"]').click();while(await page.locator('.event-screen').count())await page.locator('[data-action="next-event"]').click();await page.locator('[data-action="ready"]').click();
+ saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.strategyLocked[0].length,0);assert.equal(saved.active,0);assert.deepEqual(errors,[]);await page.close();return 'public three-card market, purchase animation, supply cost, refill, per-turn lock and next-own-turn unlock';
+}

@@ -1,19 +1,19 @@
 
 export const SUITS=['♠','♥','♣','♦'];
 export const STRATEGIES=[
- {id:'conscription',name:'征召令',icon:'✚',phase:'campaign',count:3,desc:'从公共牌库随机补充 1 张暗牌。'},
- {id:'meds_team',name:'医疗分队',icon:'✥',phase:'campaign',count:2,desc:'从自己的公开战利品中随机回收 1 张到暗牌手牌。'},
- {id:'spy',name:'潜伏密探',icon:'◈',phase:'battle',count:2,desc:'秘密查看敌方 1 张未翻开的战线牌；不将它翻开。'},
- {id:'isr',name:'全域侦察',icon:'◎',phase:'campaign',count:2,desc:'永久揭示选中敌方据点的 1 张驻军牌。'},
- {id:'paratrooper',name:'空降增援',icon:'↧',phase:'battle',count:2,desc:'从公共牌库增加 1 张明牌到己方战线；战线仍最多 3 张。'},
- {id:'rank_up',name:'战地晋升',icon:'↑',phase:'battle',count:2,desc:'己方 1 张普通明牌点数 +1（最高 K），仅在本次交锋生效。'},
- {id:'scouting',name:'火力侦搜',icon:'⌖',phase:'battle',count:2,desc:'强制翻开敌方 1 张战线暗牌。'},
- {id:'peace_talk',name:'停火谈判',icon:'⚑',phase:'battle',count:1,desc:'结束交锋。各自明牌进入各自公开牌堆，暗牌收回。领地不变。'},
- {id:'revolution',name:'起义烽火',icon:'✦',phase:'campaign',count:1,desc:'以一张新生成的公开 A 占领选中的中立据点，消耗本回合行动。'},
- {id:'blitzkrieg',name:'闪电战',icon:'ϟ',phase:'battle',count:1,desc:'立即让当前未被压制的一方赢得交锋。'},
- {id:'international_support',name:'国际援助',icon:'▣',phase:'campaign',count:2,desc:'获得 1–13 点补给；每 2 点可从公共牌库补充 1 张。'},
- {id:'airborne_raid',name:'纵深空袭',icon:'⤴',phase:'campaign',count:1,desc:'本回合可以占领或进攻任意选中据点，忽略相邻限制。'},
- {id:'economic_sanctions',name:'经济封锁',icon:'⊘',phase:'campaign',count:2,desc:'封锁选中敌方据点的补给产出 1–13 个完整回合。'}
+ {id:'conscription',name:'征召令',icon:'✚',phase:'campaign',count:3,price:4,desc:'从公共牌库随机补充 1 张暗牌。'},
+ {id:'meds_team',name:'医疗分队',icon:'✥',phase:'campaign',count:2,price:4,desc:'从自己的公开战利品中随机回收 1 张到暗牌手牌。'},
+ {id:'spy',name:'潜伏密探',icon:'◈',phase:'battle',count:2,price:4,desc:'秘密查看敌方 1 张未翻开的战线牌；不将它翻开。'},
+ {id:'isr',name:'全域侦察',icon:'◎',phase:'campaign',count:2,price:5,desc:'永久揭示选中敌方据点的 1 张驻军牌。'},
+ {id:'paratrooper',name:'空降增援',icon:'↧',phase:'battle',count:2,price:6,desc:'从公共牌库增加 1 张明牌到己方战线；战线仍最多 3 张。'},
+ {id:'rank_up',name:'战地晋升',icon:'↑',phase:'battle',count:2,price:6,desc:'己方 1 张普通明牌点数 +1（最高 K），仅在本次交锋生效。'},
+ {id:'scouting',name:'火力侦搜',icon:'⌖',phase:'battle',count:2,price:6,desc:'强制翻开敌方 1 张战线暗牌。'},
+ {id:'peace_talk',name:'停火谈判',icon:'⚑',phase:'battle',count:1,price:5,desc:'结束交锋。各自明牌进入各自公开牌堆，暗牌收回。领地不变。'},
+ {id:'revolution',name:'起义烽火',icon:'✦',phase:'campaign',count:1,price:7,desc:'以一张新生成的公开 A 占领选中的中立据点，消耗本回合行动。'},
+ {id:'blitzkrieg',name:'闪电战',icon:'ϟ',phase:'battle',count:1,price:8,desc:'立即让当前未被压制的一方赢得交锋。'},
+ {id:'international_support',name:'国际援助',icon:'▣',phase:'campaign',count:2,price:5,desc:'获得 1–13 点补给；每 2 点可从公共牌库补充 1 张。'},
+ {id:'airborne_raid',name:'纵深空袭',icon:'⤴',phase:'campaign',count:1,price:7,desc:'本回合可以占领或进攻任意选中据点，忽略相邻限制。'},
+ {id:'economic_sanctions',name:'经济封锁',icon:'⊘',phase:'campaign',count:2,price:5,desc:'封锁选中敌方据点的补给产出 1–13 个完整回合。'}
 ];
 const f=(id,label,type,x,y,links,owner=null,capital=false)=>({id,label,type,x,y,links,owner,capital,garrison:[],blockedUntil:0});
 export const MAPS=[

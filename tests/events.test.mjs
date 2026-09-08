@@ -22,3 +22,8 @@ test('new cards have private faces and own-hand new markers; harvest lists locat
  a={type:'pass'};r=act(s,0,a);
  assert.match(actionEvents(s,r.state,a,0).find(e=>e.kind==='resources').detail,/首都/);
 });
+test('strategy purchase produces a priced acquisition event',()=>{
+ const s=createGame({strategies:false});s.opt.strategies=true;s.players[0].supply=10;s.strategyMarket=['conscription'];s.strategyDeck=['spy'];s.strategyDiscard=[];s.strategyLocked=[[],[]];s.marketBought=false;
+ const a={type:'buy_strategy',id:'conscription'},r=act(s,0,a);assert.equal(r.ok,true);
+ const event=actionEvents(s,r.state,a,0)[0];assert.equal(event.kind,'purchase');assert.equal(event.strategy.id,'conscription');assert.match(event.detail,/4 点补给/);
+});

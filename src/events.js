@@ -21,6 +21,10 @@ export function actionEvents(before,after,action,perspective){
  if(actor===perspective&&peek.length)add('cards','密探情报', '仅你可见，敌方暗牌保持未翻开。',{cards:peek,owner:actor});
  }
  }
+ if(action.type==='buy_strategy'){
+ const strategy=strategyById(action.id);
+ add('purchase',name(actor)+'购入「'+strategy.name+'」','消耗 '+strategy.price+' 点补给。该策略将在购买者的下一个地图回合解锁。',{owner:actor,strategy});
+ }
  if(action.type==='deploy'){
  const line=after.battle?.lines[actor]||[];
  add('deployment',name(actor)+'完成部署',line.filter(c=>c.open).length+' 张明牌 / '+line.filter(c=>!c.open).length+' 张暗牌。',{owner:actor,cards:line.map(c=>visible(c,actor)),field:before.battle?.field});
@@ -56,4 +60,3 @@ export function actionEvents(before,after,action,perspective){
  }
  return events;
 }
-

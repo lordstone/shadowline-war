@@ -1,11 +1,11 @@
 {
   "date": "2026-09-07",
-  "tests": 26,
-  "passed": 26,
+  "tests": 31,
+  "passed": 31,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 144,
-  "legalActions": 11499,
+  "legalActions": 12383,
   "browserUIQA": {
     "browser": "Chrome via Playwright",
     "viewports": [
@@ -20,7 +20,8 @@
       "actual deployment to tactical window and successful blitzkrieg",
       "390px mobile event and battle layout without horizontal overflow",
       "AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish"
-      ,"Counter card is visibly marked, previews the resulting hand, and requires explicit confirmation"
+      ,"Counter card is visibly marked, previews the resulting hand, and requires explicit confirmation",
+      "Public strategy market purchase, refill, animation, supply cost and next-turn unlock"
     ],
     "pageErrors": []
   },

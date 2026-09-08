@@ -29,6 +29,8 @@ export function validate(s){
  if(all.length!==54+s.generated)throw Error('牌数不守恒 '+all.length);
  if(s.players.some(p=>p.hand.some(c=>c.boost)))throw Error('临时晋升未清除');
  if(s.battle?.lines.some(l=>l.length>3))throw Error('战线超过三张');
+ if(s.strategyMarket?.length>3)throw Error('策略市场超过三张');
+ if(s.players.some(p=>p.strategies.length>3))throw Error('持有策略超过三张');
  if(!['draft','campaign','defend','attack','tactics','counter','over'].includes(s.phase))throw Error('未知阶段');
  return true;
 }
@@ -37,18 +39,35 @@ export function createGame(options={}){
  const s={version:1,opt,rng:opt.seed,phase:'draft',active:opt.first===1?1:0,round:1,skirmish:0,generated:0,
  players:[{name:'苍岚军团',hand:[],reserve:[],strategies:[],supply:2,wins:0},{name:opt.mode==='ai'?'赤烬 · 战术 AI':'赤烬军团',hand:[],reserve:[],strategies:[],supply:2,wins:0}],
  deck:[],fields:structuredClone(MAPS.find(m=>m.id===opt.map)?.fields||MAPS[0].fields),
- battle:null,log:[],winner:null,reason:'',draft:[[],[]],drafted:[false,false],turn:1,strategyUsed:false,supplyUsed:false,raid:false,knowledge:[{},{}]};
+ battle:null,log:[],winner:null,reason:'',draft:[[],[]],drafted:[false,false],turn:1,strategyUsed:false,supplyUsed:false,raid:false,knowledge:[{},{}],
+ strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false};
  s.deck=shuffle(s,makeDeck());for(let i=0;i<12;i++)for(let p=0;p<2;p++)s.players[p].hand.push(s.deck.pop());
  if(opt.rules==='campaign'){for(const f of s.fields.filter(f=>f.capital))f.garrison.push({...s.players[f.owner].hand.pop(),open:false});}
  else s.fields=[];
  const available=STRATEGIES.filter(c=>opt.rules==='campaign'||c.phase==='battle');
- for(let p=0;p<2;p++)s.draft[p]=shuffle(s,[...available]).slice(0,3).map(c=>c.id);
+ if(opt.strategies){s.strategyDeck=shuffle(s,available.flatMap(c=>Array(c.count).fill(c.id)));for(let p=0;p<2;p++)s.draft[p]=s.strategyDeck.splice(-3)}
  s.active=0;
  if(!opt.strategies){s.drafted=[true,true];begin(s)}
  log(s,'行动准备完毕。明牌决定火力，暗牌保留变数。');validate(s);return s;
 }
 function log(s,msg){s.log.unshift({round:s.round,text:msg});s.log=s.log.slice(0,70)}
 function clean(c){const {open,boost,...rest}=c;return rest}
+function fillMarket(s){
+ while(s.strategyMarket.length<3){
+ if(!s.strategyDeck.length){if(!s.strategyDiscard.length)break;s.strategyDeck=shuffle(s,s.strategyDiscard.splice(0))}
+ s.strategyMarket.push(s.strategyDeck.pop());
+ }
+}
+function refreshMarket(s){s.strategyDiscard.push(...s.strategyMarket.splice(0));fillMarket(s);log(s,'策略市场已刷新。')}
+export function upgradeState(s){
+ if(!Array.isArray(s.strategyDeck)){const held=s.players.flatMap(p=>p.strategies);s.strategyDeck=STRATEGIES.flatMap(c=>Array(Math.max(0,c.count-held.filter(id=>id===c.id).length)).fill(c.id));s.strategyMarket=[];s.strategyDiscard=[]}
+ if(!Array.isArray(s.strategyMarket))s.strategyMarket=[];
+ if(!Array.isArray(s.strategyDiscard))s.strategyDiscard=[];
+ if(!Array.isArray(s.strategyLocked))s.strategyLocked=[[],[]];
+ if(typeof s.marketBought!=='boolean')s.marketBought=false;
+ if(s.opt.rules==='campaign'&&s.opt.strategies)fillMarket(s);
+ return s;
+}
 function replenish(s){
  let need=true;while(s.deck.length&&need){need=false;for(const p of [s.active,1-s.active])if(s.players[p].hand.length<12&&s.deck.length){s.players[p].hand.push(clean(s.deck.pop()));need=true}}
 }
@@ -59,12 +78,13 @@ function exhausted(s){
 }
 function score(s,p){return s.players[p].reserve.length+s.fields.filter(f=>f.owner===p).length*3}
 function finish(s,winner,reason){s.phase='over';s.winner=winner;s.reason=reason;s.battle=null;log(s,winner===null?'战局结束：双方平局。':s.players[winner].name+'赢得大局。')}
-function begin(s){s.active=s.opt.first===1?1:0;if(s.opt.rules==='classic')startBattle(s,1-s.active,s.active,null);else{s.phase='campaign';income(s)}}
+function begin(s){s.active=s.opt.first===1?1:0;if(s.opt.rules==='classic')startBattle(s,1-s.active,s.active,null);else{fillMarket(s);s.phase='campaign';income(s)}}
 function income(s){const p=s.players[s.active],before=p.supply;p.supply=Math.min(30,p.supply+s.fields.filter(f=>f.owner===s.active&&f.blockedUntil<s.round).reduce((n,f)=>n+(f.type==='oil'?2:1),0));log(s,p.name+'收获 '+(p.supply-before)+' 点补给。')}
 function nextCampaign(s){
- s.active=1-s.active;s.turn++;s.round=Math.floor((s.turn-1)/2)+1;s.phase='campaign';s.strategyUsed=false;s.supplyUsed=false;s.raid=false;
+ s.active=1-s.active;s.turn++;s.round=Math.floor((s.turn-1)/2)+1;s.phase='campaign';s.strategyUsed=false;s.supplyUsed=false;s.marketBought=false;s.raid=false;s.strategyLocked[s.active]=[];
  if(exhausted(s))return;
  if(s.round>s.opt.maxRounds){const a=score(s,0),b=score(s,1);finish(s,a===b?null:a>b?0:1,'达到回合上限：比较公开牌数 + 每块领地 3 分');return}
+ if(s.active===(s.opt.first===1?1:0)&&s.round>1&&(s.round-1)%3===0)refreshMarket(s);
  income(s);
 }
 function startBattle(s,attacker,defender,field){
@@ -114,6 +134,7 @@ export function reachable(s,p,f){return s.raid||s.fields.some(x=>x.owner===p&&x.
 function target(s,id){return s.fields.find(x=>x.id===id)}
 function strategyError(s,p,id,fieldId){
  const c=strategyById(id);if(!c||!s.players[p].strategies.includes(id))return '没有这张策略卡。';
+ if(s.strategyLocked[p].includes(id))return '新购策略将在你的下一个地图回合解锁。';
  const campaign=s.phase==='campaign';
  if(c.phase==='campaign'&&!campaign)return '这张策略卡只能在地图行动阶段使用。';
  if(c.phase==='battle'&&!['tactics','counter'].includes(s.phase))return '双方部署后，在战术窗口或反击阶段使用。';
@@ -131,10 +152,25 @@ function strategyError(s,p,id,fieldId){
  return null;
 }
 export function canStrategy(s,p,id,fieldId){return p===s.active&&s.phase!=='over'?strategyError(s,p,id,fieldId):'尚未轮到你行动。'}
+export function canBuyStrategy(s,p,id){
+ if(s.phase!=='campaign'||p!==s.active)return '只能在自己的地图行动阶段购买。';
+ if(!s.opt.strategies)return '本局未开启策略牌。';
+ const c=strategyById(id);if(!c||!s.strategyMarket.includes(id))return '策略市场中没有这张牌。';
+ if(s.marketBought)return '每个地图回合只能购买一张策略牌。';
+ if(s.players[p].strategies.length>=3)return '最多持有三张策略牌。';
+ if(s.players[p].strategies.includes(id))return '不能同时持有同名策略牌。';
+ if(s.players[p].supply<c.price)return '需要 '+c.price+' 点补给。';
+ return null;
+}
+function buyStrategy(s,p,id){
+ const error=canBuyStrategy(s,p,id);if(error)return error;
+ const c=strategyById(id),i=s.strategyMarket.indexOf(id);s.players[p].supply-=c.price;s.players[p].strategies.push(id);s.strategyLocked[p].push(id);s.strategyMarket.splice(i,1);s.marketBought=true;fillMarket(s);log(s,s.players[p].name+'花费 '+c.price+' 点补给购买「'+c.name+'」，下回合解锁。');return null;
+}
 function strategy(s,p,id,fieldId){
  const error=strategyError(s,p,id,fieldId);if(error)return error;
  const pl=s.players[p],enemy=1-p,f=target(s,fieldId),pick=a=>a[Math.floor(random(s)*a.length)];
  pl.strategies.splice(pl.strategies.indexOf(id),1);
+ s.strategyDiscard.push(id);
  if(s.phase==='campaign')s.strategyUsed=true;else s.battle.strategyUsed[p]=true;
  log(s,pl.name+'使用「'+strategyById(id).name+'」。');
  switch(id){
@@ -160,10 +196,11 @@ function apply(s,p,a){
  if(a.type==='resign'){if(s.battle){for(let q=0;q<2;q++)s.players[q].hand.push(...s.battle.lines[q].map(clean))}finish(s,1-p,'对方投降');return null}
  if(s.phase==='draft'){
  if(a.type!=='draft'||!s.draft[p].includes(a.id))return '请选择一张提供的策略卡。';
- s.players[p].strategies=[a.id];s.drafted[p]=true;if(s.drafted.every(Boolean))begin(s);else s.active=1-p;return null;
+ const offer=s.draft[p],picked=offer.indexOf(a.id);s.players[p].strategies=[a.id];s.strategyDiscard.push(...offer.filter((_,i)=>i!==picked));s.draft[p]=[];s.drafted[p]=true;if(s.drafted.every(Boolean))begin(s);else s.active=1-p;return null;
  }
  if(a.type==='strategy')return strategy(s,p,a.id,a.field);
  if(s.phase==='campaign'){
+ if(a.type==='buy_strategy')return buyStrategy(s,p,a.id);
  if(a.type==='supply'){
  if(s.supplyUsed)return '每个地图回合只能补给一次。';if(s.players[p].supply<2||!s.deck.length)return '需要 2 点补给和非空公共牌库。';
  s.players[p].supply-=2;s.players[p].hand.push(clean(s.deck.pop()));s.supplyUsed=true;log(s,s.players[p].name+'补充了一张暗牌。');return null;
@@ -214,6 +251,7 @@ function apply(s,p,a){
 }
 export function act(state,player,action){
  const next=structuredClone(state);
+ upgradeState(next);
  const error=apply(next,player,action);if(error)return {ok:false,error,state};
  validate(next);return {ok:true,state:next};
 }
@@ -223,6 +261,7 @@ export function viewFor(s,p){
  v.deck=v.deck.map(mask);
  v.players[1-p].hand=v.players[1-p].hand.map(mask);
  v.players[1-p].strategies=v.players[1-p].strategies.map(()=>'?');
+ v.strategyLocked[1-p]=v.strategyLocked[1-p].map(()=>'?');
  v.draft[1-p]=v.draft[1-p].map(()=>'?');
  v.knowledge[1-p]={};
  for(const f of v.fields)if(f.owner!==p)f.garrison=f.garrison.map(c=>c.open?c:mask(c));
@@ -254,6 +293,11 @@ export function aiAction(s,p,level='normal'){
  const enemy=targets.filter(f=>f.owner===1-p).sort((a,b)=>Number(b.capital)-Number(a.capital));
  const neutral=targets.filter(f=>f.owner===null).sort((a,b)=>(b.type==='oil')-(a.type==='oil'));
  const focus=enemy[0]||neutral[0];
+ if(!v.marketBought&&pl.strategies.length<3){
+ const priority=['international_support',...(pl.hand.length<9?['conscription']:[]),'spy','rank_up','scouting','meds_team','isr','paratrooper','economic_sanctions','airborne_raid','revolution','peace_talk','blitzkrieg'];
+ const affordable=priority.find(id=>v.strategyMarket.includes(id)&&!pl.strategies.includes(id)&&!canBuyStrategy(s,p,id)&&(id==='international_support'||pl.supply-strategyById(id).price>=2));
+ if(affordable)return {type:'buy_strategy',id:affordable};
+ }
  for(const id of pl.strategies){
  const f=id==='revolution'?v.fields.find(x=>x.owner===null):id==='isr'?v.fields.find(x=>x.owner===1-p&&x.garrison.some(c=>c.hidden)):focus;
  // Availability is evaluated against own/visible resources, no hidden ranks.
