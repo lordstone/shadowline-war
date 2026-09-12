@@ -27,6 +27,7 @@
 @keyframes card-arrival{from{opacity:0;transform:translateY(-35px) rotate(-6deg)}to{opacity:1;transform:translateY(0) rotate(0)}}
 @keyframes event-time{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @media(max-width:600px){.event-panel{padding:19px}.event-panel h1{font-size:22px}.event-map{height:230px}.event-map-node b{font-size:8px;padding:2px 4px}.event-footer{flex-direction:column;align-items:stretch}.event-footer button{width:100%}.garrison-roster{grid-template-columns:1fr}.army-stats{gap:7px}.army-stats span:nth-child(3){display:none}.army-panel{gap:6px}}
+.battle-line:has(.line-cards>:nth-child(4)) .line-cards{gap:9px}.battle-line:has(.line-cards>:nth-child(4)) .playing-card,.battle-line:has(.line-cards>:nth-child(4)) .card-slot{width:72px;height:104px;flex-basis:72px}.battle-line:has(.line-cards>:nth-child(4)) .card-suit{left:24px;top:30px;font-size:31px}
 @media(prefers-reduced-motion:reduce){.event-map-node.hit::before{animation:none;opacity:.8}.event-cards .playing-card{animation:none}.event-progress span{animation:none}}
 
 /* Make the active counter card unmistakable even though its owner can see its face. */

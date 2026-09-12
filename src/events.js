@@ -5,10 +5,10 @@ export function actionEvents(before,after,action,perspective){
  const field=id=>after.fields.find(f=>f.id===id)||before.fields.find(f=>f.id===id);
  const visible=(c,p,publicCard=false)=>p===perspective||publicCard||c.open?{...c}:{hidden:true};
  const add=(kind,title,detail,extra={})=>{if(extra.map)extra.map=extra.map.map(({id,label,x,y,links,owner,capital})=>({id,label,x,y,links,owner,capital}));events.push({kind,title,detail,...extra})};
- if(action.type==='attack'){
+ if(['attack','siege'].includes(action.type)){
  const f=field(action.field),stationed=before.fields.find(x=>x.id===f.id).garrison;
- add('invasion',name(actor)+'发动入侵',f.label+'遭到进攻。固定驻军已进入防线，进攻方必须用明牌严格压过。',{field:f.id,map:after.fields,owner:actor});
- if(stationed.length)add('garrison','固定驻军迎战',f.label+'的 '+stationed.length+' 张驻军直接组成防守战线，没有回到手牌。',{field:f.id,cards:stationed.map(c=>visible(c,1-actor)),owner:1-actor});
+ add('invasion',name(actor)+(action.type==='siege'?'发动围城':'发动入侵'),f.label+'遭到进攻。'+(action.type==='siege'?'消耗 3 点补给，封锁一张预备守军。':'固定驻军已进入防线，进攻方必须用明牌严格压过。'),{field:f.id,map:after.fields,owner:actor});
+ if(stationed.length)add('garrison','固定驻军迎战',f.label+'原有 '+stationed.length+' 张驻军，'+after.battle.lines[1-actor].length+' 张进入本次防线。',{field:f.id,cards:after.battle.lines[1-actor].map(c=>visible(c,1-actor)),owner:1-actor});
  }
  if(action.type==='occupy'){
  const f=field(action.field);add('occupation',name(actor)+'占领'+f.label,'所选牌已转为据点驻军，没有丢失。可点击该据点或军团面板查看。',{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});

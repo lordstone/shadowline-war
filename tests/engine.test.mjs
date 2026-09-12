@@ -1,7 +1,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState} from '../src/engine.js';
+import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
@@ -38,6 +38,11 @@ test('enumerate all 24,804 three-card hands against exact category counts',()=>{
  const d=makeDeck(),counts=Array(7).fill(0);
  for(let i=0;i<d.length;i++)for(let j=i+1;j<d.length;j++)for(let k=j+1;k<d.length;k++)counts[power([d[i],d[j],d[k]])[0]]++;
  assert.deepEqual(counts,[0,19204,3744,1100,660,44,52]);
+});
+test('four and five revealed defenders use their strongest three-card combination',()=>{
+ assert.deepEqual(power([c(2,0),c(7,1),c(9,2),c(9,3)]),[2,9,7,0]);
+ assert.deepEqual(power([c(2,0),c(3,0),c(4,0),c(13,1),c(13,2)]),[5,4,0,0]);
+ assert.equal(compare([c(2,0),c(3,0),c(4,0),c(13,1)],[c(12,0),c(12,1),c(8,2)]),1);
 });
 test('all maps have symmetric, connected topology and two capitals',()=>{
  for(const m of MAPS){const seen=new Set([m.fields[0].id]);while(true){const n=seen.size;for(const f of m.fields)if(seen.has(f.id))for(const id of f.links){assert.ok(m.fields.find(g=>g.id===id)?.links.includes(f.id));seen.add(id)}if(seen.size===n)break}assert.equal(seen.size,m.fields.length);assert.equal(m.fields.filter(f=>f.capital).length,2)}
@@ -224,6 +229,29 @@ test('ordinary occupation requires one open card and caps fixed garrisons at thr
  }
  const specs=cards.slice(0,3).map((c,i)=>({id:c.id,open:i===1}));s=next(s,{type:'occupy',field:f.id,cards:specs});
  assert.equal(s.fields.find(x=>x.id===f.id).garrison.length,3);assert.equal(s.fields.find(x=>x.id===f.id).garrison.filter(c=>c.open).length,1);validate(s);
+});
+
+test('fortified locations hold four, capitals hold five, and non-capitals still require an open card',()=>{
+ let s=createGame({strategies:false,seed:440}),fort=s.fields.find(f=>f.fortified),capital=s.fields.find(f=>f.owner===0);
+ assert.equal(garrisonLimit(fort),4);assert.equal(garrisonLimit(capital),5);
+ const four=s.players[0].hand.slice(0,4);
+ assert.equal(act(s,0,{type:'occupy',field:fort.id,cards:four.map(c=>({id:c.id,open:false}))}).ok,false);
+ s=next(s,{type:'occupy',field:fort.id,cards:four.map((c,i)=>({id:c.id,open:i===0}))});
+ assert.equal(s.fields.find(f=>f.id===fort.id).garrison.length,4);validate(s);
+ let t=createGame({strategies:false,seed:441});capital=t.fields.find(f=>f.owner===0);
+ const five=t.players[0].hand.slice(0,5);t=next(t,{type:'reorganize',field:capital.id,cards:five.map(c=>({id:c.id,open:false}))});
+ assert.equal(t.fields.find(f=>f.id===capital.id).garrison.length,5);validate(t);
+});
+
+test('siege spends supply, suppresses one reserve without revealing it, and restores it after a hold',()=>{
+ let s=createGame({strategies:false,seed:442}),capital=s.fields.find(f=>f.owner===1);
+ const reinforcements=s.players[1].hand.splice(0,2).map(c=>({...c,open:false}));capital.garrison.push(...reinforcements);
+ const originalIds=new Set(capital.garrison.map(c=>c.id));s.players[0].supply=3;s.raid=true;validate(s);
+ s=next(s,{type:'siege',field:capital.id});
+ assert.equal(s.players[0].supply,0);assert.equal(s.battle.lines[1].length,4);assert.equal(s.battle.suppressed.length,1);
+ const observed=viewFor(s,0).battle.suppressed[0];assert.deepEqual(observed,{hidden:true});
+ s=next(s,{type:'fold'});capital=s.fields.find(f=>f.id===capital.id);
+ assert.equal(capital.garrison.length,5);assert.deepEqual(new Set(capital.garrison.map(c=>c.id)),originalIds);validate(s);
 });
 
 test('reorganizing costs a map action; rapid redeployment costs supply and preserves it',()=>{

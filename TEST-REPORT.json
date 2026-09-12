@@ -1,7 +1,7 @@
 {
-  "date": "2026-09-07",
-  "tests": 33,
-  "passed": 33,
+  "date": "2026-09-11",
+  "tests": 36,
+  "passed": 36,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 144,
@@ -20,9 +20,16 @@
       "actual deployment to tactical window and successful blitzkrieg",
       "390px mobile event and battle layout without page overflow",
       "AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish",
-      "Visible location controls and explicit ordinary-card draw cost at app-window width; collapsed shop, purchase states, refill, hover tooltip and next-turn unlock"
+      "Visible location controls and explicit ordinary-card draw cost at app-window width; collapsed shop, purchase states, refill, hover tooltip and next-turn unlock",
+      "Capital capacity-five selection and all target controls visible without page overflow"
     ],
     "pageErrors": []
+  },
+  "deepDefense": {
+    "strongestThreeOfFourOrFive": "passed",
+    "fortifiedAndCapitalCapacity": "passed",
+    "siegeSupplyAndHiddenInformation": "passed",
+    "suppressedReserveRestoration": "passed"
   },
   "standaloneBundle": {
     "modules": 7,

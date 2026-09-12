@@ -1,6 +1,6 @@
 
 import {MAPS,STRATEGIES,defaults,strategyById,SUITS} from './data.js';
-import {createGame,act,face,handName,power,compare,opened,leading,reachable,canStrategy,canBuyStrategy,aiAction,timeoutAction,validate,upgradeState} from './engine.js';
+import {createGame,act,face,handName,power,compare,opened,leading,reachable,garrisonLimit,canStrategy,canBuyStrategy,aiAction,timeoutAction,validate,upgradeState} from './engine.js';
 import {Battlefield} from './battlefield.js';
 import {actionEvents} from './events.js';
 const app=document.querySelector('#app'),sceneEl=document.querySelector('#scene');
@@ -80,10 +80,10 @@ function draft(){
 function mapView(){
  const p=viewer(),f=s.fields.find(f=>f.id===focus);
  const actionable=s.active===p&&!isAI(),can=f&&f.owner!==p&&reachable(s,p,f);
- const chosen=[...selection].map(([id,open])=>({id,open})),placementValid=chosen.length>0&&chosen.length<=3&&(f?.capital||chosen.some(c=>c.open));
- return (targeting?'<div class="targeting-note">'+strategyById(targeting).name+'：点击符合条件的地图据点'+btn('取消','cancel-target','text-button')+'</div>':'')+'<div class="war-map"><div class="map-title"><div class="eyebrow">战术地图 / LIVE OPERATIONS</div><h2>'+MAPS.find(m=>m.id===s.opt.map).name+'</h2></div><div class="map-stage"><div id="visual-mount" class="scene-mount"></div><div class="node-layer">'+s.fields.map(f=>'<button class="map-node owner-'+f.owner+' '+(f.id===focus?'focused ':'')+(reachable(s,p,f)&&f.owner!==p?'reachable':'')+'" data-action="focus" data-id="'+f.id+'" style="left:'+f.x+'%;top:'+f.y+'%"><span class="node-icon">'+(f.capital?'♜':f.type==='oil'?'▥':'◆')+'</span><b>'+f.label+'</b><small>'+(f.owner===null?'中立区域':f.owner===p?'己方控制':'敌方控制')+(f.owner!==null?' · 驻军 '+f.garrison.length:'')+(f.blockedUntil>=s.round?' · 封锁中':'')+'</small></button>').join('')+'</div><span class="map-compass">N<br>↑</span></div>'+
- '<div class="target-bar"><div><small>当前目标</small><b>'+(f?f.label:'选择地图上的据点')+'</b><p>'+(f?f.owner===p?'固定驻军不可直接取回；选择 1–3 张手牌可整编换防。':!can?'目标尚不相邻，需要先建立进军路线。':f.owner===null?'选择 1–3 张手牌驻军，普通据点至少 1 张明牌。':'该据点的固定驻军会直接进入防线，你必须压过其明牌。':'青色代表苍岚，橙色代表赤烬。')+'</p>'+(f?.garrison.length?'<span class="garrison-info">驻军：'+f.garrison.map(c=>f.owner===p||c.open?face(c)+(SUITS[c.suit]||'★'):'未知暗牌').join(' / ')+'</span>':'')+'</div>'+
- '<div class="target-actions">'+(f?.owner===null?btn('部署驻军并占领 →','occupy','primary',!actionable||!can||!placementValid):f?.owner===1-p?btn('发动进攻 →','attack','primary danger',!actionable||!can):f?.owner===p?btn('整编驻军 →','reorganize','primary',!actionable||!placementValid)+btn('快速换防 · 3','rapid_redeploy','secondary',!actionable||!placementValid||s.rapidRedeployUsed||s.players[p].supply<3):'')+
+ const limit=garrisonLimit(f),chosen=[...selection].map(([id,open])=>({id,open})),placementValid=chosen.length>0&&chosen.length<=limit&&(f?.capital||chosen.some(c=>c.open));
+ return (targeting?'<div class="targeting-note">'+strategyById(targeting).name+'：点击符合条件的地图据点'+btn('取消','cancel-target','text-button')+'</div>':'')+'<div class="war-map"><div class="map-title"><div class="eyebrow">战术地图 / LIVE OPERATIONS</div><h2>'+MAPS.find(m=>m.id===s.opt.map).name+'</h2></div><div class="map-stage"><div id="visual-mount" class="scene-mount"></div><div class="node-layer">'+s.fields.map(f=>'<button class="map-node owner-'+f.owner+' '+(f.id===focus?'focused ':'')+(reachable(s,p,f)&&f.owner!==p?'reachable':'')+'" data-action="focus" data-id="'+f.id+'" style="left:'+f.x+'%;top:'+f.y+'%"><span class="node-icon">'+(f.capital?'♜':f.fortified?'▰':f.type==='oil'?'▥':'◆')+'</span><b>'+f.label+'</b><small>'+(f.owner===null?'中立区域':f.owner===p?'己方控制':'敌方控制')+' · 容量 '+garrisonLimit(f)+(f.owner!==null?' · 驻军 '+f.garrison.length:'')+(f.blockedUntil>=s.round?' · 封锁中':'')+'</small></button>').join('')+'</div><span class="map-compass">N<br>↑</span></div>'+
+ '<div class="target-bar"><div><small>当前目标</small><b>'+(f?f.label+' · 容量 '+limit:'选择地图上的据点')+'</b><p>'+(f?f.owner===p?'固定驻军不可直接取回；选择 1–'+limit+' 张手牌可整编换防。':!can?'目标尚不相邻，需要先建立进军路线。':f.owner===null?'选择 1–'+limit+' 张手牌驻军，非首都至少 1 张明牌。':'守军公开牌超过 3 张时自动计算最强三张；可用围城封锁一张预备守军。':'青色代表苍岚，橙色代表赤烬。')+'</p>'+(f?.garrison.length?'<span class="garrison-info">驻军：'+f.garrison.map(c=>f.owner===p||c.open?face(c)+(SUITS[c.suit]||'★'):'未知暗牌').join(' / ')+'</span>':'')+'</div>'+
+ '<div class="target-actions">'+(f?.owner===null?btn('部署驻军并占领 →','occupy','primary',!actionable||!can||!placementValid):f?.owner===1-p?btn('发动进攻 →','attack','primary danger',!actionable||!can)+btn('围城 · 3 补给','siege','secondary',!actionable||!can||f.garrison.length<=3||s.players[p].supply<3,'title="封锁一张第4或第5位预备守军，本次交锋不参与牌型"'):f?.owner===p?btn('整编驻军 →','reorganize','primary',!actionable||!placementValid)+btn('快速换防 · 3','rapid_redeploy','secondary',!actionable||!placementValid||s.rapidRedeployUsed||s.players[p].supply<3):'')+
  btn('补充暗牌 · 2 补给','supply','secondary',!actionable||s.supplyUsed||s.players[p].supply<2||!s.deck.length,'title="消耗 2 点补给，从公共牌库随机抽取 1 张暗牌"')+btn('结束行动','pass','text-button',!actionable)+'</div></div></div>';
 }
 function line(p){
@@ -91,7 +91,7 @@ function line(p){
  const own=p===v;
  const cards=deployed.length?deployed:own&&['defend','attack'].includes(s.phase)?[...selection].map(([id,open])=>({...s.players[p].hand.find(c=>c.id===id),open,preview:true})):[];
  return '<div class="battle-line '+(own?'own-line':'enemy-line')+'"><div class="line-label"><span>'+(p===b.defender?'防守方 · 平手即胜':'进攻方 · 必须压过')+'</span><b>'+s.players[p].name+'</b><small>'+handName(cards.filter(c=>c.open))+' / '+power(cards.filter(c=>c.open)).join(' · ')+'</small></div><div class="line-cards">'+
- [0,1,2].map(i=>{const c=cards[i];if(!c)return '<div class="card-slot"><span>0'+(i+1)+'</span></div>';const known=own||c.open||s.knowledge[v][c.id],revealable=own&&!c.open&&!c.preview&&s.phase==='counter'&&!isAI();return card(c,{hidden:!known,selected:reveals.has(c.id),stance:c.open,interactive:revealable,revealable,action:'reveal-card',peek:!own&&!c.open&&known})}).join('')+'</div></div>';
+ Array.from({length:p===b.defender&&b.field?garrisonLimit(s.fields.find(f=>f.id===b.field)):3},(_,i)=>{const c=cards[i];if(!c)return '<div class="card-slot"><span>0'+(i+1)+'</span></div>';const known=own||c.open||s.knowledge[v][c.id],revealable=own&&!c.open&&!c.preview&&s.phase==='counter'&&!isAI();return card(c,{hidden:!known,selected:reveals.has(c.id),stance:c.open,interactive:revealable,revealable,action:'reveal-card',peek:!own&&!c.open&&known})}).join('')+'</div></div>';
 }
 function battleView(){
  const b=s.battle,p=viewer(),active=s.active===p&&!isAI();
@@ -132,7 +132,7 @@ function result(){
 }
 const rulesHTML='<div class="eyebrow">FIELD MANUAL / 战地手册</div><h2>明牌交火，暗牌反击。</h2><div class="rules-content"><h3>一场交锋</h3><ol><li>防守方先部署 1–3 张牌，至少 1 张明牌。进攻方同样部署，明牌必须严格压过防守方。</li><li>随后被压制方选择撤退，或翻开 1–2 张暗牌。进攻方必须严格大于才占优，平手时防守方占优。</li><li>翻牌反超后，如果对方仍有战线暗牌，交给对方反击；双方可反复翻牌。仍被压制且还有暗牌，则继续翻牌或撤退；被压制方没有战线暗牌或主动撤退才判负。首次进攻部署不会立即获胜，闪电战与停火按各自效果结算。</li><li>胜方收取双方已翻开的牌进入公开牌堆；未翻开的牌各自收回。双方从公共牌库交替补至 12 张暗牌。</li></ol><h3>牌力顺序 · 从强到弱</h3><p class="rank-order">三条 ＞ 同花顺 ＞ 顺子 ＞ 同花 ＞ 对子 ＞ 高牌</p><p>组合牌型要求恰好 3 张明牌，包括“对子 + 一张杂牌”。两张同点数明牌仍按高牌比较。A 最小，Q-K-A 不成顺。小王大于 K，大王最大；含王的牌只按高牌比较，王不参与任何组合。相同牌型依规则逐项比较点数，不比较花色。</p><h3>战役地图 · 本作补充规则</h3><ul><li>每方 12 张初始牌中的 1 张作为首都暗牌驻军，其余 11 张在手中。每个地图回合有 1 次占领、进攻或跳过行动。占领中立点消耗 1 张手牌作为暗牌驻军，只能行动至相邻据点。</li><li>交锋开始时，防守驻军收回手中供部署。交锋结束仍由防守方控制时，优先将尚在手牌中的原驻军归还原据点；否则从所有者的公开牌堆（若空则手牌）取 1 张驻防。进攻胜利夺取该据点；夺取敌方首都立即赢得大局。</li><li>地图回合开始：每个己方据点产 1 补给，油田产 2，最多储存 30。每回合可花 2 点从公共牌库补充 1 张，不消耗地图行动。</li><li>公共牌库为空且任一方暗牌手牌为空，该方失败；同时耗尽则平局。驻军和公开牌不计为暗牌手牌。双方按回合交替优先补牌。</li><li>策略卡开局三选一，每张一次性。战役策略每个地图回合最多一次，交锋策略每方每次交锋最多一次。进攻方持有交锋策略时，完成部署后有战术窗口，可出策略或点击继续。闪电战仅己方占优时可用；之后由被压制方反击。医疗分队从己方公开牌回收；起义额外生成一张 A。补给、驻军和策略细则是本作扩展，并非原 MVP 规则。</li></ul><h3>经典模式与其他选项</h3><p>经典模式完整使用 54 张牌、每人 12 张暗牌，不使用地图、驻军和补给；双方交替先防守。开启策略时只从交锋策略选取。回合上限到达后，经典比较公开牌数，战役比较公开牌数 + 每块领地 3 分；相同则平局。</p><p>同机双人模式在每次换人时遮蔽手牌，按“准备就绪”后才显示并计时。它不提供两台设备联网。AI 只根据公开信息和自己的牌决策。暂停与手册会暂停计时和 AI。超时：地图跳过、防守出最低单张明牌、进攻或反击撤退。存档保存在此浏览器，仅供本机继续对局。</p></div>';
 const revisedRulesHTML=rulesHTML.replace('组合牌型要求恰好 3 张明牌，包括“对子 + 一张杂牌”。两张同点数明牌仍按高牌比较。','两张或三张明牌中出现两张同点数即为对子；三张同点数为三条。顺子、同花与三条要求恰好 3 张明牌。');
-const finalRulesHTML=revisedRulesHTML.replace('防守方先部署 1–3 张牌，至少 1 张明牌。进攻方同样部署，明牌必须严格压过防守方。','经典交锋由防守方先部署 1–3 张牌，至少 1 张明牌；战役交锋直接使用据点的固定驻军。进攻方部署 1–3 张，明牌必须严格压过防线。').replace('胜方收取双方已翻开的牌进入公开牌堆；未翻开的牌各自收回。双方从公共牌库交替补至 12 张暗牌。','经典交锋由胜方收取双方明牌，暗牌各自收回。战役交锋中，守住时固定驻军留守，攻下时进攻战线接防，其余牌按明暗结算。双方从公共牌库交替补至 12 张暗牌。').replace('策略卡开局三选一，每张一次性。','策略卡开局三选一，每张一次性。战役模式另有三张公开市场牌，每回合可花费补给购买一张，最多持有三张；新购牌在购买者下一个地图回合解锁，市场每三轮整体刷新。').replace('每方 12 张初始牌中的 1 张作为首都暗牌驻军，其余 11 张在手中。每个地图回合有 1 次占领、进攻或跳过行动。占领中立点消耗 1 张手牌作为暗牌驻军，只能行动至相邻据点。','每方首都开局部署 3 张暗牌驻军，其余 9 张在手中。每个据点最多驻守 3 张牌；普通据点必须至少有 1 张明牌，首都允许 3 张全为暗牌。占领中立点时选择 1–3 张手牌并决定明暗，只能行动至相邻据点。').replace('交锋开始时，防守驻军收回手中供部署。交锋结束仍由防守方控制时，优先将尚在手牌中的原驻军归还原据点；否则从所有者的公开牌堆（若空则手牌）取 1 张驻防。进攻胜利夺取该据点；夺取敌方首都立即赢得大局。','驻军设置后固定在据点，被攻击时直接成为防守战线。守军获胜则原驻军留守，已翻开的牌保持公开；进攻胜利时，进攻战线成为该据点的新驻军。选择己方据点可用一次地图行动整编，或花费 3 点补给快速换防且保留地图行动；快速换防每回合一次。夺取敌方首都立即赢得大局。');
+const finalRulesHTML=revisedRulesHTML.replace('防守方先部署 1–3 张牌，至少 1 张明牌。进攻方同样部署，明牌必须严格压过防守方。','经典交锋由防守方先部署 1–3 张牌，至少 1 张明牌；战役交锋直接使用据点的固定驻军。进攻方部署 1–3 张，明牌必须严格压过防线。').replace('胜方收取双方已翻开的牌进入公开牌堆；未翻开的牌各自收回。双方从公共牌库交替补至 12 张暗牌。','经典交锋由胜方收取双方明牌，暗牌各自收回。战役交锋中，守住时固定驻军留守，攻下时进攻战线接防，其余牌按明暗结算。双方从公共牌库交替补至 12 张暗牌。').replace('策略卡开局三选一，每张一次性。','策略卡开局三选一，每张一次性。战役模式另有三张公开市场牌，每回合可花费补给购买一张，最多持有三张；新购牌在购买者下一个地图回合解锁，市场每三轮整体刷新。').replace('每方 12 张初始牌中的 1 张作为首都暗牌驻军，其余 11 张在手中。每个地图回合有 1 次占领、进攻或跳过行动。占领中立点消耗 1 张手牌作为暗牌驻军，只能行动至相邻据点。','每方首都开局部署 3 张暗牌驻军，其余 9 张在手中。普通据点容量 3，强化据点容量 4，首都容量 5；非首都至少 1 张明牌，首都可以全暗。防守公开牌超过 3 张时只计算最强三张，暗牌仍需逐步翻开。占领中立点时选择不超过该据点容量的手牌并决定明暗，只能行动至相邻据点。').replace('交锋开始时，防守驻军收回手中供部署。交锋结束仍由防守方控制时，优先将尚在手牌中的原驻军归还原据点；否则从所有者的公开牌堆（若空则手牌）取 1 张驻防。进攻胜利夺取该据点；夺取敌方首都立即赢得大局。','驻军设置后固定在据点，被攻击时直接成为防守战线。守军获胜则原驻军留守，已翻开的牌保持公开；进攻胜利时，进攻战线成为该据点的新驻军。选择己方据点可用一次地图行动整编，或花费 3 点补给快速换防且保留地图行动；快速换防每回合一次。攻击超过 3 张守军的据点时，可花 3 点补给围城并随机封锁一张预备守军。夺取敌方首都立即赢得大局。');
 function overlay(){
  if(gate&&!modal)return '<div class="handoff"><div class="handoff-symbol">⟐</div><div class="eyebrow">SECURE HANDOVER</div><h1>请将屏幕交给<br><em>'+s.players[s.active].name+'</em></h1><p>对手移开视线后，点击下方按钮查看自己的手牌。</p>'+btn('准备就绪 · 显示手牌','ready','primary')+btn('返回主菜单','confirm-exit','text-button')+'</div>';
  if(!modal)return '';
@@ -239,7 +239,7 @@ app.addEventListener('click',e=>{
  if(a==='cancel-target'){targeting=null;render();return}
  if(a==='sort'){s.players[viewer()].hand.sort((a,b)=>a.rank-b.rank||a.suit-b.suit);render();return}
  if(a==='card'){
- const n=Number(id);if(s.phase==='campaign'){if(!selection.has(n)){if(selection.size>=3){toast('每个据点最多驻军 3 张');return}selection.set(n,true)}else if(selection.get(n))selection.set(n,false);else selection.delete(n)}
+ const n=Number(id);if(s.phase==='campaign'){const limit=garrisonLimit(s.fields.find(f=>f.id===focus));if(!selection.has(n)){if(selection.size>=limit){toast('该据点最多驻军 '+limit+' 张');return}selection.set(n,true)}else if(selection.get(n))selection.set(n,false);else selection.delete(n)}
  else if(!selection.has(n)){if(selection.size>=3){toast('最多部署 3 张牌');return}selection.set(n,true)}
  else if(selection.get(n))selection.set(n,false);else selection.delete(n);
  render();return;
@@ -250,7 +250,7 @@ app.addEventListener('click',e=>{
  if(a==='deploy')perform({type:'deploy',cards:[...selection].map(([id,open])=>({id,open}))});
  if(a==='reveal')perform({type:'reveal',ids:[...reveals]});
  if(['occupy','reorganize','rapid_redeploy'].includes(a))perform({type:a,field:focus,cards:[...selection].map(([id,open])=>({id,open}))});
- if(a==='attack')perform({type:'attack',field:focus});
+ if(['attack','siege'].includes(a))perform({type:a,field:focus});
  if(['fold','supply','pass','continue'].includes(a))perform({type:a});
 });
 app.addEventListener('change',e=>{

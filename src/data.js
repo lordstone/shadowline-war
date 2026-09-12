@@ -15,19 +15,19 @@ export const STRATEGIES=[
  {id:'airborne_raid',name:'纵深空袭',icon:'⤴',phase:'campaign',count:1,price:7,desc:'本回合可以占领或进攻任意选中据点，忽略相邻限制。'},
  {id:'economic_sanctions',name:'经济封锁',icon:'⊘',phase:'campaign',count:2,price:5,desc:'封锁选中敌方据点的补给产出 1–13 个完整回合。'}
 ];
-const f=(id,label,type,x,y,links,owner=null,capital=false)=>({id,label,type,x,y,links,owner,capital,garrison:[],blockedUntil:0});
+const f=(id,label,type,x,y,links,owner=null,capital=false,fortified=false)=>({id,label,type,x,y,links,owner,capital,fortified,garrison:[],blockedUntil:0});
 export const MAPS=[
  {id:'duel',name:'双都对峙',subtitle:'5 个据点 · 快速交锋',desc:'两座首都隔着中央城镇相望。争夺侧翼油田，直取敌方指挥部。',fields:[
  f('p1_capital','苍岚首都','capital',16,74,['p1_oil','center_town'],0,true),
  f('p1_oil','西部油田','oil',34,44,['p1_capital','center_town']),
- f('center_town','中央城镇','town',50,60,['p1_capital','p1_oil','p2_oil','p2_capital']),
+ f('center_town','中央城镇','town',50,60,['p1_capital','p1_oil','p2_oil','p2_capital'],null,false,true),
  f('p2_oil','东部油田','oil',66,44,['p2_capital','center_town']),
  f('p2_capital','赤烬首都','capital',84,74,['p2_oil','center_town'],1,true)]},
  {id:'rift',name:'裂谷防线',subtitle:'7 个据点 · 双线突破',desc:'两条进军路线穿过峡谷。控制中继站，撕开对方防线。',fields:[
  f('a','苍岚首都','capital',12,54,['b','c'],0,true),
  f('b','北部隘口','town',32,28,['a','d','e']),
  f('c','南部油田','oil',32,76,['a','d','f']),
- f('d','峡谷中继','town',50,52,['b','c','e','f']),
+ f('d','峡谷中继','town',50,52,['b','c','e','f'],null,false,true),
  f('e','北部油田','oil',68,28,['b','d','g']),
  f('f','南部隘口','town',68,76,['c','d','g']),
  f('g','赤烬首都','capital',88,54,['e','f'],1,true)]},
@@ -40,7 +40,7 @@ export const MAPS=[
  f('f','南港','town',76,79,['e','g','i']),
  f('g','南部油田','oil',50,87,['f','h']),
  f('h','西部雷达','town',24,79,['g','a','i']),
- f('i','中央堡垒','town',50,52,['b','d','f','h'])]}
+ f('i','中央堡垒','town',50,52,['b','d','f','h'],null,false,true)]}
 ];
 export const defaults={mode:'ai',map:'duel',rules:'campaign',difficulty:'normal',timer:0,eventSeconds:3,seed:2026,strategies:true,first:0,maxRounds:80,sound:true};
 export const strategyById=id=>STRATEGIES.find(s=>s.id===id);
