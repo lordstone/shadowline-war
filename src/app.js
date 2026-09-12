@@ -140,7 +140,7 @@ function strategyMarketView(){
 function strategyShopButton(){
  if(s.phase!=='campaign'||!s.opt.strategies)return '';
  const p=viewer(),summary=s.marketBought?'本回合已采购':'可查看 '+s.strategyMarket.length+' 张市场策略';
- return '<button class="strategy-shop-button" data-action="open-market" aria-label="'+esc('打开战术商店：'+summary+'，当前 '+s.players[p].supply+' 点补给')+'" title="'+esc(summary+' · '+s.players[p].supply+' 补给')+'"><span>▰</span><i>'+s.strategyMarket.length+'</i></button>';
+ return '<button class="strategy-shop-button" data-action="open-market" aria-label="'+esc('打开战术商店：'+summary+'，当前 '+s.players[p].supply+' 点补给')+'" title="'+esc(summary+' · '+s.players[p].supply+' 补给')+'"><span class="shop-coin">$</span><i>'+s.strategyMarket.length+'</i></button>';
 }
 function strategyDock(){
  const p=viewer(),cards=s.players[p].strategies;if(!cards.length)return '<div class="empty-tactics">暂无策略卡</div>';
