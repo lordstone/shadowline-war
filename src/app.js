@@ -121,23 +121,27 @@ function handTray(){
  const sort='<span class="hand-sort-toggle" role="group" aria-label="手牌排序"><button class="'+(handSort==='rank'?'active':'')+'" data-action="hand-sort" data-id="rank" aria-pressed="'+(handSort==='rank')+'">点数</button><button class="'+(handSort==='suit'?'active':'')+'" data-action="hand-sort" data-id="suit" aria-pressed="'+(handSort==='suit')+'">花色</button></span>';
  return '<section class="hand-tray"><div class="hand-top"><div><span class="eyebrow">你的暗牌 / PRIVATE HAND</span><b>'+pl.hand.length+' 张</b></div><div>'+sort+'<span>'+(['defend','attack'].includes(s.phase)?'已选 '+selection.size+' / 3':s.phase==='campaign'?'选择驻军牌':'暗牌安全保留')+'</span></div></div><div class="hand-scroll">'+cards.map((c,i)=>'<div class="hand-card-shell" style="--rot:'+((i-(cards.length-1)/2)*1.15)+'deg;--lift:'+(-Math.abs(i-(cards.length-1)/2)*1.15)+'px;--z:'+i+'">'+card(c,{interactive,selected:selection.has(c.id),stance:selection.has(c.id)?selection.get(c.id):null})+'</div>').join('')+'</div></section>';
 }
-function strategyMarketView(expanded=false){
+function strategyMarketView(){
  if(s.phase!=='campaign'||!s.opt.strategies)return '';
- const p=viewer(),icons=s.strategyMarket.map(id=>'<i>'+strategyById(id).icon+'</i>').join('');
- if(!expanded)return '<button class="strategy-shop-trigger" data-action="open-market"><span class="shop-emblem">▰</span><span><small>战术商店 / STRATEGY SHOP</small><b>'+(s.marketBought?'本回合已采购':'查看 3 张市场策略')+'</b></span><span class="shop-icons">'+icons+'</span><strong>'+s.players[p].supply+' 补给　›</strong></button>';
+ const p=viewer();
  return '<section class="strategy-market expanded"><div class="market-heading"><div><span class="eyebrow">策略市场 / WAR ROOM</span><h3>'+(s.marketBought?'本回合已完成购买':'本回合可购买 1 张')+'</h3></div><small>当前 '+s.players[p].supply+' 补给 · 持有 '+s.players[p].strategies.length+' / 3 · 新购下回合解锁</small></div><div class="market-list">'+s.strategyMarket.map((id,index)=>{const c=strategyById(id),reason=canBuyStrategy(s,p,id),label=!reason?'购买 · '+c.price+' 补给':reason.startsWith('需要 ')?'补给不足 · 需 '+c.price:reason.includes('同名')?'已持有':reason.includes('持有三张')?'持有已满':reason.includes('只能购买一张')?'本回合已购':'不可购买';return '<article class="market-card"><span class="market-icon">'+c.icon+'</span><div><b>'+c.name+'</b><small>'+(c.phase==='battle'?'交锋战术':'战役指令')+' · '+c.desc+'</small></div>'+btn(label,'buy-strategy','market-buy',!!reason,'data-id="'+id+'" data-index="'+index+'" title="'+esc(reason||'花费 '+c.price+' 补给购买；下一个地图回合解锁')+'"')+'</article>'}).join('')+'</div></section>';
+}
+function strategyShopButton(){
+ if(s.phase!=='campaign'||!s.opt.strategies)return '';
+ const p=viewer(),summary=s.marketBought?'本回合已采购':'可查看 '+s.strategyMarket.length+' 张市场策略';
+ return '<button class="strategy-shop-button" data-action="open-market" aria-label="'+esc('打开战术商店：'+summary+'，当前 '+s.players[p].supply+' 点补给')+'" title="'+esc(summary+' · '+s.players[p].supply+' 补给')+'"><span>▰</span><i>'+s.strategyMarket.length+'</i></button>';
 }
 function strategyDock(){
  const p=viewer(),cards=s.players[p].strategies;if(!cards.length)return '<div class="empty-tactics">暂无策略卡</div>';
  return '<div class="tactic-dock">'+cards.map(id=>{const c=strategyById(id),reason=canStrategy(s,p,id,focus);return '<button class="strategy-token '+(reason?'unavailable':'ready')+'" data-action="use-strategy" data-id="'+id+'" '+(isAI()?'disabled':'')+' aria-label="'+esc(c.name+'：'+c.desc+'；'+(reason||'现在可以使用'))+'"><span>'+c.icon+'</span><small>'+c.name+'</small><span class="strategy-tooltip"><b>'+c.name+'</b><em>'+(c.phase==='battle'?'交锋战术':'战役指令')+'</em><p>'+c.desc+'</p><strong>'+(reason||'现在可以使用')+'</strong></span></button>'}).join('')+'</div>';
 }
 function sidePanel(){
- const p=viewer();return '<aside class="intel-panel"><div class="supply-box"><span class="eyebrow">公共牌库</span><b>'+s.deck.length+'<small> / '+s.baseDeckSize+'</small></b><div class="supply-meter"><span style="width:'+s.deck.length/s.baseDeckSize*100+'%"></span></div><p>交锋结束补暗牌至 12 张<br>公共牌库耗尽后，暗牌耗尽者败</p></div><div class="tactics-heading"><h3>战术指令</h3><span>'+s.players[p].strategies.length+'</span></div>'+
+ const p=viewer();return '<aside class="intel-panel"><div class="supply-box"><span class="eyebrow">公共牌库</span><b>'+s.deck.length+'<small> / '+s.baseDeckSize+'</small></b><div class="supply-meter"><span style="width:'+s.deck.length/s.baseDeckSize*100+'%"></span></div><p>交锋结束补暗牌至 12 张<br>公共牌库耗尽后，暗牌耗尽者败</p></div><div class="tactics-heading"><h3>战术指令</h3><span class="tactics-tools"><span>'+s.players[p].strategies.length+'</span>'+strategyShopButton()+'</span></div>'+
  strategyDock()+'<div class="log-heading"><h3>战场记录</h3><span>LIVE</span></div><ol class="battle-log">'+s.log.slice(0,6).map(l=>'<li><span>'+String(l.round).padStart(2,'0')+'</span><p>'+esc(l.text)+'</p></li>').join('')+'</ol></aside>';
 }
 function game(){
  return header()+'<div class="armies">'+playerPanel(0)+'<span class="army-vs">VS</span>'+playerPanel(1)+'</div>'+
- '<div class="game-layout"><div class="play-column">'+(s.phase==='campaign'?mapView()+strategyMarketView():battleView())+handTray()+'</div>'+sidePanel()+'</div>';
+ '<div class="game-layout"><div class="play-column">'+(s.phase==='campaign'?mapView():battleView())+handTray()+'</div>'+sidePanel()+'</div>';
 }
 function result(){
  const win=s.winner;return header()+'<section class="result-screen"><div class="result-emblem">'+(win===null?'⟐':win===0?'♜':'✣')+'</div><div class="eyebrow">OPERATION COMPLETE</div><h1>'+(win===null?'战局平分秋色':s.players[win].name+'获胜')+'</h1><p>'+s.reason+'</p><div class="result-stats">'+s.players.map((p,i)=>'<div class="army-'+i+'"><h3>'+p.name+'</h3><b>'+p.wins+'<small> 次交锋获胜</small></b><span>'+p.reserve.length+' 张公开牌 · '+s.fields.filter(f=>f.owner===i).length+' 块领地</span></div>').join('')+'</div><div class="result-actions">'+btn('再战一局 →','rematch','primary')+btn('返回作战部署','exit','secondary')+'</div><small>战局种子 '+s.opt.seed+' · '+s.skirmish+' 次交锋</small></section>';
@@ -150,7 +154,7 @@ function overlay(){
  if(!modal)return '';
  let content='';
  if(modal==='rules')content=finalRulesHTML+btn('已了解 · 继续','close','primary');
- else if(modal==='market')content='<div class="eyebrow">SUPPLY EXCHANGE / 补给交易所</div><h2>战术商店</h2><p>市场公开可见。购买策略牌不消耗地图行动；买到的策略牌在你的下一个地图回合解锁。</p>'+strategyMarketView(true)+btn('关闭商店','close','secondary');
+ else if(modal==='market')content='<div class="eyebrow">SUPPLY EXCHANGE / 补给交易所</div><h2>战术商店</h2><p>市场公开可见。购买策略牌不消耗地图行动；买到的策略牌在你的下一个地图回合解锁。</p>'+strategyMarketView()+btn('关闭商店','close','secondary');
  else if(typeof modal==='object'&&modal.kind==='reserve'){const p=s.players[modal.player];content='<h2>'+p.name+' · 公开牌堆</h2><p>这些牌双方均可查看。</p><div class="reserve-cards">'+(p.reserve.map(c=>card(c,{small:true})).join('')||'<p>尚未获得公开牌。</p>')+'</div>'+garrisonRoster(modal.player)+btn('关闭','close','primary')}
  else if(modal==='exit')content='<h2>离开当前战局？</h2><p>本机存档会保留，可从主菜单继续。</p><div class="modal-actions">'+btn('返回战局','close','primary')+btn('保存并退出','exit','secondary')+'</div>';
  else content='<div class="eyebrow">TACTICAL PAUSE</div><h2>战场已暂停</h2><p>行动计时与电脑对手均已暂停。</p><div class="pause-actions">'+btn('继续战斗 →','close','primary')+btn('查看规则','rules','secondary')+btn('保存并返回主菜单','exit','secondary')+btn('投降','resign','text-button')+'</div>';

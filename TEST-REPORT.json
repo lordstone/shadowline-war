@@ -18,7 +18,8 @@
     "twoDeckJokers": 2,
     "uniqueCardIds": "passed"
   },
-  "globalVersionBadge": "v1.9.1 visible across all application states",
+  "globalVersionBadge": "v1.9.2 visible across all application states",
+  "compactStrategyShop": "passed: right-side trigger opens the existing market modal",
   "browserUIQA": {
     "browser": "Chrome via Playwright",
     "viewports": [
