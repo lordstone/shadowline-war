@@ -1,7 +1,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit} from '../src/engine.js';
+import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,resolvedDeckCount} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
@@ -66,6 +66,11 @@ test('seed reproducibility; classic deals twelve, campaign accounts for garrison
  assert.equal(b.players[0].hand.length,9);assert.equal(b.fields.flatMap(f=>f.garrison).length,6);
  for(const f of b.fields.filter(f=>f.capital)){assert.equal(f.garrison.length,3);assert.ok(f.garrison.every(c=>!c.open))}
  assert.equal(cardLocations(b).length,54);
+});
+test('map-sized decks keep one joker pair and globally unique card ids',()=>{
+ const single=createGame({map:'korea',deckCount:'auto',strategies:false});assert.equal(single.baseDeckSize,54);assert.equal(cardLocations(single).length,54);
+ const large=createGame({map:'eastern_front',deckCount:'auto',strategies:false});assert.equal(large.baseDeckSize,106);assert.equal(cardLocations(large).length,106);
+ const forced=createGame({map:'duel',deckCount:2,strategies:false}),cards=cardLocations(forced);assert.equal(cards.length,106);assert.equal(new Set(cards.map(c=>c.id)).size,106);assert.equal(cards.filter(c=>c.rank>13).length,2);assert.equal(cards.filter(c=>c.rank<=13).length,104);assert.equal(resolvedDeckCount(forced.opt,forced.fields),2);validate(forced);
 });
 test('reject wrong player, all-hidden and duplicate deployments without changing state',()=>{
  const s=fixture([[1,0],[5,1]],[[4,2]]);

@@ -1,16 +1,22 @@
 {
   "date": "2026-09-12",
-  "tests": 37,
-  "passed": 37,
+  "tests": 38,
+  "passed": 38,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 288,
-  "legalActions": 19131,
+  "legalActions": 20858,
   "wildcardJokers": {
     "allThreeCardHands": 24804,
     "categoryCounts": [0, 16500, 5064, 1540, 1212, 228, 260],
     "naturalTieBreak": "passed",
     "bigJokerTieBreak": "passed"
+  },
+  "adaptiveDecks": {
+    "smallAndMediumMaps": 54,
+    "largeMaps": 106,
+    "twoDeckJokers": 2,
+    "uniqueCardIds": "passed"
   },
   "browserUIQA": {
     "browser": "Chrome via Playwright",

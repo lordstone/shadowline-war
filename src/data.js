@@ -82,5 +82,5 @@ export const MAPS=[
  f('munich','慕尼黑','town',74,80,['alsace','frankfurt','berlin']),
  f('berlin','柏林指挥部','capital',90,39,['hamburg','ruhr','frankfurt','munich'],1,true)]}
 ];
-export const defaults={mode:'ai',map:'duel',rules:'campaign',difficulty:'normal',timer:0,eventSeconds:3,seed:2026,strategies:true,first:0,maxRounds:80,sound:true};
+export const defaults={mode:'ai',map:'duel',rules:'campaign',difficulty:'normal',timer:0,eventSeconds:3,seed:2026,strategies:true,first:0,maxRounds:80,deckCount:'auto',sound:true};
 export const strategyById=id=>STRATEGIES.find(s=>s.id===id);

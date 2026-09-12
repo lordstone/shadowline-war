@@ -2,7 +2,13 @@
 import {MAPS,STRATEGIES,SUITS,defaults,strategyById} from './data.js';
 export function random(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/4294967296}
 export function shuffle(s,arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(random(s)*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
-export function makeDeck(){const d=[];for(let suit=0;suit<4;suit++)for(let rank=1;rank<=13;rank++)d.push({id:suit*13+rank-1,rank,suit});d.push({id:52,rank:14,suit:4},{id:53,rank:15,suit:4});return d}
+export function makeDeck(count=1){
+ const d=[];for(let suit=0;suit<4;suit++)for(let rank=1;rank<=13;rank++)d.push({id:suit*13+rank-1,rank,suit});
+ d.push({id:52,rank:14,suit:4},{id:53,rank:15,suit:4});
+ for(let copy=1;copy<count;copy++)for(let suit=0;suit<4;suit++)for(let rank=1;rank<=13;rank++)d.push({id:54+(copy-1)*52+suit*13+rank-1,rank,suit});
+ return d;
+}
+export function resolvedDeckCount(opt,fields){if(opt.deckCount===1||opt.deckCount==='1')return 1;if(opt.deckCount===2||opt.deckCount==='2')return 2;return opt.rules==='campaign'&&fields.length>=12?2:1}
 export function face(c){return c.rank===15?'大王':c.rank===14?'小王':({1:'A',11:'J',12:'Q',13:'K'}[c.rank]||String(c.rank))}
 function exactPower(cards){
  if(!cards.length)return [0,0,0,0];
@@ -61,7 +67,7 @@ export function cardLocations(s){return [...s.deck,...s.players.flatMap(p=>[...p
 export function validate(s){
  const all=cardLocations(s),ids=all.map(c=>c.id);
  if(new Set(ids).size!==ids.length)throw Error('重复牌');
- if(all.length!==54+s.generated)throw Error('牌数不守恒 '+all.length);
+ if(all.length!==(s.baseDeckSize||54)+s.generated)throw Error('牌数不守恒 '+all.length);
  if(s.players.some(p=>p.hand.some(c=>c.boost)))throw Error('临时晋升未清除');
  if(s.battle&&s.battle.lines.some((l,p)=>l.length>(p===s.battle.defender&&s.battle.field?garrisonLimit(s.fields.find(f=>f.id===s.battle.field)):3)))throw Error('战线超过据点容量');
  if(s.fields.some(f=>f.garrison.length>garrisonLimit(f)))throw Error('驻军超过据点容量');
@@ -78,7 +84,8 @@ export function createGame(options={}){
  deck:[],fields:structuredClone(MAPS.find(m=>m.id===opt.map)?.fields||MAPS[0].fields),
  battle:null,log:[],winner:null,reason:'',draft:[[],[]],drafted:[false,false],turn:1,strategyUsed:false,supplyUsed:false,raid:false,knowledge:[{},{}],
  strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false};
- s.deck=shuffle(s,makeDeck());for(let i=0;i<12;i++)for(let p=0;p<2;p++)s.players[p].hand.push(s.deck.pop());
+ const deckCount=resolvedDeckCount(opt,s.fields);s.baseDeckSize=54+(deckCount-1)*52;
+ s.deck=shuffle(s,makeDeck(deckCount));for(let i=0;i<12;i++)for(let p=0;p<2;p++)s.players[p].hand.push(s.deck.pop());
  if(opt.rules==='campaign'){for(const f of s.fields.filter(f=>f.capital))for(let i=0;i<3;i++)f.garrison.push({...s.players[f.owner].hand.pop(),open:false});}
  else s.fields=[];
  const available=STRATEGIES.filter(c=>opt.rules==='campaign'||c.phase==='battle');
@@ -97,6 +104,8 @@ function fillMarket(s){
 }
 function refreshMarket(s){s.strategyDiscard.push(...s.strategyMarket.splice(0));fillMarket(s);log(s,'策略市场已刷新。')}
 export function upgradeState(s){
+ if(!s.opt.deckCount)s.opt.deckCount='auto';
+ if(!s.baseDeckSize)s.baseDeckSize=54;
  if(!Array.isArray(s.strategyDeck)){const held=s.players.flatMap(p=>p.strategies);s.strategyDeck=STRATEGIES.flatMap(c=>Array(Math.max(0,c.count-held.filter(id=>id===c.id).length)).fill(c.id));s.strategyMarket=[];s.strategyDiscard=[]}
  if(!Array.isArray(s.strategyMarket))s.strategyMarket=[];
  if(!Array.isArray(s.strategyDiscard))s.strategyDiscard=[];
@@ -242,7 +251,7 @@ function strategy(s,p,id,fieldId){
  case 'rank_up':{const c=pick(s.battle.lines[p].filter(c=>c.open&&c.rank+(c.boost||0)<13));c.boost=(c.boost||0)+1;if(s.phase==='counter')resolveCounter(s);break}
  case 'scouting':pick(s.battle.lines[enemy].filter(c=>!c.open)).open=true;resolveCounter(s);break;
  case 'peace_talk':settle(s,null);break;
- case 'revolution':f.owner=p;f.garrison.push({id:54+s.generated++,rank:1,suit:Math.floor(random(s)*4),open:true});nextCampaign(s);break;
+ case 'revolution':f.owner=p;f.garrison.push({id:s.baseDeckSize+s.generated++,rank:1,suit:Math.floor(random(s)*4),open:true});nextCampaign(s);break;
  case 'blitzkrieg':settle(s,leading(s));break;
  case 'international_support':pl.supply=Math.min(30,pl.supply+1+Math.floor(random(s)*13));break;
  case 'airborne_raid':s.raid=true;break;
