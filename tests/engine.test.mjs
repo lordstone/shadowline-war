@@ -60,8 +60,13 @@ test('four and five revealed defenders use their strongest three-card combinatio
 });
 test('all maps have symmetric, connected topology and two capitals',()=>{
  for(const m of MAPS){const seen=new Set([m.fields[0].id]);while(true){const n=seen.size;for(const f of m.fields)if(seen.has(f.id))for(const id of f.links){assert.ok(m.fields.find(g=>g.id===id)?.links.includes(f.id),m.id+': '+f.id+' ↔ '+id);seen.add(id)}if(seen.size===n)break}assert.equal(seen.size,m.fields.length,m.id);assert.equal(m.fields.filter(f=>f.capital).length,2,m.id)}
- assert.deepEqual(MAPS.slice(-3).map(m=>m.fields.length),[14,11,12]);
- assert.ok(MAPS.slice(-3).every(m=>m.fields.some(f=>f.type==='port')&&m.fields.some(f=>f.type==='mountain'||f.type==='oil')));
+ assert.deepEqual(MAPS.slice(-5).map(m=>m.fields.length),[14,11,12,10,13]);
+ assert.ok(MAPS.slice(-5).every(m=>m.fields.some(f=>f.type==='port')&&m.fields.some(f=>f.type==='mountain'||f.type==='oil')));
+});
+test('player identities default cleanly and retain custom names, logos and factions',()=>{
+ const ai=createGame({rules:'classic',strategies:false,difficulty:'normal'});assert.equal(ai.players[0].name,'玩家');assert.equal(ai.players[1].name,'老兵 AI');
+ const local=createGame({rules:'classic',strategies:false,mode:'local',playerNames:['','小林'],playerLogos:['⚓','▲'],factions:['海峡联合舰队','波斯湾卫队']});
+ assert.deepEqual(local.players.map(p=>[p.name,p.logo,p.faction]),[['玩家1','⚓','海峡联合舰队'],['小林','▲','波斯湾卫队']]);
 });
 test('terrain limits, mountain disclosure, and sea landing formation rules are enforced',()=>{
  assert.equal(terrainLimit({type:'swamp'}),1);assert.equal(garrisonLimit({type:'forest'}),2);assert.equal(garrisonLimit({type:'capital'}),5);

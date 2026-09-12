@@ -87,8 +87,14 @@ export function validate(s){
 }
 export function createGame(options={}){
  const opt={...defaults,...options};opt.seed=Number(opt.seed)>>>0;
+ const text=(value,fallback)=>String(value||'').trim().slice(0,18)||fallback;
+ const local=opt.mode==='local',aiName=opt.difficulty==='easy'?'新兵 AI':'老兵 AI';
+ const names=[text(opt.playerNames?.[0],local?'玩家1':'玩家'),text(opt.playerNames?.[1],local?'玩家2':aiName)];
+ const logos=[text(opt.playerLogos?.[0],'⟐').slice(0,2),text(opt.playerLogos?.[1],'✣').slice(0,2)];
+ const factions=[text(opt.factions?.[0],''),text(opt.factions?.[1],'')];
+ opt.playerNames=names;opt.playerLogos=logos;opt.factions=factions;
  const s={version:1,opt,rng:opt.seed,phase:'draft',active:opt.first===1?1:0,round:1,skirmish:0,generated:0,
- players:[{name:'苍岚军团',hand:[],reserve:[],strategies:[],supply:2,wins:0},{name:opt.mode==='ai'?'赤烬 · 战术 AI':'赤烬军团',hand:[],reserve:[],strategies:[],supply:2,wins:0}],
+ players:[{name:names[0],logo:logos[0],faction:factions[0],hand:[],reserve:[],strategies:[],supply:2,wins:0},{name:names[1],logo:logos[1],faction:factions[1],hand:[],reserve:[],strategies:[],supply:2,wins:0}],
  deck:[],fields:structuredClone(MAPS.find(m=>m.id===opt.map)?.fields||MAPS[0].fields),
  battle:null,log:[],winner:null,reason:'',draft:[[],[]],drafted:[false,false],turn:1,strategyUsed:false,supplyUsed:false,raid:false,knowledge:[{},{}],
  strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false};

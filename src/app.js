@@ -10,8 +10,10 @@ let handSort='rank';
 let targeting=null;
 let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
 let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map();
+let identityStep=null;
 const STORE='shadowline-war-v1';
-const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆'}[id]||'◇');
+const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆',hormuz:'≋',china_civil_war:'山'}[id]||'◇');
+const LOGOS=['⟐','✣','♜','⚓','▲','✦','◈','☄'];
 const fieldIcon=f=>f.capital?'♜':f.fortified?'▰':f.type==='oil'?'▥':f.type==='port'?'⚓':f.type==='mountain'?'▲':f.type==='forest'?'♣':f.type==='swamp'?'≈':'◆';
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const btn=(label,action,cls='',disabled=false,extra='')=>'<button class="'+cls+'" data-action="'+action+'" '+(disabled?'disabled ':'')+extra+'>'+label+'</button>';
@@ -45,17 +47,22 @@ function header(menu=false){
  '<div class="top-actions">'+btn(muted?'音效关闭':'音效开启','sound','text-button')+btn('规则','rules','text-button')+(menu?'':btn('暂停','pause','icon-button'))+'</div></header>';
 }
 function optionSelect(name,label,entries,value){return '<label class="option"><span>'+label+'</span><select data-option="'+name+'">'+entries.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+t+'</option>').join('')+'</select></label>'}
+function logoPicker(player){const selected=options.playerLogos?.[player]||LOGOS[player];return '<div class="logo-picker" role="group" aria-label="选择徽记">'+LOGOS.map(icon=>'<button class="'+(selected===icon?'active':'')+'" data-action="select-logo" data-player="'+player+'" data-id="'+icon+'" aria-label="选择徽记 '+icon+'">'+icon+'</button>').join('')+'</div>'}
+function identityFields(player,label){return '<div class="identity-fields"><label class="option"><span>'+label+'名称</span><input data-option="playerName'+player+'" maxlength="18" placeholder="'+(options.mode==='local'?'玩家'+(player+1):'玩家')+'" value="'+esc(options.playerNames?.[player]||'')+'"></label>'+logoPicker(player)+'</div>'}
 function menu(){
  const map=MAPS.find(m=>m.id===options.map);
  return header(true)+'<section class="command-menu"><div class="setup-panel"><div class="eyebrow"><span></span> 作战部署 / OPERATION SETUP</div><h1>明面交火。<br><em>暗线制胜。</em></h1><p class="intro">一组牌库，一场信息战争。<br>建立防线，隐藏底牌，夺取敌方首都。</p>'+
  '<div class="field-label">01 / 选择对战模式</div><div class="segmented">'+btn('<b>◈ 人机对战</b><small>与战术 AI 交锋</small>','mode-ai',options.mode==='ai'?'active':'')+btn('<b>⧉ 双人对战</b><small>同机轮流 · 手牌遮蔽</small>','mode-local',options.mode==='local'?'active':'')+'</div>'+
  '<div class="field-label">02 / 选择战场</div><div class="map-choices">'+MAPS.map(m=>'<button class="map-choice '+(m.id===options.map?'active':'')+'" data-action="map" data-id="'+m.id+'"><span class="map-symbol">'+mapSymbol(m.id)+'</span><span><b>'+m.name+'</b><small>'+m.subtitle+'</small></span><i>'+(m.id===options.map?'●':'○')+'</i></button>').join('')+'</div>'+
+ '<div class="field-label">03 / 你的身份</div>'+identityFields(0,options.mode==='local'?'玩家 1':'玩家')+(options.mode==='local'?'<p class="identity-note">开始后将进入玩家 2 的独立身份选择界面。</p>':'')+
  '<details class="advanced"><summary>高级选项 <span>＋</span></summary><div class="advanced-grid">'+
  optionSelect('rules','胜利规则',[['campaign','战役 · 夺取首都'],['classic','经典 · 暗牌耗尽']],options.rules)+
  optionSelect('difficulty','AI 风格',[['easy','新兵 · 节省兵力'],['normal','老兵 · 组合与伏兵']],options.difficulty)+
  optionSelect('eventSeconds','事件展示时长',[[1,'1 秒 · 快速'],[3,'3 秒 · 标准'],[5,'5 秒 · 慢速']],options.eventSeconds||3)+
  optionSelect('timer','每次行动限时',[[0,'不限时'],[30,'30 秒'],[60,'60 秒'],[120,'120 秒']],options.timer)+
- optionSelect('first','先行军团',[[0,'苍岚先行'],[1,'赤烬先行']],options.first)+
+ optionSelect('first','先行方',[[0,'玩家先行'],[1,'对手先行']],options.first)+
+ optionSelect('faction0','玩家势力',map.factions.map(x=>[x,x]),options.factions?.[0]||map.factions[0])+
+ optionSelect('faction1',options.mode==='local'?'玩家 2 势力':'AI 势力',map.factions.map(x=>[x,x]),options.factions?.[1]||map.factions[1])+
  optionSelect('strategies','初始策略卡',[[true,'开启 · 三选一'],[false,'关闭 · 纯扑克牌']],options.strategies)+
  optionSelect('deckCount','公共牌库',[['auto','跟随地图'],[1,'1 副 · 54 张'],[2,'2 副 · 106 张']],options.deckCount||'auto')+
  optionSelect('maxRounds','回合上限',[[40,'40'],[80,'80'],[120,'120']],options.maxRounds)+
@@ -65,8 +72,9 @@ function menu(){
  '<div class="menu-foot">'+(resolvedDeckCount(options,map.fields)===2?'106':'54')+' 张扑克牌 <i></i> 隐藏信息博弈 <i></i> 无需联网</div></div>'+
  '<div class="menu-visual"><div class="map-heading"><span>战区预览 / '+map.id.toUpperCase()+'</span><b>'+map.name+'</b></div><div class="scene-mount" id="visual-mount"></div><div class="visual-corner tl"></div><div class="visual-corner br"></div><div class="map-caption"><span class="coordinates">SECTOR '+map.fields.length+' / '+(options.rules==='classic'?'SKIRMISH':'CAPITAL STRIKE')+'</span><p>'+map.desc+'</p></div><div class="side-word">SHADOWLINE</div></div></section>';
 }
+function identitySetup(player){return header(true)+'<section class="identity-setup"><div class="eyebrow">身份确认 / PLAYER '+(player+1)+'</div><h1>玩家 '+(player+1)+'，<em>选择你的旗帜。</em></h1><p>可直接开始使用默认名称与徽记；你的手牌在此之前不会展示。</p>'+identityFields(player,'玩家 '+(player+1))+'<div class="identity-actions">'+btn('进入战场 →','identity-continue','primary')+'</div></section>'}
 function playerPanel(p){
- const pl=s.players[p];return '<button class="army-panel army-'+p+' '+(s.active===p?'current':'')+'" data-action="reserve" data-player="'+p+'"><span class="army-insignia">'+(p===0?'⟐':'✣')+'</span><span><b>'+pl.name+'</b><small>'+(s.active===p?'正在行动':'待命')+'</small></span><div class="army-stats"><span><b>'+pl.hand.length+'</b>暗牌</span><span><b>'+pl.reserve.length+'</b>公开牌</span><span><b>'+pl.supply+'</b>补给</span><span><b>'+s.fields.filter(f=>f.owner===p).reduce((n,f)=>n+f.garrison.length,0)+'</b>驻军</span></div></button>';
+ const pl=s.players[p];return '<button class="army-panel army-'+p+' '+(s.active===p?'current':'')+'" data-action="reserve" data-player="'+p+'"><span class="army-insignia">'+(pl.logo|| (p===0?'⟐':'✣'))+'</span><span><b>'+pl.name+'</b><small>'+(pl.faction?pl.faction+' · ':'')+(s.active===p?'正在行动':'待命')+'</small></span><div class="army-stats"><span><b>'+pl.hand.length+'</b>暗牌</span><span><b>'+pl.reserve.length+'</b>公开牌</span><span><b>'+pl.supply+'</b>补给</span><span><b>'+s.fields.filter(f=>f.owner===p).reduce((n,f)=>n+f.garrison.length,0)+'</b>驻军</span></div></button>';
 }
 function statusText(){
  if(s.phase==='draft')return '选择初始策略';
@@ -147,7 +155,7 @@ function game(){
  '<div class="game-layout"><div class="play-column">'+(s.phase==='campaign'?mapView():battleView())+handTray()+'</div>'+sidePanel()+'</div>';
 }
 function result(){
- const win=s.winner;return header()+'<section class="result-screen"><div class="result-emblem">'+(win===null?'⟐':win===0?'♜':'✣')+'</div><div class="eyebrow">OPERATION COMPLETE</div><h1>'+(win===null?'战局平分秋色':s.players[win].name+'获胜')+'</h1><p>'+s.reason+'</p><div class="result-stats">'+s.players.map((p,i)=>'<div class="army-'+i+'"><h3>'+p.name+'</h3><b>'+p.wins+'<small> 次交锋获胜</small></b><span>'+p.reserve.length+' 张公开牌 · '+s.fields.filter(f=>f.owner===i).length+' 块领地</span></div>').join('')+'</div><div class="result-actions">'+btn('再战一局 →','rematch','primary')+btn('返回作战部署','exit','secondary')+'</div><small>战局种子 '+s.opt.seed+' · '+s.skirmish+' 次交锋</small></section>';
+ const win=s.winner;return header()+'<section class="result-screen"><div class="result-emblem">'+(win===null?'⟐':s.players[win].logo)+'</div><div class="eyebrow">OPERATION COMPLETE</div><h1>'+(win===null?'战局平分秋色':s.players[win].name+'获胜')+'</h1><p>'+s.reason+'</p><div class="result-stats">'+s.players.map((p,i)=>'<div class="army-'+i+'"><h3>'+p.name+(p.faction?' · '+p.faction:'')+'</h3><b>'+p.wins+'<small> 次交锋获胜</small></b><span>'+p.reserve.length+' 张公开牌 · '+s.fields.filter(f=>f.owner===i).length+' 块领地</span></div>').join('')+'</div><div class="result-actions">'+btn('再战一局 →','rematch','primary')+btn('返回作战部署','exit','secondary')+'</div><small>战局种子 '+s.opt.seed+' · '+s.skirmish+' 次交锋</small></section>';
 }
 const rulesHTML='<div class="eyebrow">FIELD MANUAL / 战地手册</div><h2>明牌交火，暗牌反击。</h2><div class="rules-content"><h3>一场交锋</h3><ol><li>防守方先部署 1–3 张牌，至少 1 张明牌。进攻方同样部署，明牌必须严格压过防守方。</li><li>随后被压制方选择撤退，或翻开 1–2 张暗牌。进攻方必须严格大于才占优，平手时防守方占优。</li><li>翻牌反超后，如果对方仍有战线暗牌，交给对方反击；双方可反复翻牌。仍被压制且还有暗牌，则继续翻牌或撤退；被压制方没有战线暗牌或主动撤退才判负。首次进攻部署不会立即获胜，闪电战与停火按各自效果结算。</li><li>胜方收取双方已翻开的牌进入公开牌堆；未翻开的牌各自收回。双方从公共牌库交替补至 12 张暗牌。</li></ol><h3>牌力顺序 · 从强到弱</h3><p class="rank-order">三条 ＞ 同花顺 ＞ 顺子 ＞ 同花 ＞ 对子 ＞ 高牌</p><p>组合牌型要求恰好 3 张明牌，包括“对子 + 一张杂牌”。两张同点数明牌仍按高牌比较。A 最小，Q-K-A 不成顺。小王大于 K，大王最大；含王的牌只按高牌比较，王不参与任何组合。相同牌型依规则逐项比较点数，不比较花色。</p><h3>战役地图 · 本作补充规则</h3><ul><li>每方 12 张初始牌中的 1 张作为首都暗牌驻军，其余 11 张在手中。每个地图回合有 1 次占领、进攻或跳过行动。占领中立点消耗 1 张手牌作为暗牌驻军，只能行动至相邻据点。</li><li>交锋开始时，防守驻军收回手中供部署。交锋结束仍由防守方控制时，优先将尚在手牌中的原驻军归还原据点；否则从所有者的公开牌堆（若空则手牌）取 1 张驻防。进攻胜利夺取该据点；夺取敌方首都立即赢得大局。</li><li>地图回合开始：每个己方据点产 1 补给，油田产 2，最多储存 30。每回合可花 2 点从公共牌库补充 1 张，不消耗地图行动。</li><li>公共牌库为空且任一方暗牌手牌为空，该方失败；同时耗尽则平局。驻军和公开牌不计为暗牌手牌。双方按回合交替优先补牌。</li><li>策略卡开局三选一，每张一次性。战役策略每个地图回合最多一次，交锋策略每方每次交锋最多一次。进攻方持有交锋策略时，完成部署后有战术窗口，可出策略或点击继续。闪电战仅己方占优时可用；之后由被压制方反击。医疗分队从己方公开牌回收；起义额外生成一张 A。补给、驻军和策略细则是本作扩展，并非原 MVP 规则。</li></ul><h3>经典模式与其他选项</h3><p>经典模式完整使用 54 张牌、每人 12 张暗牌，不使用地图、驻军和补给；双方交替先防守。开启策略时只从交锋策略选取。回合上限到达后，经典比较公开牌数，战役比较公开牌数 + 每块领地 3 分；相同则平局。</p><p>同机双人模式在每次换人时遮蔽手牌，按“准备就绪”后才显示并计时。它不提供两台设备联网。AI 只根据公开信息和自己的牌决策。暂停与手册会暂停计时和 AI。超时：地图跳过、防守出最低单张明牌、进攻或反击撤退。存档保存在此浏览器，仅供本机继续对局。</p></div>';
 const revisedRulesHTML=rulesHTML.replace('组合牌型要求恰好 3 张明牌，包括“对子 + 一张杂牌”。两张同点数明牌仍按高牌比较。A 最小，Q-K-A 不成顺。小王大于 K，大王最大；含王的牌只按高牌比较，王不参与任何组合。','两张或三张明牌中出现两张同点数即为对子；三张同点数为三条。大小王是万能牌，会自动替代为当前最强合法牌型。相同牌型与点数时天然组合胜万能组合；都使用一张王时大王胜小王。单张大王胜单张小王，但完整牌型等级始终优先。A 最小，Q-K-A 不成顺。').replace('经典模式完整使用 54 张牌、每人 12 张暗牌','牌库可在高级选项中跟随地图或指定 1／2 副；两副模式为 104 张普通牌加唯一一对大小王，共 106 张。经典模式每人 12 张暗牌');
@@ -215,7 +223,7 @@ function garrisonRoster(p){
 function render(){
  clearTimeout(aiTask);
  document.body.appendChild(sceneEl);
- if(!s){app.innerHTML=menu()+overlay();scene.setMap(MAPS.find(m=>m.id===options.map).fields);scene.setMode('map')}
+ if(!s){app.innerHTML=(identityStep===null?menu():identitySetup(identityStep))+overlay();scene.setMap(MAPS.find(m=>m.id===options.map).fields);scene.setMode('map')}
  else if(events.length){app.innerHTML=header()+eventView()+(modal?overlay():'')}
  else if(gate){app.innerHTML=header()+overlay()}
  else{
@@ -248,6 +256,10 @@ function perform(action){
  save();if(!events.length)resume();render();
  }catch(e){console.error(e);toast('行动未提交，战局保持不变：'+e.message)}
 }
+function launchGame(){
+ const map=MAPS.find(m=>m.id===options.map);options.factions=[options.factions?.[0]||map.factions[0],options.factions?.[1]||map.factions[1]];
+ s=createGame(options);identityStep=null;targeting=null;events=[];eventEnd=null;newCards.clear();selection.clear();reveals.clear();focus=null;gate=false;modal=null;deadline=null;remaining=null;clockKey='';save();render();sound();
+}
 app.addEventListener('click',e=>{
  const control=e.target.closest('[data-map-control]');if(control){e.preventDefault();const kind=control.dataset.mapControl;if(kind==='reset'){mapViewport={x:0,y:0,scale:1};updateMapCamera()}else zoomMap(kind==='in'?1.25:.8);return}
  const el=e.target.closest('[data-action]');if(!el||el.disabled)return;e.preventDefault();const a=el.dataset.action,id=el.dataset.id;
@@ -260,12 +272,18 @@ app.addEventListener('click',e=>{
  if(a==='confirm-exit'){showModal('exit');return}
  if(a==='pause'){showModal('pause');return}
  if(a==='ready'){gate=false;clockKey='';render();return}
- if(a==='start'||a==='rematch'){
- if(a==='rematch')options={...s.opt,seed:(s.opt.seed+1)>>>0};
- s=createGame(options);targeting=null;events=[];eventEnd=null;newCards.clear();selection.clear();reveals.clear();focus=null;gate=false;modal=null;deadline=null;remaining=null;clockKey='';save();render();sound();return;
+ if(a==='start'||a==='rematch'||a==='identity-continue'){
+ if(a==='rematch'){options={...s.opt,seed:(s.opt.seed+1)>>>0};launchGame();return}
+ if(a==='start'&&options.mode==='local'){identityStep=1;render();return}
+ launchGame();return;
  }
  if(a==='load'){const loaded=saved();if(!loaded){toast('没有有效存档');return}s=loaded;gate=s.opt.mode==='local';clockKey='';selection.clear();render();return}
- if(!s){if(a.startsWith('mode-'))options.mode=a.slice(5);if(a==='map')options.map=id;render();return}
+ if(!s){
+  if(a.startsWith('mode-'))options.mode=a.slice(5);
+  if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id);options.factions=[map.factions[0],map.factions[1]]}
+  if(a==='select-logo'){const p=Number(el.dataset.player);options.playerLogos=[...(options.playerLogos||LOGOS.slice(0,2))];options.playerLogos[p]=id}
+  render();return
+ }
  if(a==='reserve'){showModal({kind:'reserve',player:Number(el.dataset.player)});return}
  if(a==='open-market'){showModal('market');return}
  if(a==='buy-strategy'){modal=null;resume();perform({type:'buy_strategy',id});return}
@@ -307,9 +325,12 @@ app.addEventListener('pointerup',endMapPointer);app.addEventListener('pointercan
 app.addEventListener('change',e=>{
  const name=e.target.dataset.option;if(!name)return;
  const value=e.target.value;
+ if(name.startsWith('playerName')){const p=Number(name.slice(-1));options.playerNames=[...(options.playerNames||['',''])];options.playerNames[p]=value;return}
+ if(name==='faction0'||name==='faction1'){const p=Number(name.slice(-1));options.factions=[...(options.factions||['',''])];options.factions[p]=value;return}
  options[name]=['seed','timer','first','maxRounds','eventSeconds'].includes(name)?Math.min(4294967295,Math.max(0,Number(value)||0)):name==='strategies'?value==='true':value;
  if(name==='rules'||name==='map'||name==='deckCount')render();
 });
+app.addEventListener('input',e=>{const name=e.target.dataset.option;if(!name?.startsWith('playerName'))return;const p=Number(name.slice(-1));options.playerNames=[...(options.playerNames||['',''])];options.playerNames[p]=e.target.value});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&s){e.preventDefault();if(modal){modal=null;resume();render()}else showModal('pause')}});
 window.addEventListener('resize',positionNodes);
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&s&&!modal&&!gate&&s.phase!=='over')showModal('pause')});

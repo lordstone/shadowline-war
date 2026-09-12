@@ -1,7 +1,7 @@
 {
   "date": "2026-09-12",
-  "tests": 40,
-  "passed": 40,
+  "tests": 41,
+  "passed": 41,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 288,
@@ -18,7 +18,8 @@
     "twoDeckJokers": 2,
     "uniqueCardIds": "passed"
   },
-  "globalVersionBadge": "v1.10.0 visible across all application states",
+  "globalVersionBadge": "v1.11.0 visible across all application states",
+  "identityAndMaps": "passed: player identity defaults/customization and eight connected maps",
   "terrainCombatRules": "passed: swamp/forest limits, mountain disclosure, and sea-landing anti-triple rule",
   "revealedKickerComparison": "passed: Q-4 defeats Q-3 before concealed cards are revealed",
   "compactStrategyShop": "passed: right-side trigger opens the existing market modal",
