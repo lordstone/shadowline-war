@@ -14,7 +14,7 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  async function drain(){for(let n=0;n<20&&await page.locator('.event-screen').count();n++)await click('next-event')}
  let s=createGame({strategies:false,mode:'ai',timer:30,eventSeconds:3,seed:119});s.active=1;s.raid=true;
  await load(s);await page.locator('.event-invasion').waitFor();
- assert.match(await page.locator('.event-map-node.hit').innerText(),/苍岚首都/);
+ assert.match(await page.locator('.event-map-node.hit').innerText(),/西境指挥部/);
  const invaded=await state();assert.equal(invaded.phase,'attack');assert.equal(invaded.battle.lines[0].length,3);
  await page.getByRole('button',{name:'暂停',exact:true}).click();await page.waitForTimeout(3200);
  assert.equal(await page.locator('.event-invasion').count(),1);assert.deepEqual(await state(),invaded);

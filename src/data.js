@@ -18,25 +18,25 @@ export const STRATEGIES=[
 const f=(id,label,type,x,y,links,owner=null,capital=false,fortified=false)=>({id,label,type,x,y,links,owner,capital,fortified,garrison:[],blockedUntil:0});
 export const MAPS=[
  {id:'duel',name:'双都对峙',subtitle:'5 个据点 · 快速交锋',desc:'两座首都隔着中央城镇相望。争夺侧翼油田，直取敌方指挥部。',factions:['北境联合','南境联盟'],fields:[
- f('p1_capital','苍岚首都','capital',16,74,['p1_oil','center_town'],0,true),
+ f('p1_capital','西境指挥部','capital',16,74,['p1_oil','center_town'],0,true),
  f('p1_oil','西部油田','oil',34,44,['p1_capital','center_town']),
  f('center_town','中央城镇','town',50,60,['p1_capital','p1_oil','p2_oil','p2_capital'],null,false,true),
  f('p2_oil','东部油田','oil',66,44,['p2_capital','center_town']),
- f('p2_capital','赤烬首都','capital',84,74,['p2_oil','center_town'],1,true)]},
+ f('p2_capital','东境指挥部','capital',84,74,['p2_oil','center_town'],1,true)]},
  {id:'rift',name:'裂谷防线',subtitle:'7 个据点 · 双线突破',desc:'两条进军路线穿过峡谷。控制中继站，撕开对方防线。',factions:['峡谷守军','高原军团'],fields:[
- f('a','苍岚首都','capital',12,54,['b','c'],0,true),
+ f('a','西部指挥部','capital',12,54,['b','c'],0,true),
  f('b','北部隘口','town',32,28,['a','d','e']),
  f('c','南部油田','oil',32,76,['a','d','f']),
  f('d','峡谷中继','town',50,52,['b','c','e','f'],null,false,true),
  f('e','北部油田','oil',68,28,['b','d','g']),
  f('f','南部隘口','town',68,76,['c','d','g']),
- f('g','赤烬首都','capital',88,54,['e','f'],1,true)]},
- {id:'ring',name:'灰烬环岛',subtitle:'9 个据点 · 环线包抄',desc:'环岛道路与中央堡垒相连。选择正面突破，或沿海岸迂回。',factions:['苍海舰队','赤潮军团'],fields:[
- f('a','苍岚首都','capital',12,52,['b','h'],0,true),
+ f('g','东部指挥部','capital',88,54,['e','f'],1,true)]},
+ {id:'ring',name:'灰烬环岛',subtitle:'9 个据点 · 环线包抄',desc:'环岛道路与中央堡垒相连。选择正面突破，或沿海岸迂回。',factions:['海湾舰队','群岛守备军'],fields:[
+ f('a','西岸指挥部','capital',12,52,['b','h'],0,true),
  f('b','北港','town',24,25,['a','c','i']),
  f('c','北部油田','oil',50,18,['b','d']),
  f('d','东部雷达','town',76,25,['c','e','i']),
- f('e','赤烬首都','capital',88,52,['d','f'],1,true),
+ f('e','东岸指挥部','capital',88,52,['d','f'],1,true),
  f('f','南港','town',76,79,['e','g','i']),
  f('g','南部油田','oil',50,87,['f','h']),
  f('h','西侧沼泽','swamp',24,79,['g','a','i']),

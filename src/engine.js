@@ -122,6 +122,9 @@ function fillMarket(s){
 function refreshMarket(s){s.strategyDiscard.push(...s.strategyMarket.splice(0));fillMarket(s);log(s,'策略市场已刷新。')}
 export function upgradeState(s){
  const map=MAPS.find(m=>m.id===s.opt.map)||MAPS[0];
+ const renamedFactions={'苍海舰队':'海湾舰队','赤潮军团':'群岛守备军'};
+ for(const p of s.players)if(renamedFactions[p.faction])p.faction=renamedFactions[p.faction];
+ if(Array.isArray(s.opt.factions))s.opt.factions=s.opt.factions.map(name=>renamedFactions[name]||name);
  for(let p=0;p<2;p++)if(!Number.isInteger(s.players[p].side))s.players[p].side=Math.max(0,map.factions.indexOf(s.players[p].faction));
  if(!s.opt.deckCount)s.opt.deckCount='auto';
  if(!s.baseDeckSize)s.baseDeckSize=54;
