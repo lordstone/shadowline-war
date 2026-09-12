@@ -21,13 +21,15 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  await click('close');await page.waitForTimeout(400);assert.equal(await page.locator('.event-invasion').count(),1);
  await page.locator('.event-garrison').waitFor({timeout:4000});await drain();
  assert.equal(await page.locator('.hand-tray .playing-card').count(),9);
+ assert.equal(await page.locator('.map-mini-card').count(),6);assert.equal(await page.locator('.map-mini-card.concealed').count(),3);assert.equal(await page.locator('.map-mini-card.back').count(),3);
+ const nodeBefore=await page.locator('.map-node').first().evaluate(el=>el.getBoundingClientRect().width);await page.getByRole('button',{name:'放大战场'}).click();const nodeAfter=await page.locator('.map-node').first().evaluate(el=>el.getBoundingClientRect().width);assert.ok(Math.abs(nodeBefore-nodeAfter)<1,{nodeBefore,nodeAfter});
  const rankOrder=await page.locator('.hand-tray [data-action="card"]').evaluateAll(xs=>xs.map(x=>Number(x.dataset.id)));
  const rankExpected=(await state()).players[0].hand.slice().sort((a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id).map(c=>c.id);assert.deepEqual(rankOrder,rankExpected);
  await page.locator('[data-action="hand-sort"][data-id="suit"]').click();
  const suitOrder=await page.locator('.hand-tray [data-action="card"]').evaluateAll(xs=>xs.map(x=>Number(x.dataset.id)));
  const suitExpected=(await state()).players[0].hand.slice().sort((a,b)=>a.suit-b.suit||a.rank-b.rank||a.id-b.id).map(c=>c.id);assert.deepEqual(suitOrder,suitExpected);
  await page.waitForFunction(()=>/30|29/.test(document.querySelector('#clock')?.textContent));
- checks.push('AI invasion target, automatic 3-second queue, pause, preserved action timer, fixed three-card garrison and rank/suit hand sorting');
+ checks.push('AI invasion target, automatic 3-second queue, pause, preserved action timer, visible map garrisons, scale-stable nodes and rank/suit hand sorting');
  s=createGame({strategies:false,mode:'ai'});s.players[0].strategies=['conscription'];await load(s);await page.locator('[data-action="use-strategy"][data-id="conscription"]').click();
  await click('next-event');assert.equal(await page.locator('.event-cards .playing-card:not(.back)').count(),1);
  assert.equal(await page.locator('.event-cards + .event-progress').count(),1);

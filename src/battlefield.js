@@ -26,10 +26,12 @@ export class Battlefield{
  }
  setMap(fields){
  this.fields=fields;if(!this.renderer)return;
+ const xs=fields.map(f=>f.x),ys=fields.map(f=>f.y),spanX=Math.max(...xs)-Math.min(...xs),spanY=Math.max(...ys)-Math.min(...ys),vertical=spanY>spanX*1.35;this.xScale=vertical?.39:.32;
+ this.camera.position.set(0,vertical?42:24,vertical?16:29);this.camera.fov=vertical?40:38;this.camera.lookAt(0,0,0);this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();
  for(const child of [...this.mapGroup.children]){this.mapGroup.remove(child);child.traverse(o=>{o.geometry?.dispose();if(o.material)for(const m of(Array.isArray(o.material)?o.material:[o.material]))m.dispose()})}
  this.markers=[];
  const material=(color,metalness=.25)=>new THREE.MeshStandardMaterial({color,roughness:.8,metalness});
- const coords=f=>new THREE.Vector3((f.x-50)*.32,0,(f.y-52)*.28);
+ const coords=f=>new THREE.Vector3((f.x-50)*this.xScale,0,(f.y-52)*.28);
  for(const f of fields){
  const pos=coords(f),color=f.owner===0?0x57c9d5:f.owner===1?0xef795e:0x8d927c;
  const tile=new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.8,.8,6),material(0x273a3c));tile.position.copy(pos);tile.position.y=-.65;this.mapGroup.add(tile);
@@ -56,7 +58,7 @@ export class Battlefield{
  }
  }
  }
- project(f){const p=new THREE.Vector3((f.x-50)*.32,.1,(f.y-52)*.28);p.project(this.camera);return {x:(p.x+1)*50,y:(1-p.y)*50}}
+ project(f){const p=new THREE.Vector3((f.x-50)*(this.xScale||.32),.1,(f.y-52)*.28);p.project(this.camera);return {x:(p.x+1)*50,y:(1-p.y)*50}}
  setMode(mode){this.mode=mode;this.container.classList.toggle('battle-backdrop',mode==='battle')}
  tick(now){this.frame=requestAnimationFrame(this.tick);if(document.hidden||now-this.time<33)return;this.time=now;
  if(!this.reduced){this.particles.rotation.y=now*.000008;this.markers.forEach((m,i)=>{m.rotation.y=now*.0007;m.position.y=4.3+Math.sin(now*.0015+i)*.1})}

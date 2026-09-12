@@ -45,6 +45,14 @@
     "suitThenRank": "covered by browser regression",
     "mutatesGameState": false
   },
+  "mapTacticalOverlayQA": {
+    "koreaCamera": "vertical top-down with expanded east-west spacing",
+    "northSouthNodeBounds": "inside map stage",
+    "ownConcealedGarrisons": "face visible with concealed treatment",
+    "enemyConcealedGarrisons": "card backs only",
+    "revealedGarrisons": "face visible to both players",
+    "inverseScaleNodes": true
+  },
   "deepDefense": {
     "strongestThreeOfFourOrFive": "passed",
     "fortifiedAndCapitalCapacity": "passed",
