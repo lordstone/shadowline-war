@@ -51,7 +51,7 @@
     "ownConcealedGarrisons": "face visible with concealed treatment",
     "enemyConcealedGarrisons": "card backs only",
     "revealedGarrisons": "face visible to both players",
-    "inverseScaleNodes": true
+    "nativePixelNodeLabels": true
   },
   "deepDefense": {
     "strongestThreeOfFourOrFive": "passed",
