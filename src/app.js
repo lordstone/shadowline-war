@@ -1,6 +1,6 @@
 
 import {MAPS,STRATEGIES,defaults,strategyById,SUITS} from './data.js';
-import {createGame,act,face,handName,power,compare,opened,leading,reachable,garrisonLimit,canStrategy,canBuyStrategy,aiAction,timeoutAction,validate,upgradeState,resolvedDeckCount} from './engine.js';
+import {createGame,act,face,handName,power,compare,opened,leading,reachable,garrisonLimit,seaLanding,battleLineLimit,canStrategy,canBuyStrategy,aiAction,timeoutAction,validate,upgradeState,resolvedDeckCount} from './engine.js';
 import {Battlefield} from './battlefield.js';
 import {actionEvents} from './events.js';
 const app=document.querySelector('#app'),sceneEl=document.querySelector('#scene');
@@ -12,7 +12,7 @@ let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
 let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map();
 const STORE='shadowline-war-v1';
 const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆'}[id]||'◇');
-const fieldIcon=f=>f.capital?'♜':f.fortified?'▰':f.type==='oil'?'▥':f.type==='port'?'⚓':f.type==='mountain'?'▲':'◆';
+const fieldIcon=f=>f.capital?'♜':f.fortified?'▰':f.type==='oil'?'▥':f.type==='port'?'⚓':f.type==='mountain'?'▲':f.type==='forest'?'♣':f.type==='swamp'?'≈':'◆';
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const btn=(label,action,cls='',disabled=false,extra='')=>'<button class="'+cls+'" data-action="'+action+'" '+(disabled?'disabled ':'')+extra+'>'+label+'</button>';
 const viewer=()=>s?.opt.mode==='ai'?0:s?.active??0;
@@ -90,9 +90,10 @@ function mapView(){
  const p=viewer(),f=s.fields.find(f=>f.id===focus);
  const actionable=s.active===p&&!isAI(),can=f&&f.owner!==p&&reachable(s,p,f);
  const limit=garrisonLimit(f),chosen=[...selection].map(([id,open])=>({id,open})),placementValid=chosen.length>0&&chosen.length<=limit&&(f?.capital||chosen.some(c=>c.open));
+ const terrainNote=!f?'':f.type==='swamp'?'沼泽：攻守与驻军最多 1 张。':f.type==='forest'?'林地：攻守与驻军最多 2 张。':f.type==='mountain'?'山地：进攻至少亮出 2 张牌。':f.type==='port'&&seaLanding(s,p,f)?'跨海登陆：不能组成三条，进攻牌型须不低于守军。':'';
  const topology='<svg class="topology-lines" viewBox="0 0 100 100" preserveAspectRatio="none">'+s.fields.flatMap(a=>a.links.filter(id=>a.id.localeCompare(id)<0).map(id=>{const b=s.fields.find(f=>f.id===id);return b?'<line data-a="'+a.id+'" data-b="'+b.id+'" x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>':''})).join('')+'</svg>';
  return (targeting?'<div class="targeting-note">'+strategyById(targeting).name+'：点击符合条件的地图据点'+btn('取消','cancel-target','text-button')+'</div>':'')+'<div class="war-map"><div class="map-title"><div class="eyebrow">战术地图 / LIVE OPERATIONS</div><h2>'+MAPS.find(m=>m.id===s.opt.map).name+'</h2></div><div class="map-stage '+(s.fields.length>9?'dense-map':'')+'"><div class="map-camera" style="--map-x:'+mapViewport.x+'px;--map-y:'+mapViewport.y+'px;--map-scale:'+mapViewport.scale+'"><div id="visual-mount" class="scene-mount"></div>'+topology+'</div><div class="node-layer">'+s.fields.map(f=>'<button class="map-node owner-'+f.owner+' '+(f.id===focus?'focused ':'')+(reachable(s,p,f)&&f.owner!==p?'reachable':'')+'" data-action="focus" data-id="'+f.id+'" style="left:'+f.x+'%;top:'+f.y+'%"><span class="node-icon">'+fieldIcon(f)+'</span><b>'+f.label+'</b>'+mapGarrison(f,p)+'<small>'+(f.owner===null?'中立区域':f.owner===p?'己方控制':'敌方控制')+' · 容量 '+garrisonLimit(f)+(f.blockedUntil>=s.round?' · 封锁中':'')+'</small></button>').join('')+'</div><div class="map-controls"><button data-map-control="in" aria-label="放大战场">＋</button><button data-map-control="out" aria-label="缩小战场">－</button><button data-map-control="reset" aria-label="重置战场视图">⌖</button></div><span class="map-gesture-hint">拖动战场 · 双指或滚轮缩放</span><span class="map-compass">N<br>↑</span></div>'+
- '<div class="target-bar"><div><small>当前目标</small><b>'+(f?f.label+' · 容量 '+limit:'选择地图上的据点')+'</b><p>'+(f?f.owner===p?'固定驻军不可直接取回；选择 1–'+limit+' 张手牌可整编换防。':!can?'目标尚不相邻，需要先建立进军路线。':f.owner===null?'选择 1–'+limit+' 张手牌驻军，非首都至少 1 张明牌。':'守军公开牌超过 3 张时自动计算最强三张；可用围城封锁一张预备守军。':'青色代表苍岚，橙色代表赤烬。')+'</p>'+(f?.garrison.length?'<span class="garrison-info">驻军：'+f.garrison.map(c=>f.owner===p||c.open?face(c)+(SUITS[c.suit]||'★'):'未知暗牌').join(' / ')+'</span>':'')+'</div>'+
+ '<div class="target-bar"><div><small>当前目标</small><b>'+(f?f.label+' · 容量 '+limit:'选择地图上的据点')+'</b><p>'+(f?f.owner===p?'固定驻军不可直接取回；选择 1–'+limit+' 张手牌可整编换防。':!can?'目标尚不相邻，需要先建立进军路线。':f.owner===null?'选择 1–'+limit+' 张手牌驻军，非首都至少 1 张明牌。':'守军公开牌超过 3 张时自动计算最强三张；可用围城封锁一张预备守军。':'青色代表苍岚，橙色代表赤烬。')+'</p>'+(terrainNote?'<span class="garrison-info">'+terrainNote+'</span>':'')+(f?.garrison.length?'<span class="garrison-info">驻军：'+f.garrison.map(c=>f.owner===p||c.open?face(c)+(SUITS[c.suit]||'★'):'未知暗牌').join(' / ')+'</span>':'')+'</div>'+
  '<div class="target-actions">'+(f?.owner===null?btn('部署驻军并占领 →','occupy','primary',!actionable||!can||!placementValid):f?.owner===1-p?btn('发动进攻 →','attack','primary danger',!actionable||!can)+btn('围城 · 3 补给','siege','secondary',!actionable||!can||f.garrison.length<=3||s.players[p].supply<3,'title="封锁一张第4或第5位预备守军，本次交锋不参与牌型"'):f?.owner===p?btn('整编驻军 →','reorganize','primary',!actionable||!placementValid)+btn('快速换防 · 3','rapid_redeploy','secondary',!actionable||!placementValid||s.rapidRedeployUsed||s.players[p].supply<3):'')+
  btn('补充暗牌 · 2 补给','supply','secondary',!actionable||s.supplyUsed||s.players[p].supply<2||!s.deck.length,'title="消耗 2 点补给，从公共牌库随机抽取 1 张暗牌"')+btn('结束行动','pass','text-button',!actionable)+'</div></div></div>';
 }
@@ -101,18 +102,19 @@ function line(p){
  const own=p===v;
  const cards=deployed.length?deployed:own&&['defend','attack'].includes(s.phase)?[...selection].map(([id,open])=>({...s.players[p].hand.find(c=>c.id===id),open,preview:true})):[];
  return '<div class="battle-line '+(own?'own-line':'enemy-line')+'"><div class="line-label"><span>'+(p===b.defender?'防守方 · 平手即胜':'进攻方 · 必须压过')+'</span><b>'+s.players[p].name+'</b><small>'+handName(cards.filter(c=>c.open))+' / '+power(cards.filter(c=>c.open)).join(' · ')+'</small></div><div class="line-cards">'+
- Array.from({length:p===b.defender&&b.field?garrisonLimit(s.fields.find(f=>f.id===b.field)):3},(_,i)=>{const c=cards[i];if(!c)return '<div class="card-slot"><span>0'+(i+1)+'</span></div>';const known=own||c.open||s.knowledge[v][c.id],revealable=own&&!c.open&&!c.preview&&s.phase==='counter'&&!isAI();return card(c,{hidden:!known,selected:reveals.has(c.id),stance:c.open,interactive:revealable,revealable,action:'reveal-card',peek:!own&&!c.open&&known})}).join('')+'</div></div>';
+ Array.from({length:b.field?battleLineLimit(s,p):3},(_,i)=>{const c=cards[i];if(!c)return '<div class="card-slot"><span>0'+(i+1)+'</span></div>';const known=own||c.open||s.knowledge[v][c.id],revealable=own&&!c.open&&!c.preview&&s.phase==='counter'&&!isAI();return card(c,{hidden:!known,selected:reveals.has(c.id),stance:c.open,interactive:revealable,revealable,action:'reveal-card',peek:!own&&!c.open&&known})}).join('')+'</div></div>';
 }
 function battleView(){
  const b=s.battle,p=viewer(),active=s.active===p&&!isAI();
  const comparing=['counter','tactics'].includes(s.phase),lead=comparing?leading(s):null;
  const leadText=comparing?(lead===p?'己方明牌占优':'对方明牌占优 · 暗牌尚未计入'):'VS';
  const chosen=[...selection].map(([id,open])=>({...s.players[p].hand.find(c=>c.id===id),open}));
- const valid=chosen.length>0&&chosen.some(c=>c.open)&&(s.phase!=='attack'||compare(chosen.filter(c=>c.open),opened(s,b.defender))>0);
+ const mountain=b.field&&s.fields.find(f=>f.id===b.field)?.type==='mountain',sea=b.seaLanding;
+ const valid=chosen.length>0&&chosen.length<=battleLineLimit(s,p)&&chosen.some(c=>c.open)&&(s.phase!=='attack'||(compare(chosen.filter(c=>c.open),opened(s,b.defender))>0&&(!mountain||chosen.filter(c=>c.open).length>=2)&&(!sea||power(chosen.filter(c=>c.open))[0]>=power(opened(s,b.defender))[0])&&(!sea||power(chosen)[0]!==6)));
  const revealPreview=s.phase==='counter'&&reveals.size?handName(b.lines[p].filter(c=>c.open||reveals.has(c.id))):'';
  return '<section class="battle-area"><div class="battle-heading"><div><div class="eyebrow">交锋 '+String(s.skirmish).padStart(2,'0')+' / SKIRMISH</div><h2>'+(b.field?s.fields.find(f=>f.id===b.field).label:'明暗交锋')+'</h2></div><span class="battle-badge">'+statusText()+'</span></div>'+
  line(1-p)+'<div class="versus"><span></span><b>'+leadText+'</b><span></span></div>'+line(p)+
- '<div class="battle-actions"><div><b>'+(isAI()?'敌方正在推演…':s.phase==='tactics'?'可使用交锋策略，或继续让对方反击。':s.phase==='defend'?'部署 1–3 张牌，至少 1 张为明牌。':s.phase==='attack'?'用明牌压过防线，保留你的暗牌。':reveals.size?'选择后牌型：'+revealPreview+'。点击右侧确认翻开。':'当前比较只计算明牌；点击战线上标有“点击翻开”的暗牌，再确认反击。')+'</b><small>'+(s.phase==='counter'?'你翻开的暗牌会立刻加入比较；若反超，对方才获得继续反击的机会。':'手牌点击顺序：选择为明牌 → 改为暗牌 → 取消。')+'</small></div><div>'+
+ '<div class="battle-actions"><div><b>'+(isAI()?'敌方正在推演…':s.phase==='tactics'?'可使用交锋策略，或继续让对方反击。':s.phase==='defend'?'部署 1–'+battleLineLimit(s,p)+' 张牌，至少 1 张为明牌。':s.phase==='attack'?(mountain?'山地进攻：至少亮出 2 张牌，并严格压过防线。':sea?'跨海登陆：不能组成三条，牌型须不低于防守方。':'用明牌压过防线，保留你的暗牌。'):reveals.size?'选择后牌型：'+revealPreview+'。点击右侧确认翻开。':'当前比较只计算明牌；点击战线上标有“点击翻开”的暗牌，再确认反击。')+'</b><small>'+(s.phase==='counter'?'你翻开的暗牌会立刻加入比较；若反超，对方才获得继续反击的机会。':'手牌点击顺序：选择为明牌 → 改为暗牌 → 取消。')+'</small></div><div>'+
  (s.phase==='tactics'?btn('继续 · 让对方反击 →','continue','primary',!active):s.phase==='counter'?btn(reveals.size?'确认翻开 '+reveals.size+' 张 →':'先点击暗牌','reveal','primary',!active||reveals.size<1||reveals.size>2):btn('确认部署 →','deploy','primary',!active||!valid))+
  btn('撤退','fold','secondary',!active)+'</div></div></section>';
 }

@@ -61,7 +61,14 @@ export function power(cards){return evaluation(cards).value}
 export function compare(a,b){return compareEvaluation(evaluation(a),evaluation(b))}
 export function handName(cards){return ['未出牌','高牌','对子','同花','顺子','同花顺','三条'][power(cards)[0]]}
 export function opened(s,p){return s.battle?.lines[p].filter(c=>c.open)||[]}
-export function garrisonLimit(f){return f?.capital?5:f?.fortified?4:3}
+export function terrainLimit(f){return f?.type==='swamp'?1:f?.type==='forest'?2:3}
+export function garrisonLimit(f){return Math.min(f?.capital?5:f?.fortified?4:3,terrainLimit(f))}
+export function battleLineLimit(s,p){const b=s.battle,f=b?.field?target(s,b.field):null;return b&&p===b.attacker?terrainLimit(f):garrisonLimit(f)}
+function mapFor(s){return MAPS.find(m=>m.id===s.opt.map)}
+function isSeaLink(s,a,b){return (mapFor(s)?.seaLinks||[]).some(([x,y])=>(x===a&&y===b)||(x===b&&y===a))}
+export function seaLanding(s,p,f){if(s.raid)return false;const origins=s.fields.filter(x=>x.owner===p&&x.links.includes(f.id));return origins.length>0&&origins.every(x=>isSeaLink(s,x.id,f.id))}
+function seaFormationLegal(cards){return power(cards)[0]!==6}
+function rankUpAllowed(s,p,line,c){return c.open&&c.rank+(c.boost||0)<13&&(!s.battle?.seaLanding||p!==s.battle.attacker||seaFormationLegal(line.map(x=>x===c?{...x,boost:(x.boost||0)+1}:x)))}
 export function leading(s){if(!s.battle)return null;return compare(opened(s,s.battle.attacker),opened(s,s.battle.defender))>0?s.battle.attacker:s.battle.defender}
 export function cardLocations(s){return [...s.deck,...s.players.flatMap(p=>[...p.hand,...p.reserve]),...s.fields.flatMap(f=>f.garrison),...(s.battle?[...s.battle.lines.flat(),...(s.battle.suppressed||[])]:[])]}
 export function validate(s){
@@ -69,7 +76,8 @@ export function validate(s){
  if(new Set(ids).size!==ids.length)throw Error('重复牌');
  if(all.length!==(s.baseDeckSize||54)+s.generated)throw Error('牌数不守恒 '+all.length);
  if(s.players.some(p=>p.hand.some(c=>c.boost)))throw Error('临时晋升未清除');
- if(s.battle&&s.battle.lines.some((l,p)=>l.length>(p===s.battle.defender&&s.battle.field?garrisonLimit(s.fields.find(f=>f.id===s.battle.field)):3)))throw Error('战线超过据点容量');
+ if(s.battle&&s.battle.lines.some((l,p)=>l.length>battleLineLimit(s,p)))throw Error('战线超过地形容量');
+ if(s.battle?.seaLanding&&!seaFormationLegal(s.battle.lines[s.battle.attacker]))throw Error('跨海进攻不能组成三条');
  if(s.fields.some(f=>f.garrison.length>garrisonLimit(f)))throw Error('驻军超过据点容量');
  if(s.opt.rules==='campaign'&&s.fields.some(f=>f.owner!==null&&!f.capital&&f.garrison.length&&!f.garrison.some(c=>c.open)))throw Error('普通据点必须至少有一张明牌驻军');
  if(s.strategyMarket?.length>3)throw Error('策略市场超过三张');
@@ -141,7 +149,9 @@ function startBattle(s,attacker,defender,field,siege=false){
  const suppressed=siege&&garrison.length>3?[garrison.splice(3+Math.floor(random(s)*(garrison.length-3)),1)[0]]:[];
  const lines=[[],[]];
  if(field){const f=s.fields.find(x=>x.id===field);for(const c of garrison)if(c.open)s.knowledge[attacker][c.id]=true;f.garrison=[];lines[defender]=garrison;log(s,f.label+'遭到'+s.players[attacker].name+'入侵；固定驻军直接进入防守战线。')}
- s.skirmish++;s.battle={attacker,defender,field,garrison:[...garrison,...suppressed],suppressed,lines,strategyUsed:[false,false]};s.phase=field?'attack':'defend';s.active=field?attacker:defender;s.strategyUsed=false;log(s,'第 '+s.skirmish+' 次交锋：'+(field?s.players[attacker].name+'准备突破固定驻军。':s.players[defender].name+'先部署防线。'));
+ const landing=field&&seaLanding(s,attacker,s.fields.find(x=>x.id===field));
+ s.skirmish++;s.battle={attacker,defender,field,garrison:[...garrison,...suppressed],suppressed,lines,strategyUsed:[false,false],seaLanding:landing};s.phase=field?'attack':'defend';s.active=field?attacker:defender;s.strategyUsed=false;log(s,'第 '+s.skirmish+' 次交锋：'+(field?s.players[attacker].name+'准备突破固定驻军。':s.players[defender].name+'先部署防线。'));
+ if(landing)log(s,'跨海登陆：进攻牌型须不低于守军，且不能组成三条。');
  if(suppressed.length)log(s,'围城封锁了 1 张预备守军；该牌本次交锋不参与牌型。');
 }
 function settle(s,winner){
@@ -204,8 +214,9 @@ function strategyError(s,p,id,fieldId){
  if(id==='meds_team'&&!s.players[p].reserve.length)return '没有可回收的公开牌。';
  if(id==='isr'&&(!f||f.owner!==enemy||!f.garrison.some(c=>!c.open)))return '请先选择有暗牌驻军的敌方据点。';
  if(['spy','scouting'].includes(id)&&!other.some(c=>!c.open))return '敌方战线没有暗牌。';
- if(id==='paratrooper'&&line.length>=3)return '战线已满，最多 3 张。';
- if(id==='rank_up'&&!line.some(c=>c.open&&c.rank+(c.boost||0)<13))return '没有可晋升的普通明牌。';
+ if(id==='paratrooper'&&line.length>=battleLineLimit(s,p))return '战线已满，受当前地形容量限制。';
+ if(id==='paratrooper'&&s.battle?.seaLanding&&p===s.battle.attacker)return '跨海登陆不能使用空降增援，避免组成三条。';
+ if(id==='rank_up'&&!line.some(c=>rankUpAllowed(s,p,line,c)))return '没有可晋升的普通明牌。';
  if(id==='blitzkrieg'&&leading(s)!==p)return '闪电战需要己方占优；在进攻部署后的战术窗口使用。';
  if(id==='revolution'&&(!f||f.owner!==null))return '请先选择中立据点。';
  if(id==='economic_sanctions'&&(!f||f.owner!==enemy))return '请先选择敌方据点。';
@@ -248,7 +259,7 @@ function strategy(s,p,id,fieldId){
  case 'spy':{const c=pick(s.battle.lines[enemy].filter(c=>!c.open));s.knowledge[p][c.id]=true;break}
  case 'isr':pick(f.garrison.filter(c=>!c.open)).open=true;break;
  case 'paratrooper':s.battle.lines[p].push({...clean(s.deck.pop()),open:true});if(s.phase==='counter')resolveCounter(s);break;
- case 'rank_up':{const c=pick(s.battle.lines[p].filter(c=>c.open&&c.rank+(c.boost||0)<13));c.boost=(c.boost||0)+1;if(s.phase==='counter')resolveCounter(s);break}
+ case 'rank_up':{const c=pick(s.battle.lines[p].filter(c=>rankUpAllowed(s,p,s.battle.lines[p],c)));c.boost=(c.boost||0)+1;if(s.phase==='counter')resolveCounter(s);break}
  case 'scouting':pick(s.battle.lines[enemy].filter(c=>!c.open)).open=true;resolveCounter(s);break;
  case 'peace_talk':settle(s,null);break;
  case 'revolution':f.owner=p;f.garrison.push({id:s.baseDeckSize+s.generated++,rank:1,suit:Math.floor(random(s)*4),open:true});nextCampaign(s);break;
@@ -310,11 +321,15 @@ function apply(s,p,a){
  }
  if(['defend','attack'].includes(s.phase)){
  if(a.type==='fold'){settle(s,1-p);return null}
- if(a.type!=='deploy'||!Array.isArray(a.cards)||a.cards.length<1||a.cards.length>3)return '每次部署必须选择 1–3 张牌。';
+ const limit=battleLineLimit(s,p);
+ if(a.type!=='deploy'||!Array.isArray(a.cards)||a.cards.length<1||a.cards.length>limit)return '本次部署必须选择 1–'+limit+' 张牌。';
  if(new Set(a.cards.map(c=>c.id)).size!==a.cards.length)return '不能重复部署同一张牌。';
  if(!a.cards.some(c=>c.open))return '至少部署 1 张明牌。';
  const line=a.cards.map(c=>{const h=s.players[p].hand.find(h=>h.id===c.id);return h?{...h,open:!!c.open}:null});
  if(line.some(c=>!c))return '只能部署自己的手牌。';
+ if(s.phase==='attack'&&s.battle.field&&s.fields.find(f=>f.id===s.battle.field)?.type==='mountain'&&line.filter(c=>c.open).length<2)return '山地进攻必须至少亮出 2 张牌。';
+ if(s.phase==='attack'&&s.battle.seaLanding&&power(line.filter(c=>c.open))[0]<power(opened(s,1-p))[0])return '跨海登陆的进攻牌型必须不低于防守方。';
+ if(s.phase==='attack'&&s.battle.seaLanding&&!seaFormationLegal(line))return '跨海登陆不能组成三条。';
  if(s.phase==='attack'&&compare(line.filter(c=>c.open),opened(s,1-p))<=0)return '进攻方的明牌牌力必须严格大于防守方。';
  s.players[p].hand=s.players[p].hand.filter(c=>!line.some(x=>x.id===c.id));s.battle.lines[p]=line;
  log(s,s.players[p].name+'部署 '+line.filter(c=>c.open).length+' 明 / '+line.filter(c=>!c.open).length+' 暗。');
@@ -333,6 +348,7 @@ function apply(s,p,a){
  const line=s.battle.lines[p];
  if(a.ids.some(id=>!line.some(c=>c.id===id&&!c.open)))return '只能翻开己方尚未揭示的战线牌。';
  for(const c of line)if(a.ids.includes(c.id))c.open=true;
+ if(s.battle.seaLanding&&p===s.battle.attacker&&!seaFormationLegal(line))return '跨海登陆不能通过翻牌组成三条。';
  log(s,s.players[p].name+'翻开 '+a.ids.length+' 张暗牌。');
  resolveCounter(s);
  return null;
@@ -402,7 +418,9 @@ export function aiAction(s,p,level='normal'){
  }
  if(v.phase==='defend'||v.phase==='attack'){
  let choices=deployments(pl.hand);
- if(v.phase==='attack')choices=choices.filter(l=>compare(l.filter(c=>c.open),opened(v,1-p))>0);
+ const field=b?.field?target(v,b.field):null;
+ choices=choices.filter(l=>l.length<=battleLineLimit(v,p));
+ if(v.phase==='attack')choices=choices.filter(l=>compare(l.filter(c=>c.open),opened(v,1-p))>0&&(!field||field.type!=='mountain'||l.filter(c=>c.open).length>=2)&&(!b.seaLanding||power(l.filter(c=>c.open))[0]>=power(opened(v,1-p))[0])&&(!b.seaLanding||seaFormationLegal(l)));
  if(!choices.length)return {type:'fold'};
  const strength=cs=>{const t=power(cs);return t[0]*40+t[1]*2+t[2]*.12+t[3]*.01};
  const metric=l=>{

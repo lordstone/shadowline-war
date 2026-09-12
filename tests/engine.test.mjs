@@ -1,7 +1,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,resolvedDeckCount,leading} from '../src/engine.js';
+import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,terrainLimit,battleLineLimit,resolvedDeckCount,leading} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
@@ -62,6 +62,15 @@ test('all maps have symmetric, connected topology and two capitals',()=>{
  for(const m of MAPS){const seen=new Set([m.fields[0].id]);while(true){const n=seen.size;for(const f of m.fields)if(seen.has(f.id))for(const id of f.links){assert.ok(m.fields.find(g=>g.id===id)?.links.includes(f.id),m.id+': '+f.id+' ↔ '+id);seen.add(id)}if(seen.size===n)break}assert.equal(seen.size,m.fields.length,m.id);assert.equal(m.fields.filter(f=>f.capital).length,2,m.id)}
  assert.deepEqual(MAPS.slice(-3).map(m=>m.fields.length),[14,11,12]);
  assert.ok(MAPS.slice(-3).every(m=>m.fields.some(f=>f.type==='port')&&m.fields.some(f=>f.type==='mountain'||f.type==='oil')));
+});
+test('terrain limits, mountain disclosure, and sea landing formation rules are enforced',()=>{
+ assert.equal(terrainLimit({type:'swamp'}),1);assert.equal(garrisonLimit({type:'forest'}),2);assert.equal(garrisonLimit({type:'capital'}),5);
+ let mountain=fixture([[13,0],[12,1]],[[2,2]]),mf={id:'mountain',type:'mountain',garrison:[]};
+ mountain.fields=[mf];mountain.phase='attack';mountain.active=0;mountain.battle={attacker:0,defender:1,field:'mountain',lines:[[],[{...mountain.players[1].hand[0],open:true}]],suppressed:[],strategyUsed:[false,false]};
+ assert.equal(battleLineLimit(mountain,0),3);assert.match(act(mountain,0,{type:'deploy',cards:[{id:mountain.players[0].hand[0].id,open:true}]}).error,/山地/);
+ let sea=fixture([[10,0],[10,1],[10,2]],[[2,2],[2,3]]),sf={id:'port',type:'port',garrison:[]};
+ sea.fields=[sf];sea.phase='attack';sea.active=0;sea.battle={attacker:0,defender:1,field:'port',seaLanding:true,lines:[[],sea.players[1].hand.map(c=>({...c,open:true}))],suppressed:[],strategyUsed:[false,false]};
+ assert.match(act(sea,0,{type:'deploy',cards:sea.players[0].hand.map(c=>({id:c.id,open:true}))}).error,/不能组成三条/);
 });
 test('seed reproducibility; classic deals twelve, campaign accounts for garrison',()=>{
  assert.deepEqual(createGame({seed:818}),createGame({seed:818}));

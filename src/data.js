@@ -39,7 +39,7 @@ export const MAPS=[
  f('e','赤烬首都','capital',88,52,['d','f'],1,true),
  f('f','南港','town',76,79,['e','g','i']),
  f('g','南部油田','oil',50,87,['f','h']),
- f('h','西部雷达','town',24,79,['g','a','i']),
+ f('h','西侧沼泽','swamp',24,79,['g','a','i']),
  f('i','中央堡垒','town',50,52,['b','d','f','h'],null,false,true)]},
  {id:'eastern_front',name:'东线纵深',subtitle:'14 个据点 · 纵深推进',desc:'以苏德战场的城市、铁路与南北战线为灵感。北线港口、中部交通轴和南部油区形成三条彼此支援的推进路线。',fields:[
  f('berlin','柏林指挥部','capital',9,48,['prussia','warsaw','krakow'],0,true),
@@ -56,24 +56,24 @@ export const MAPS=[
  f('caucasus','高加索油区','oil',76,89,['lviv','kharkov','stalingrad']),
  f('stalingrad','斯大林格勒','town',88,70,['kharkov','caucasus','moscow'],null,false,true),
  f('moscow','莫斯科指挥部','capital',91,30,['smolensk','leningrad','stalingrad'],1,true)]},
- {id:'korea',name:'半岛拉锯',subtitle:'11 个据点 · 山地与港口',desc:'以朝鲜半岛的狭长地形为灵感。东西海岸线由山地走廊切开，仁川与元山提供侧翼通道，首尔是全图关键枢纽。',fields:[
+ {id:'korea',name:'半岛拉锯',subtitle:'11 个据点 · 山地与港口',desc:'以朝鲜半岛的狭长地形为灵感。东西海岸线由山地走廊切开，仁川与元山提供侧翼通道，首尔是全图关键枢纽。',seaLinks:[['incheon','wonsan']],fields:[
  f('pyongyang','平壤指挥部','capital',41,18,['sinuiju','wonsan','kaesong'],1,true),
  f('sinuiju','鸭绿江补给线','oil',24,7,['pyongyang','chosin']),
  f('chosin','长津山地','mountain',61,8,['sinuiju','wonsan']),
- f('wonsan','元山港','port',73,25,['pyongyang','chosin','chuncheon']),
+ f('wonsan','元山港','port',73,25,['pyongyang','chosin','chuncheon','incheon']),
  f('kaesong','开城防线','town',39,37,['pyongyang','seoul','chuncheon'],null,false,true),
- f('incheon','仁川港','port',18,52,['seoul','daejeon']),
+ f('incheon','仁川港','port',18,52,['seoul','daejeon','wonsan']),
  f('seoul','首尔枢纽','town',44,51,['kaesong','incheon','chuncheon','daejeon'],null,false,true),
  f('chuncheon','春川山口','mountain',69,45,['wonsan','kaesong','seoul','daegu']),
  f('daejeon','大田','town',43,67,['incheon','seoul','daegu']),
  f('daegu','大邱防线','town',61,78,['chuncheon','daejeon','busan'],null,false,true),
  f('busan','釜山指挥部','capital',73,92,['daegu'],0,true)]},
- {id:'western_front',name:'法德西线',subtitle:'12 个据点 · 河谷突破',desc:'以法国战役方向的低地、阿登和莱茵交通网为灵感。北部港区适合迂回，中部要塞密集，南部路线更长但防线较薄。',fields:[
+ {id:'western_front',name:'法德西线',subtitle:'12 个据点 · 河谷突破',desc:'以法国战役方向的低地、阿登和莱茵交通网为灵感。北部港区适合迂回，中部要塞密集，南部路线更长但防线较薄。',seaLinks:[['belgium','hamburg']],fields:[
  f('paris','巴黎指挥部','capital',11,55,['reims','belgium','alsace'],0,true),
  f('reims','兰斯','town',28,52,['paris','belgium','sedan']),
  f('belgium','比利时低地','port',39,18,['paris','reims','ardennes','hamburg']),
  f('sedan','色当要塞','town',41,51,['reims','ardennes','luxembourg','alsace'],null,false,true),
- f('ardennes','阿登山林','mountain',47,34,['belgium','sedan','luxembourg','ruhr']),
+ f('ardennes','阿登山林','forest',47,34,['belgium','sedan','luxembourg','ruhr']),
  f('alsace','阿尔萨斯','mountain',47,75,['paris','sedan','luxembourg','munich']),
  f('luxembourg','卢森堡走廊','town',56,52,['sedan','ardennes','alsace','frankfurt'],null,false,true),
  f('hamburg','汉堡港','port',73,14,['belgium','ruhr','berlin']),
