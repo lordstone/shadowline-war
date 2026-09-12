@@ -106,12 +106,13 @@ function line(p){
 function battleView(){
  const b=s.battle,p=viewer(),active=s.active===p&&!isAI();
  const comparing=['counter','tactics'].includes(s.phase),lead=comparing?leading(s):null;
+ const leadText=comparing?(lead===p?'己方明牌占优':'对方明牌占优 · 暗牌尚未计入'):'VS';
  const chosen=[...selection].map(([id,open])=>({...s.players[p].hand.find(c=>c.id===id),open}));
  const valid=chosen.length>0&&chosen.some(c=>c.open)&&(s.phase!=='attack'||compare(chosen.filter(c=>c.open),opened(s,b.defender))>0);
  const revealPreview=s.phase==='counter'&&reveals.size?handName(b.lines[p].filter(c=>c.open||reveals.has(c.id))):'';
  return '<section class="battle-area"><div class="battle-heading"><div><div class="eyebrow">交锋 '+String(s.skirmish).padStart(2,'0')+' / SKIRMISH</div><h2>'+(b.field?s.fields.find(f=>f.id===b.field).label:'明暗交锋')+'</h2></div><span class="battle-badge">'+statusText()+'</span></div>'+
- line(1-p)+'<div class="versus"><span></span><b>'+(comparing?lead===p?'己方占优':'己方被压制':'VS')+'</b><span></span></div>'+line(p)+
- '<div class="battle-actions"><div><b>'+(isAI()?'敌方正在推演…':s.phase==='tactics'?'可使用交锋策略，或继续让对方反击。':s.phase==='defend'?'部署 1–3 张牌，至少 1 张为明牌。':s.phase==='attack'?'用明牌压过防线，保留你的暗牌。':reveals.size?'选择后牌型：'+revealPreview+'。点击右侧确认翻开。':'点击战线上标有“点击翻开”的暗牌，再确认反击。')+'</b><small>'+(s.phase==='counter'?'暗牌未翻开前不计入当前牌型；反超后由对方继续反击。':'手牌点击顺序：选择为明牌 → 改为暗牌 → 取消。')+'</small></div><div>'+
+ line(1-p)+'<div class="versus"><span></span><b>'+leadText+'</b><span></span></div>'+line(p)+
+ '<div class="battle-actions"><div><b>'+(isAI()?'敌方正在推演…':s.phase==='tactics'?'可使用交锋策略，或继续让对方反击。':s.phase==='defend'?'部署 1–3 张牌，至少 1 张为明牌。':s.phase==='attack'?'用明牌压过防线，保留你的暗牌。':reveals.size?'选择后牌型：'+revealPreview+'。点击右侧确认翻开。':'当前比较只计算明牌；点击战线上标有“点击翻开”的暗牌，再确认反击。')+'</b><small>'+(s.phase==='counter'?'你翻开的暗牌会立刻加入比较；若反超，对方才获得继续反击的机会。':'手牌点击顺序：选择为明牌 → 改为暗牌 → 取消。')+'</small></div><div>'+
  (s.phase==='tactics'?btn('继续 · 让对方反击 →','continue','primary',!active):s.phase==='counter'?btn(reveals.size?'确认翻开 '+reveals.size+' 张 →':'先点击暗牌','reveal','primary',!active||reveals.size<1||reveals.size>2):btn('确认部署 →','deploy','primary',!active||!valid))+
  btn('撤退','fold','secondary',!active)+'</div></div></section>';
 }

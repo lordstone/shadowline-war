@@ -60,7 +60,7 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  await click('deploy');await drain();assert.equal((await state()).phase,'tactics');
  await page.locator('[data-action="use-strategy"][data-id="blitzkrieg"]').click();assert.equal(await page.locator('.event-strategy').count(),1);await drain();
  assert.equal((await state()).players[1].wins,1);checks.push('actual deployment to tactical window and successful blitzkrieg');
- await page.setViewportSize({width:390,height:844});s=createGame({strategies:false,mode:'ai',eventSeconds:5});s.active=1;s.raid=true;await load(s);await page.locator('.event-invasion').waitFor();
+ await page.setViewportSize({width:375,height:812});s=createGame({strategies:false,mode:'ai',eventSeconds:5});s.active=1;s.raid=true;await load(s);await page.locator('.event-invasion').waitFor();
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:fileURLToPath(new URL('../../shadowline-event-mobile.png',import.meta.url)),fullPage:true});
  await page.getByRole('button',{name:'暂停',exact:true}).click();await click('close');await drain();
  const mobileMetrics=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,width:innerWidth,height:innerHeight,battle:document.querySelector('.battle-area')?.getBoundingClientRect().toJSON(),hand:document.querySelector('.hand-tray')?.getBoundingClientRect().toJSON(),intel:document.querySelector('.intel-panel')?.getBoundingClientRect().toJSON()}));
@@ -83,7 +83,7 @@ export async function counterplayCheck(browser,url='http://127.0.0.1:4173/'){
  assert.equal(saved.active,0);assert.equal(saved.skirmish,skirmish);assert.equal(saved.players.map(p=>p.wins).join(','),'0,0');
  await page.locator('[data-action="next-event"]').click();
  const hidden=page.locator('[data-action="reveal-card"][data-id="'+humanHidden+'"]');assert.equal(await hidden.count(),1);
- assert.match(await hidden.innerText(),/点击翻开/);assert.match(await page.locator('.battle-actions').innerText(),/暗牌未翻开前不计入当前牌型/);
+ assert.match(await hidden.innerText(),/点击翻开/);assert.match(await page.locator('.battle-actions').innerText(),/当前比较只计算明牌/);
  await hidden.click();assert.match(await page.locator('.battle-actions').innerText(),/选择后牌型/);assert.equal(await page.locator('[data-action="reveal"]').isEnabled(),true);await page.locator('[data-action="reveal"]').click();
  saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.players[0].wins,1);
  assert.deepEqual(errors,[]);await page.close();

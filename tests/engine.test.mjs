@@ -1,7 +1,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,resolvedDeckCount} from '../src/engine.js';
+import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,resolvedDeckCount,leading} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
@@ -33,6 +33,11 @@ test('exact ranking, A boundaries and wildcard jokers',()=>{
  assert.equal(compare([c(13)],[c(1)]),1);
  assert.equal(compare([c(5),c(5,1),c(3,2)],[c(4),c(4,1),c(13,2)]),1);
  assert.equal(compare([c(7),c(5,1)],[c(7,2),c(4,3)]),1);
+});
+test('current winner compares only revealed kickers before a counterreveal',()=>{
+ const s=fixture([[12,3],[3,2]],[[12,0],[4,0]]);
+ s.battle={attacker:1,defender:0,lines:[[{...s.players[0].hand[0],open:true},{...s.players[0].hand[1],open:true}],[{...s.players[1].hand[0],open:true},{...s.players[1].hand[1],open:true}]],suppressed:[]};
+ assert.equal(compare(opened(s,1),opened(s,0)),1);assert.equal(leading(s),1);
 });
 test('jokers maximize legal combinations with natural and big-joker tie breaks',()=>{
  assert.deepEqual(power([c(3,0),c(3,1),c(14,4)]),[6,3,0,0]);
