@@ -20,7 +20,7 @@
       "actual deployment to tactical window and successful blitzkrieg",
       "390px mobile event and battle layout without page overflow",
       "AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish",
-      "Visible occupation and garrison controls at app-window width; collapsed shop, purchase, refill, hover tooltip, supply cost and next-turn unlock"
+      "Visible location controls and explicit ordinary-card draw cost at app-window width; collapsed shop, purchase states, refill, hover tooltip and next-turn unlock"
     ],
     "pageErrors": []
   },
