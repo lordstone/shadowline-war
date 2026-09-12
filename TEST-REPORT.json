@@ -40,6 +40,11 @@
     "mapZoomControl": "1.0 to 1.25 verified",
     "unifiedProjectedMapLayer": true
   },
+  "handSorting": {
+    "rankThenSuit": "covered by browser regression",
+    "suitThenRank": "covered by browser regression",
+    "mutatesGameState": false
+  },
   "deepDefense": {
     "strongestThreeOfFourOrFive": "passed",
     "fortifiedAndCapitalCapacity": "passed",

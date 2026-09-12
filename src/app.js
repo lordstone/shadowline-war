@@ -6,6 +6,7 @@ import {actionEvents} from './events.js';
 const app=document.querySelector('#app'),sceneEl=document.querySelector('#scene');
 const scene=new Battlefield(sceneEl);
 let s=null,options={...defaults,seed:Math.floor(Math.random()*4294967296)},selection=new Map(),reveals=new Set(),focus=null,gate=false,modal=null,aiTask=null,deadline=null,remaining=null,clockKey='',muted=false;
+let handSort='rank';
 let targeting=null;
 let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
 let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map();
@@ -111,7 +112,9 @@ function battleView(){
 }
 function handTray(){
  const p=viewer(),pl=s.players[p],interactive=!isAI()&&s.active===p&&['campaign','defend','attack'].includes(s.phase);
- return '<section class="hand-tray"><div class="hand-top"><div><span class="eyebrow">你的暗牌 / PRIVATE HAND</span><b>'+pl.hand.length+' 张</b></div><div>'+btn('按点数排序','sort','text-button')+'<span>'+(['defend','attack'].includes(s.phase)?'已选 '+selection.size+' / 3':s.phase==='campaign'?'选择驻军牌':'暗牌安全保留')+'</span></div></div><div class="hand-scroll">'+pl.hand.map((c,i)=>'<div class="hand-card-shell" style="--rot:'+((i-(pl.hand.length-1)/2)*1.15)+'deg;--lift:'+(-Math.abs(i-(pl.hand.length-1)/2)*1.15)+'px;--z:'+i+'">'+card(c,{interactive,selected:selection.has(c.id),stance:selection.has(c.id)?selection.get(c.id):null})+'</div>').join('')+'</div></section>';
+ const cards=[...pl.hand].sort(handSort==='suit'?(a,b)=>a.suit-b.suit||a.rank-b.rank||a.id-b.id:(a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id);
+ const sort='<span class="hand-sort-toggle" role="group" aria-label="手牌排序"><button class="'+(handSort==='rank'?'active':'')+'" data-action="hand-sort" data-id="rank" aria-pressed="'+(handSort==='rank')+'">点数</button><button class="'+(handSort==='suit'?'active':'')+'" data-action="hand-sort" data-id="suit" aria-pressed="'+(handSort==='suit')+'">花色</button></span>';
+ return '<section class="hand-tray"><div class="hand-top"><div><span class="eyebrow">你的暗牌 / PRIVATE HAND</span><b>'+pl.hand.length+' 张</b></div><div>'+sort+'<span>'+(['defend','attack'].includes(s.phase)?'已选 '+selection.size+' / 3':s.phase==='campaign'?'选择驻军牌':'暗牌安全保留')+'</span></div></div><div class="hand-scroll">'+cards.map((c,i)=>'<div class="hand-card-shell" style="--rot:'+((i-(cards.length-1)/2)*1.15)+'deg;--lift:'+(-Math.abs(i-(cards.length-1)/2)*1.15)+'px;--z:'+i+'">'+card(c,{interactive,selected:selection.has(c.id),stance:selection.has(c.id)?selection.get(c.id):null})+'</div>').join('')+'</div></section>';
 }
 function strategyMarketView(expanded=false){
  if(s.phase!=='campaign'||!s.opt.strategies)return '';
@@ -255,7 +258,7 @@ app.addEventListener('click',e=>{
  if(events.length||isAI()||gate||modal)return;
  if(a==='focus'){focus=id;if(targeting&&!canStrategy(s,viewer(),targeting,focus)){const strategy=targeting;targeting=null;perform({type:'strategy',id:strategy,field:focus})}else render();return}
  if(a==='cancel-target'){targeting=null;render();return}
- if(a==='sort'){s.players[viewer()].hand.sort((a,b)=>a.rank-b.rank||a.suit-b.suit);render();return}
+ if(a==='hand-sort'){handSort=id==='suit'?'suit':'rank';render();return}
  if(a==='card'){
  const n=Number(id);if(s.phase==='campaign'){const limit=garrisonLimit(s.fields.find(f=>f.id===focus));if(!selection.has(n)){if(selection.size>=limit){toast('该据点最多驻军 '+limit+' 张');return}selection.set(n,true)}else if(selection.get(n))selection.set(n,false);else selection.delete(n)}
  else if(!selection.has(n)){if(selection.size>=3){toast('最多部署 3 张牌');return}selection.set(n,true)}
