@@ -4,7 +4,7 @@ export function actionEvents(before,after,action,perspective){
  const events=[],actor=before.active,name=p=>after.players[p].name;
  const field=id=>after.fields.find(f=>f.id===id)||before.fields.find(f=>f.id===id);
  const visible=(c,p,publicCard=false)=>p===perspective||publicCard||c.open?{...c}:{hidden:true};
- const add=(kind,title,detail,extra={})=>{if(extra.map)extra.map=extra.map.map(({id,label,x,y,links,owner,capital})=>({id,label,x,y,links,owner,capital}));events.push({kind,title,detail,...extra})};
+ const add=(kind,title,detail,extra={})=>{if(extra.map)extra.map=extra.map.map(({id,label,type,x,y,links,owner,capital,fortified})=>({id,label,type,x,y,links,owner,capital,fortified}));events.push({kind,title,detail,...extra})};
  if(['attack','siege'].includes(action.type)){
  const f=field(action.field),stationed=before.fields.find(x=>x.id===f.id).garrison;
  add('invasion',name(actor)+(action.type==='siege'?'发动围城':'发动入侵'),f.label+'遭到进攻。'+(action.type==='siege'?'消耗 3 点补给，封锁一张预备守军。':'固定驻军已进入防线，进攻方必须用明牌严格压过。'),{field:f.id,map:after.fields,owner:actor});

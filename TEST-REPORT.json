@@ -4,8 +4,8 @@
   "passed": 37,
   "failed": 0,
   "threeCardHands": 24804,
-  "simulatedMatches": 144,
-  "legalActions": 9507,
+  "simulatedMatches": 288,
+  "legalActions": 19131,
   "wildcardJokers": {
     "allThreeCardHands": 24804,
     "categoryCounts": [0, 16500, 5064, 1540, 1212, 228, 260],
@@ -27,7 +27,8 @@
       "390px mobile event and battle layout without page overflow",
       "AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish",
       "Visible location controls and explicit ordinary-card draw cost at app-window width; collapsed shop, purchase states, refill, hover tooltip and next-turn unlock",
-      "Capital capacity-five selection and all target controls visible without page overflow"
+      "Capital capacity-five selection and all target controls visible without page overflow",
+      "Six-map selector grid; 14-node Eastern Front renders 24 readable topology routes with no page errors"
     ],
     "pageErrors": []
   },
@@ -36,6 +37,13 @@
     "fortifiedAndCapitalCapacity": "passed",
     "siegeSupplyAndHiddenInformation": "passed",
     "suppressedReserveRestoration": "passed"
+  },
+  "mapTopology": {
+    "maps": 6,
+    "newComplexMaps": ["eastern_front:14", "korea:11", "western_front:12"],
+    "bidirectionalLinks": "passed",
+    "connectedGraphs": "passed",
+    "twoCapitalsEach": "passed"
   },
   "standaloneBundle": {
     "modules": 7,

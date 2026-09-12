@@ -54,7 +54,9 @@ test('four and five revealed defenders use their strongest three-card combinatio
  assert.equal(compare([c(2,0),c(3,0),c(4,0),c(13,1)],[c(12,0),c(12,1),c(8,2)]),1);
 });
 test('all maps have symmetric, connected topology and two capitals',()=>{
- for(const m of MAPS){const seen=new Set([m.fields[0].id]);while(true){const n=seen.size;for(const f of m.fields)if(seen.has(f.id))for(const id of f.links){assert.ok(m.fields.find(g=>g.id===id)?.links.includes(f.id));seen.add(id)}if(seen.size===n)break}assert.equal(seen.size,m.fields.length);assert.equal(m.fields.filter(f=>f.capital).length,2)}
+ for(const m of MAPS){const seen=new Set([m.fields[0].id]);while(true){const n=seen.size;for(const f of m.fields)if(seen.has(f.id))for(const id of f.links){assert.ok(m.fields.find(g=>g.id===id)?.links.includes(f.id),m.id+': '+f.id+' ↔ '+id);seen.add(id)}if(seen.size===n)break}assert.equal(seen.size,m.fields.length,m.id);assert.equal(m.fields.filter(f=>f.capital).length,2,m.id)}
+ assert.deepEqual(MAPS.slice(-3).map(m=>m.fields.length),[14,11,12]);
+ assert.ok(MAPS.slice(-3).every(m=>m.fields.some(f=>f.type==='port')&&m.fields.some(f=>f.type==='mountain'||f.type==='oil')));
 });
 test('seed reproducibility; classic deals twelve, campaign accounts for garrison',()=>{
  assert.deepEqual(createGame({seed:818}),createGame({seed:818}));
@@ -191,7 +193,7 @@ test('timeout actions are valid at every phase, rounds bounded, save resumes exa
 });
 test('seed matrix: complete AI matches, all maps, modes and strategy settings',()=>{
  let matches=0,actions=0;
- for(const rules of ['classic','campaign'])for(const map of ['duel','rift','ring'])for(const strategies of [false,true])for(const difficulty of ['easy','normal'])for(let seed=1;seed<=6;seed++){
+ for(const rules of ['classic','campaign'])for(const map of MAPS.map(m=>m.id))for(const strategies of [false,true])for(const difficulty of ['easy','normal'])for(let seed=1;seed<=6;seed++){
  let s=createGame({seed:seed*7919,map,rules,strategies,difficulty,maxRounds:40}),n=0;
  while(s.phase!=='over'&&n++<700){
  const a=aiAction(s,s.active,difficulty),r=act(s,s.active,a);

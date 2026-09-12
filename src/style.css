@@ -28,6 +28,10 @@
 @keyframes event-time{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @media(max-width:600px){.event-panel{padding:19px}.event-panel h1{font-size:22px}.event-map{height:230px}.event-map-node b{font-size:8px;padding:2px 4px}.event-footer{flex-direction:column;align-items:stretch}.event-footer button{width:100%}.garrison-roster{grid-template-columns:1fr}.army-stats{gap:7px}.army-stats span:nth-child(3){display:none}.army-panel{gap:6px}}
 .battle-line:has(.line-cards>:nth-child(4)) .line-cards{gap:9px}.battle-line:has(.line-cards>:nth-child(4)) .playing-card,.battle-line:has(.line-cards>:nth-child(4)) .card-slot{width:72px;height:104px;flex-basis:72px}.battle-line:has(.line-cards>:nth-child(4)) .card-suit{left:24px;top:30px;font-size:31px}
+@media(min-width:801px){body:not(:has(.game-layout)) .map-choices{display:grid;grid-template-columns:1fr 1fr}.map-choice{min-width:0}.map-choice .map-symbol{font-size:22px;width:24px}.map-choice{padding:9px 11px;gap:9px}.map-choice b{font-size:12px}.map-choice small{font-size:8px}}
+@media(max-width:520px){body:not(:has(.game-layout)) .map-choices{display:flex}}
+.dense-map .map-node{min-width:68px;padding:3px 5px;transform:translate(-50%,-50%)}.dense-map .map-node:not(:disabled):active{transform:translate(-50%,-50%)}.dense-map .node-icon{font-size:13px}.dense-map .map-node b{font-size:8px}.dense-map .map-node small{font-size:6px}.dense-map .map-title{padding:3px 7px;background:#081117bb}
+.topology-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}.topology-lines line{stroke:#7d9ca4;stroke-width:.24;vector-effect:non-scaling-stroke;opacity:.48}.dense-map .node-layer{z-index:2}
 @media(prefers-reduced-motion:reduce){.event-map-node.hit::before{animation:none;opacity:.8}.event-cards .playing-card{animation:none}.event-progress span{animation:none}}
 
 /* Make the active counter card unmistakable even though its owner can see its face. */

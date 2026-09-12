@@ -43,7 +43,13 @@ export class Battlefield{
  }else if(f.type==='oil'){
  for(const x of[-.65,.65]){const tank=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,1.1,12),material(0x637471));tank.position.set(x,.55,0);node.add(tank)}
  building(0,-.8,.16,2.5,.16,0x82958b);building(0,-.8,1.3,.15,.18,0x82958b).position.y=2.15;
+ }else if(f.type==='mountain'){
+ for(const [x,z,h] of[[-.65,.2,1.5],[.2,-.25,2.1],[.75,.35,1.25]]){const peak=new THREE.Mesh(new THREE.ConeGeometry(.7,h,5),material(0x536564));peak.position.set(x,h/2,z);node.add(peak)}
+ }else if(f.type==='port'){
+ building(0,.45,1.8,.18,1.25,0x53696d);building(-.55,0,.35,1.2,.35,0x697b79);building(.35,-.15,.75,.65,.65,0x42575a);
+ const mast=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,2.1,6),new THREE.MeshBasicMaterial({color}));mast.position.set(.75,1.05,0);node.add(mast);
  }else{building(0,0,.8,1.2,.8,0x697771);building(-.7,.55,.45,.6,.45,0x4e6160);building(.7,.4,.55,.9,.55,0x42575a)}
+ if(f.fortified&&!f.capital){for(const x of[-1.05,1.05])building(x,-.55,.28,.85,.28,0x8b806b)}
  const light=new THREE.Mesh(new THREE.BoxGeometry(.7,.055,.06),new THREE.MeshBasicMaterial({color}));light.position.set(0,.55,.6);node.add(light);
  for(const id of f.links){if(f.id.localeCompare(id)>=0)continue;const dest=fields.find(t=>t.id===id);if(!dest)continue;const a=pos.clone(),b=coords(dest);a.y=-.15;b.y=-.15;
  const g=new THREE.BufferGeometry().setFromPoints([a,b]);this.mapGroup.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:0x66858a,transparent:true,opacity:.4})));

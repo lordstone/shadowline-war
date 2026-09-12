@@ -9,6 +9,8 @@ let s=null,options={...defaults,seed:Math.floor(Math.random()*4294967296)},selec
 let targeting=null;
 let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
 const STORE='shadowline-war-v1';
+const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆'}[id]||'◇');
+const fieldIcon=f=>f.capital?'♜':f.fortified?'▰':f.type==='oil'?'▥':f.type==='port'?'⚓':f.type==='mountain'?'▲':'◆';
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const btn=(label,action,cls='',disabled=false,extra='')=>'<button class="'+cls+'" data-action="'+action+'" '+(disabled?'disabled ':'')+extra+'>'+label+'</button>';
 const viewer=()=>s?.opt.mode==='ai'?0:s?.active??0;
@@ -45,7 +47,7 @@ function menu(){
  const map=MAPS.find(m=>m.id===options.map);
  return header(true)+'<section class="command-menu"><div class="setup-panel"><div class="eyebrow"><span></span> 作战部署 / OPERATION SETUP</div><h1>明面交火。<br><em>暗线制胜。</em></h1><p class="intro">一副扑克牌，一场信息战争。<br>建立防线，隐藏底牌，夺取敌方首都。</p>'+
  '<div class="field-label">01 / 选择对战模式</div><div class="segmented">'+btn('<b>◈ 人机对战</b><small>与战术 AI 交锋</small>','mode-ai',options.mode==='ai'?'active':'')+btn('<b>⧉ 双人对战</b><small>同机轮流 · 手牌遮蔽</small>','mode-local',options.mode==='local'?'active':'')+'</div>'+
- '<div class="field-label">02 / 选择战场</div><div class="map-choices">'+MAPS.map(m=>'<button class="map-choice '+(m.id===options.map?'active':'')+'" data-action="map" data-id="'+m.id+'"><span class="map-symbol">'+(m.id==='duel'?'⟁':m.id==='rift'?'⋈':'◎')+'</span><span><b>'+m.name+'</b><small>'+m.subtitle+'</small></span><i>'+(m.id===options.map?'●':'○')+'</i></button>').join('')+'</div>'+
+ '<div class="field-label">02 / 选择战场</div><div class="map-choices">'+MAPS.map(m=>'<button class="map-choice '+(m.id===options.map?'active':'')+'" data-action="map" data-id="'+m.id+'"><span class="map-symbol">'+mapSymbol(m.id)+'</span><span><b>'+m.name+'</b><small>'+m.subtitle+'</small></span><i>'+(m.id===options.map?'●':'○')+'</i></button>').join('')+'</div>'+
  '<details class="advanced"><summary>高级选项 <span>＋</span></summary><div class="advanced-grid">'+
  optionSelect('rules','胜利规则',[['campaign','战役 · 夺取首都'],['classic','经典 · 暗牌耗尽']],options.rules)+
  optionSelect('difficulty','AI 风格',[['easy','新兵 · 节省兵力'],['normal','老兵 · 组合与伏兵']],options.difficulty)+
@@ -81,7 +83,8 @@ function mapView(){
  const p=viewer(),f=s.fields.find(f=>f.id===focus);
  const actionable=s.active===p&&!isAI(),can=f&&f.owner!==p&&reachable(s,p,f);
  const limit=garrisonLimit(f),chosen=[...selection].map(([id,open])=>({id,open})),placementValid=chosen.length>0&&chosen.length<=limit&&(f?.capital||chosen.some(c=>c.open));
- return (targeting?'<div class="targeting-note">'+strategyById(targeting).name+'：点击符合条件的地图据点'+btn('取消','cancel-target','text-button')+'</div>':'')+'<div class="war-map"><div class="map-title"><div class="eyebrow">战术地图 / LIVE OPERATIONS</div><h2>'+MAPS.find(m=>m.id===s.opt.map).name+'</h2></div><div class="map-stage"><div id="visual-mount" class="scene-mount"></div><div class="node-layer">'+s.fields.map(f=>'<button class="map-node owner-'+f.owner+' '+(f.id===focus?'focused ':'')+(reachable(s,p,f)&&f.owner!==p?'reachable':'')+'" data-action="focus" data-id="'+f.id+'" style="left:'+f.x+'%;top:'+f.y+'%"><span class="node-icon">'+(f.capital?'♜':f.fortified?'▰':f.type==='oil'?'▥':'◆')+'</span><b>'+f.label+'</b><small>'+(f.owner===null?'中立区域':f.owner===p?'己方控制':'敌方控制')+' · 容量 '+garrisonLimit(f)+(f.owner!==null?' · 驻军 '+f.garrison.length:'')+(f.blockedUntil>=s.round?' · 封锁中':'')+'</small></button>').join('')+'</div><span class="map-compass">N<br>↑</span></div>'+
+ const topology=s.fields.length>9?'<svg class="topology-lines" viewBox="0 0 100 100" preserveAspectRatio="none">'+s.fields.flatMap(a=>a.links.filter(id=>a.id.localeCompare(id)<0).map(id=>{const b=s.fields.find(f=>f.id===id);return b?'<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>':''})).join('')+'</svg>':'';
+ return (targeting?'<div class="targeting-note">'+strategyById(targeting).name+'：点击符合条件的地图据点'+btn('取消','cancel-target','text-button')+'</div>':'')+'<div class="war-map"><div class="map-title"><div class="eyebrow">战术地图 / LIVE OPERATIONS</div><h2>'+MAPS.find(m=>m.id===s.opt.map).name+'</h2></div><div class="map-stage '+(s.fields.length>9?'dense-map':'')+'"><div id="visual-mount" class="scene-mount"></div>'+topology+'<div class="node-layer">'+s.fields.map(f=>'<button class="map-node owner-'+f.owner+' '+(f.id===focus?'focused ':'')+(reachable(s,p,f)&&f.owner!==p?'reachable':'')+'" data-action="focus" data-id="'+f.id+'" style="left:'+f.x+'%;top:'+f.y+'%"><span class="node-icon">'+fieldIcon(f)+'</span><b>'+f.label+'</b><small>'+(f.owner===null?'中立区域':f.owner===p?'己方控制':'敌方控制')+' · 容量 '+garrisonLimit(f)+(f.owner!==null?' · 驻军 '+f.garrison.length:'')+(f.blockedUntil>=s.round?' · 封锁中':'')+'</small></button>').join('')+'</div><span class="map-compass">N<br>↑</span></div>'+
  '<div class="target-bar"><div><small>当前目标</small><b>'+(f?f.label+' · 容量 '+limit:'选择地图上的据点')+'</b><p>'+(f?f.owner===p?'固定驻军不可直接取回；选择 1–'+limit+' 张手牌可整编换防。':!can?'目标尚不相邻，需要先建立进军路线。':f.owner===null?'选择 1–'+limit+' 张手牌驻军，非首都至少 1 张明牌。':'守军公开牌超过 3 张时自动计算最强三张；可用围城封锁一张预备守军。':'青色代表苍岚，橙色代表赤烬。')+'</p>'+(f?.garrison.length?'<span class="garrison-info">驻军：'+f.garrison.map(c=>f.owner===p||c.open?face(c)+(SUITS[c.suit]||'★'):'未知暗牌').join(' / ')+'</span>':'')+'</div>'+
  '<div class="target-actions">'+(f?.owner===null?btn('部署驻军并占领 →','occupy','primary',!actionable||!can||!placementValid):f?.owner===1-p?btn('发动进攻 →','attack','primary danger',!actionable||!can)+btn('围城 · 3 补给','siege','secondary',!actionable||!can||f.garrison.length<=3||s.players[p].supply<3,'title="封锁一张第4或第5位预备守军，本次交锋不参与牌型"'):f?.owner===p?btn('整编驻军 →','reorganize','primary',!actionable||!placementValid)+btn('快速换防 · 3','rapid_redeploy','secondary',!actionable||!placementValid||s.rapidRedeployUsed||s.players[p].supply<3):'')+
  btn('补充暗牌 · 2 补给','supply','secondary',!actionable||s.supplyUsed||s.players[p].supply<2||!s.deck.length,'title="消耗 2 点补给，从公共牌库随机抽取 1 张暗牌"')+btn('结束行动','pass','text-button',!actionable)+'</div></div></div>';
@@ -151,14 +154,14 @@ function positionNodes(){
  if(!s||s.phase!=='campaign'||!scene.renderer)return;
  const stage=document.querySelector('.map-stage');if(!stage)return;
  for(const f of s.fields){const el=stage.querySelector('[data-id="'+f.id+'"]');if(!el)continue;
- const point=scene.project?.(f);if(point){el.style.left=point.x+'%';el.style.top=point.y+'%'}
+ const point=s.fields.length>9?{x:f.x,y:f.y}:scene.project?.(f);if(point){el.style.left=point.x+'%';el.style.top=point.y+'%'}
  }
 }
 
 function eventView(){
  const e=events[0],map=e.map||s.fields;
  const paths=map.flatMap(f=>f.links.filter(id=>f.id.localeCompare(id)<0).map(id=>{const to=map.find(t=>t.id===id);return to?'<line x1="'+f.x+'" y1="'+f.y+'" x2="'+to.x+'" y2="'+to.y+'"/>':''})).join('');
- const diagram=e.field&&map.length?'<div class="event-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+paths+'</svg>'+map.map(f=>'<div class="event-map-node '+(f.id===e.field?'hit':'')+' owner-'+f.owner+'" style="left:'+f.x+'%;top:'+f.y+'%"><i>'+(f.capital?'♜':'◆')+'</i><b>'+f.label+'</b></div>').join('')+'</div>':'';
+ const diagram=e.field&&map.length?'<div class="event-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+paths+'</svg>'+map.map(f=>'<div class="event-map-node '+(f.id===e.field?'hit':'')+' owner-'+f.owner+'" style="left:'+f.x+'%;top:'+f.y+'%"><i>'+fieldIcon(f)+'</i><b>'+f.label+'</b></div>').join('')+'</div>':'';
  return '<section class="event-screen event-'+e.kind+'" role="status" aria-live="polite"><div class="event-panel"><div class="eyebrow">战场快报 / '+e.kind.toUpperCase()+'</div><h1>'+esc(e.title)+'</h1><p>'+esc(e.detail)+'</p>'+diagram+
  (e.strategy?'<div class="event-strategy"><span>'+e.strategy.icon+'</span><div><b>'+e.strategy.name+'</b><small>'+e.strategy.desc+'</small></div><strong>'+e.strategy.price+' 补给</strong></div>':'')+
  ((e.cards||[]).length?'<div class="event-cards">'+e.cards.map(c=>card(c,{hidden:!!c.hidden,small:e.cards.length>6})).join(''):'')+
