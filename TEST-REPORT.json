@@ -18,6 +18,7 @@
     "twoDeckJokers": 2,
     "uniqueCardIds": "passed"
   },
+  "globalVersionBadge": "v1.9.1 visible across all application states",
   "browserUIQA": {
     "browser": "Chrome via Playwright",
     "viewports": [
