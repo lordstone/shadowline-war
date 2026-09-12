@@ -1,5 +1,7 @@
 # 暗线战争 · Shadowline War
 
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.12.3**](https://lordstone.github.io/shadowline-war/)
+
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
 ## 立即游玩
@@ -70,6 +72,12 @@
 - `tests/engine.test.mjs`：规则与完整对局测试。
 
 Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证保留于 vendor/THREE-LICENSE.txt。无遥测，无远程资源，无外部字体。存档属于本机浏览器的数据；更换端口或浏览器会使用独立存档。
+
+## 许可证
+
+本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
+
+这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
 
 ## 1.1 试玩修复
 
