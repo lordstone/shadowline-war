@@ -19,7 +19,7 @@ function confrontation(){
  s=next(s,{type:'deploy',cards:ids(s.players[1].hand.slice(0,2))});
  return s;
 }
-test('exact ranking, A boundaries and joker exclusions',()=>{
+test('exact ranking, A boundaries and wildcard jokers',()=>{
  assert.equal(power([c(3),c(3,1),c(3,2)])[0],6);
  assert.equal(power([c(1),c(2),c(3)])[0],5);
  assert.equal(power([c(1),c(2,1),c(3,2)])[0],4);
@@ -27,17 +27,26 @@ test('exact ranking, A boundaries and joker exclusions',()=>{
  assert.equal(power([c(6),c(6,1),c(13,2)])[0],2);
  assert.deepEqual(power([c(6),c(6,1)]),[2,6,0,0]);
  assert.equal(power([c(12),c(13,1),c(1,2)])[0],1);
- assert.equal(power([c(8),c(8,1),c(14,4)])[0],1);
- assert.equal(power([c(13),c(14,4),c(15,4)])[0],1);
+ assert.deepEqual(power([c(8),c(8,1),c(14,4)]),[6,8,0,0]);
+ assert.deepEqual(power([c(13),c(14,4),c(15,4)]),[6,13,0,0]);
  assert.equal(compare([c(15,4)],[c(14,4)]),1);
  assert.equal(compare([c(13)],[c(1)]),1);
  assert.equal(compare([c(5),c(5,1),c(3,2)],[c(4),c(4,1),c(13,2)]),1);
  assert.equal(compare([c(7),c(5,1)],[c(7,2),c(4,3)]),1);
 });
-test('enumerate all 24,804 three-card hands against exact category counts',()=>{
+test('jokers maximize legal combinations with natural and big-joker tie breaks',()=>{
+ assert.deepEqual(power([c(3,0),c(3,1),c(14,4)]),[6,3,0,0]);
+ assert.deepEqual(power([c(10,0),c(11,0),c(14,4)]),[5,12,0,0]);
+ assert.deepEqual(power([c(10,0),c(12,1),c(15,4)]),[4,12,0,0]);
+ assert.equal(compare([c(3,0),c(3,1),c(15,4)],[c(3,2),c(3,3),c(14,4)]),1);
+ assert.equal(compare([c(3,0),c(3,1),c(3,2)],[c(3,3),c(3,1),c(15,4)]),1);
+ assert.equal(compare([c(14,4)],[c(15,4)]),-1);
+ assert.equal(compare([c(13,0),c(13,1),c(14,4)],[c(15,4)]),1);
+});
+test('enumerate all 24,804 wildcard three-card hands against exact category counts',()=>{
  const d=makeDeck(),counts=Array(7).fill(0);
  for(let i=0;i<d.length;i++)for(let j=i+1;j<d.length;j++)for(let k=j+1;k<d.length;k++)counts[power([d[i],d[j],d[k]])[0]]++;
- assert.deepEqual(counts,[0,19204,3744,1100,660,44,52]);
+ assert.deepEqual(counts,[0,16500,5064,1540,1212,228,260]);
 });
 test('four and five revealed defenders use their strongest three-card combination',()=>{
  assert.deepEqual(power([c(2,0),c(7,1),c(9,2),c(9,3)]),[2,9,7,0]);

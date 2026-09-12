@@ -1,11 +1,17 @@
 {
   "date": "2026-09-11",
-  "tests": 36,
-  "passed": 36,
+  "tests": 37,
+  "passed": 37,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 144,
-  "legalActions": 8440,
+  "legalActions": 9507,
+  "wildcardJokers": {
+    "allThreeCardHands": 24804,
+    "categoryCounts": [0, 16500, 5064, 1540, 1212, 228, 260],
+    "naturalTieBreak": "passed",
+    "bigJokerTieBreak": "passed"
+  },
   "browserUIQA": {
     "browser": "Chrome via Playwright",
     "viewports": [

@@ -18,17 +18,41 @@ function exactPower(cards){
  if(pair!==undefined)return [2,pair,r.find(rank=>rank!==pair)||0,0];
  return [1,r[0]||0,r[1]||0,r[2]||0];
 }
-export function power(cards){
- if(cards.length<=3)return exactPower(cards);
- let best=[0,0,0,0];
+function comparePower(x,y){for(let i=0;i<4;i++)if(x[i]!==y[i])return Math.sign(x[i]-y[i]);return 0}
+const evaluationCache=new Map();
+function compareEvaluation(a,b){
+ const strength=comparePower(a.value,b.value);if(strength)return strength;
+ if(a.wilds!==b.wilds)return Math.sign(b.wilds-a.wilds); // Natural formation wins an otherwise exact tie.
+ return Math.sign(a.joker-b.joker); // Big joker wins the same wildcard formation.
+}
+function exactEvaluation(cards){
+ const key=cards.map(c=>[c.rank,c.suit,c.boost||0].join(':')).sort().join('|');
+ if(evaluationCache.has(key))return evaluationCache.get(key);
+ const jokers=cards.filter(c=>c.rank>13),ordinary=cards.filter(c=>c.rank<=13);
+ let best={value:exactPower(cards),wilds:0,joker:Math.max(0,...jokers.map(c=>c.rank))};
+ if(jokers.length){
+  const assigned=[];
+  const search=index=>{
+   if(index===jokers.length){
+    const candidate={value:exactPower([...ordinary,...assigned]),wilds:jokers.length,joker:Math.max(...jokers.map(c=>c.rank))};
+    if(compareEvaluation(candidate,best)>0)best=candidate;return;
+   }
+   for(let rank=1;rank<=13;rank++)for(let suit=0;suit<4;suit++){assigned[index]={rank,suit,boost:jokers[index].boost||0};search(index+1)}
+  };
+  search(0);
+ }
+ evaluationCache.set(key,best);return best;
+}
+function evaluation(cards){
+ if(cards.length<=3)return exactEvaluation(cards);
+ let best={value:[0,0,0,0],wilds:99,joker:0};
  for(let i=0;i<cards.length;i++)for(let j=i+1;j<cards.length;j++)for(let k=j+1;k<cards.length;k++){
-  const candidate=exactPower([cards[i],cards[j],cards[k]]);
-  if(comparePower(candidate,best)>0)best=candidate;
+  const candidate=exactEvaluation([cards[i],cards[j],cards[k]]);if(compareEvaluation(candidate,best)>0)best=candidate;
  }
  return best;
 }
-function comparePower(x,y){for(let i=0;i<4;i++)if(x[i]!==y[i])return Math.sign(x[i]-y[i]);return 0}
-export function compare(a,b){const x=power(a),y=power(b);for(let i=0;i<4;i++){if(x[i]!==y[i])return Math.sign(x[i]-y[i])}return 0}
+export function power(cards){return evaluation(cards).value}
+export function compare(a,b){return compareEvaluation(evaluation(a),evaluation(b))}
 export function handName(cards){return ['未出牌','高牌','对子','同花','顺子','同花顺','三条'][power(cards)[0]]}
 export function opened(s,p){return s.battle?.lines[p].filter(c=>c.open)||[]}
 export function garrisonLimit(f){return f?.capital?5:f?.fortified?4:3}
