@@ -8,6 +8,7 @@ const scene=new Battlefield(sceneEl);
 let s=null,options={...defaults,seed:Math.floor(Math.random()*4294967296)},selection=new Map(),reveals=new Set(),focus=null,gate=false,modal=null,aiTask=null,deadline=null,remaining=null,clockKey='',muted=false;
 let targeting=null;
 let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
+let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map();
 const STORE='shadowline-war-v1';
 const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆'}[id]||'◇');
 const fieldIcon=f=>f.capital?'♜':f.fortified?'▰':f.type==='oil'?'▥':f.type==='port'?'⚓':f.type==='mountain'?'▲':'◆';
@@ -39,7 +40,7 @@ function strategyCard(id,action='choose-strategy',disabled=false){
 }
 function header(menu=false){
  return '<header class="topbar"><a class="brand" href="#" data-action="'+(menu?'none':'pause')+'"><span class="brand-mark">⟐</span><span>暗线战争<small>SHADOWLINE / WAR ROOM</small></span></a>'+
- (menu?'<span class="top-meta">TACTICAL CARD WARFARE <span class="live-dot"></span> 离线就绪</span>':'<div class="round-info"><span>'+(s.opt.rules==='campaign'?'战役':'经典交锋')+'</span><b>'+String(s.round).padStart(2,'0')+'</b><span>回合</span><span id="clock" class="clock"></span></div>')+
+ (menu?'<span class="top-meta">TACTICAL CARD WARFARE <span class="live-dot"></span> 离线就绪</span>':'<div class="round-info"><span>'+(s.opt.rules==='campaign'?'战役':'经典交锋')+'</span><b>'+String(s.round).padStart(2,'0')+'</b><span>回合</span>'+(s.opt.rules==='campaign'&&s.phase!=='draft'?'<span class="action-point '+(s.phase==='campaign'?'available':'spent')+'"><i></i>主要行动 '+(s.phase==='campaign'?'1 / 1':'0 / 1')+'</span>':'')+'<span id="clock" class="clock"></span></div>')+
  '<div class="top-actions">'+btn(muted?'音效关闭':'音效开启','sound','text-button')+btn('规则','rules','text-button')+(menu?'':btn('暂停','pause','icon-button'))+'</div></header>';
 }
 function optionSelect(name,label,entries,value){return '<label class="option"><span>'+label+'</span><select data-option="'+name+'">'+entries.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+t+'</option>').join('')+'</select></label>'}
@@ -83,8 +84,8 @@ function mapView(){
  const p=viewer(),f=s.fields.find(f=>f.id===focus);
  const actionable=s.active===p&&!isAI(),can=f&&f.owner!==p&&reachable(s,p,f);
  const limit=garrisonLimit(f),chosen=[...selection].map(([id,open])=>({id,open})),placementValid=chosen.length>0&&chosen.length<=limit&&(f?.capital||chosen.some(c=>c.open));
- const topology=s.fields.length>9?'<svg class="topology-lines" viewBox="0 0 100 100" preserveAspectRatio="none">'+s.fields.flatMap(a=>a.links.filter(id=>a.id.localeCompare(id)<0).map(id=>{const b=s.fields.find(f=>f.id===id);return b?'<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>':''})).join('')+'</svg>':'';
- return (targeting?'<div class="targeting-note">'+strategyById(targeting).name+'：点击符合条件的地图据点'+btn('取消','cancel-target','text-button')+'</div>':'')+'<div class="war-map"><div class="map-title"><div class="eyebrow">战术地图 / LIVE OPERATIONS</div><h2>'+MAPS.find(m=>m.id===s.opt.map).name+'</h2></div><div class="map-stage '+(s.fields.length>9?'dense-map':'')+'"><div id="visual-mount" class="scene-mount"></div>'+topology+'<div class="node-layer">'+s.fields.map(f=>'<button class="map-node owner-'+f.owner+' '+(f.id===focus?'focused ':'')+(reachable(s,p,f)&&f.owner!==p?'reachable':'')+'" data-action="focus" data-id="'+f.id+'" style="left:'+f.x+'%;top:'+f.y+'%"><span class="node-icon">'+fieldIcon(f)+'</span><b>'+f.label+'</b><small>'+(f.owner===null?'中立区域':f.owner===p?'己方控制':'敌方控制')+' · 容量 '+garrisonLimit(f)+(f.owner!==null?' · 驻军 '+f.garrison.length:'')+(f.blockedUntil>=s.round?' · 封锁中':'')+'</small></button>').join('')+'</div><span class="map-compass">N<br>↑</span></div>'+
+ const topology='<svg class="topology-lines" viewBox="0 0 100 100" preserveAspectRatio="none">'+s.fields.flatMap(a=>a.links.filter(id=>a.id.localeCompare(id)<0).map(id=>{const b=s.fields.find(f=>f.id===id);return b?'<line data-a="'+a.id+'" data-b="'+b.id+'" x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>':''})).join('')+'</svg>';
+ return (targeting?'<div class="targeting-note">'+strategyById(targeting).name+'：点击符合条件的地图据点'+btn('取消','cancel-target','text-button')+'</div>':'')+'<div class="war-map"><div class="map-title"><div class="eyebrow">战术地图 / LIVE OPERATIONS</div><h2>'+MAPS.find(m=>m.id===s.opt.map).name+'</h2></div><div class="map-stage '+(s.fields.length>9?'dense-map':'')+'"><div class="map-camera" style="--map-x:'+mapViewport.x+'px;--map-y:'+mapViewport.y+'px;--map-scale:'+mapViewport.scale+'"><div id="visual-mount" class="scene-mount"></div>'+topology+'<div class="node-layer">'+s.fields.map(f=>'<button class="map-node owner-'+f.owner+' '+(f.id===focus?'focused ':'')+(reachable(s,p,f)&&f.owner!==p?'reachable':'')+'" data-action="focus" data-id="'+f.id+'" style="left:'+f.x+'%;top:'+f.y+'%"><span class="node-icon">'+fieldIcon(f)+'</span><b>'+f.label+'</b><small>'+(f.owner===null?'中立区域':f.owner===p?'己方控制':'敌方控制')+' · 容量 '+garrisonLimit(f)+(f.owner!==null?' · 驻军 '+f.garrison.length:'')+(f.blockedUntil>=s.round?' · 封锁中':'')+'</small></button>').join('')+'</div></div><div class="map-controls"><button data-map-control="in" aria-label="放大战场">＋</button><button data-map-control="out" aria-label="缩小战场">－</button><button data-map-control="reset" aria-label="重置战场视图">⌖</button></div><span class="map-gesture-hint">拖动战场 · 双指或滚轮缩放</span><span class="map-compass">N<br>↑</span></div>'+
  '<div class="target-bar"><div><small>当前目标</small><b>'+(f?f.label+' · 容量 '+limit:'选择地图上的据点')+'</b><p>'+(f?f.owner===p?'固定驻军不可直接取回；选择 1–'+limit+' 张手牌可整编换防。':!can?'目标尚不相邻，需要先建立进军路线。':f.owner===null?'选择 1–'+limit+' 张手牌驻军，非首都至少 1 张明牌。':'守军公开牌超过 3 张时自动计算最强三张；可用围城封锁一张预备守军。':'青色代表苍岚，橙色代表赤烬。')+'</p>'+(f?.garrison.length?'<span class="garrison-info">驻军：'+f.garrison.map(c=>f.owner===p||c.open?face(c)+(SUITS[c.suit]||'★'):'未知暗牌').join(' / ')+'</span>':'')+'</div>'+
  '<div class="target-actions">'+(f?.owner===null?btn('部署驻军并占领 →','occupy','primary',!actionable||!can||!placementValid):f?.owner===1-p?btn('发动进攻 →','attack','primary danger',!actionable||!can)+btn('围城 · 3 补给','siege','secondary',!actionable||!can||f.garrison.length<=3||s.players[p].supply<3,'title="封锁一张第4或第5位预备守军，本次交锋不参与牌型"'):f?.owner===p?btn('整编驻军 →','reorganize','primary',!actionable||!placementValid)+btn('快速换防 · 3','rapid_redeploy','secondary',!actionable||!placementValid||s.rapidRedeployUsed||s.players[p].supply<3):'')+
  btn('补充暗牌 · 2 补给','supply','secondary',!actionable||s.supplyUsed||s.players[p].supply<2||!s.deck.length,'title="消耗 2 点补给，从公共牌库随机抽取 1 张暗牌"')+btn('结束行动','pass','text-button',!actionable)+'</div></div></div>';
@@ -153,9 +154,22 @@ function mountScene(){
 function positionNodes(){
  if(!s||s.phase!=='campaign'||!scene.renderer)return;
  const stage=document.querySelector('.map-stage');if(!stage)return;
+ const projected={};
  for(const f of s.fields){const el=stage.querySelector('[data-id="'+f.id+'"]');if(!el)continue;
- const point=s.fields.length>9?{x:f.x,y:f.y}:scene.project?.(f);if(point){el.style.left=point.x+'%';el.style.top=point.y+'%'}
+ const point=scene.project?.(f)||{x:f.x,y:f.y};projected[f.id]=point;el.style.left=point.x+'%';el.style.top=point.y+'%';
  }
+ for(const line of stage.querySelectorAll('.topology-lines line')){const a=projected[line.dataset.a],b=projected[line.dataset.b];if(a&&b){line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y)}}
+}
+function updateMapCamera(){
+ const camera=document.querySelector('.map-camera');if(!camera)return;
+ camera.style.setProperty('--map-x',mapViewport.x+'px');camera.style.setProperty('--map-y',mapViewport.y+'px');camera.style.setProperty('--map-scale',mapViewport.scale);
+}
+function zoomMap(factor,clientX,clientY){
+ const stage=document.querySelector('.map-stage');if(!stage)return;
+ const box=stage.getBoundingClientRect(),old=mapViewport.scale,next=Math.max(1,Math.min(2.2,old*factor));
+ const x=(clientX??box.left+box.width/2)-box.left-box.width/2,y=(clientY??box.top+box.height/2)-box.top-box.height/2;
+ mapViewport.x=x-(x-mapViewport.x)*(next/old);mapViewport.y=y-(y-mapViewport.y)*(next/old);mapViewport.scale=next;
+ if(next===1){mapViewport.x=0;mapViewport.y=0}updateMapCamera();
 }
 
 function eventView(){
@@ -164,7 +178,7 @@ function eventView(){
  const diagram=e.field&&map.length?'<div class="event-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+paths+'</svg>'+map.map(f=>'<div class="event-map-node '+(f.id===e.field?'hit':'')+' owner-'+f.owner+'" style="left:'+f.x+'%;top:'+f.y+'%"><i>'+fieldIcon(f)+'</i><b>'+f.label+'</b></div>').join('')+'</div>':'';
  return '<section class="event-screen event-'+e.kind+'" role="status" aria-live="polite"><div class="event-panel"><div class="eyebrow">战场快报 / '+e.kind.toUpperCase()+'</div><h1>'+esc(e.title)+'</h1><p>'+esc(e.detail)+'</p>'+diagram+
  (e.strategy?'<div class="event-strategy"><span>'+e.strategy.icon+'</span><div><b>'+e.strategy.name+'</b><small>'+e.strategy.desc+'</small></div><strong>'+e.strategy.price+' 补给</strong></div>':'')+
- ((e.cards||[]).length?'<div class="event-cards">'+e.cards.map(c=>card(c,{hidden:!!c.hidden,small:e.cards.length>6})).join(''):'')+
+ ((e.cards||[]).length?'<div class="event-cards">'+e.cards.map(c=>card(c,{hidden:!!c.hidden,small:e.cards.length>6})).join('')+'</div>':'')+
  '<div class="event-progress" style="--duration:'+(s.opt.eventSeconds||3)+'s"><span style="animation-play-state:'+(modal?'paused':'running')+'"></span></div><div class="event-footer"><small>展示期间暂停 AI 和行动计时 · 剩余 '+events.length+' 条</small>'+btn('我看清了 · 继续 →','next-event','secondary')+'</div></div></section>';
 }
 function advanceEvent(){
@@ -217,6 +231,7 @@ function perform(action){
  }catch(e){console.error(e);toast('行动未提交，战局保持不变：'+e.message)}
 }
 app.addEventListener('click',e=>{
+ const control=e.target.closest('[data-map-control]');if(control){e.preventDefault();const kind=control.dataset.mapControl;if(kind==='reset'){mapViewport={x:0,y:0,scale:1};updateMapCamera()}else zoomMap(kind==='in'?1.25:.8);return}
  const el=e.target.closest('[data-action]');if(!el||el.disabled)return;e.preventDefault();const a=el.dataset.action,id=el.dataset.id;
  if(a==='none')return;
  if(a==='next-event'){if(!modal)advanceEvent();return}
@@ -256,6 +271,21 @@ app.addEventListener('click',e=>{
  if(['attack','siege'].includes(a))perform({type:a,field:focus});
  if(['fold','supply','pass','continue'].includes(a))perform({type:a});
 });
+app.addEventListener('wheel',e=>{if(!e.target.closest('.map-stage'))return;e.preventDefault();zoomMap(e.deltaY<0?1.12:.89,e.clientX,e.clientY)},{passive:false});
+app.addEventListener('pointerdown',e=>{
+ const stage=e.target.closest('.map-stage');if(!stage||e.target.closest('button'))return;
+ stage.setPointerCapture?.(e.pointerId);mapPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(mapPointers.size===1)mapDrag={x:e.clientX,y:e.clientY,originX:mapViewport.x,originY:mapViewport.y};
+ else if(mapPointers.size===2){const [a,b]=[...mapPointers.values()];mapDrag={distance:Math.hypot(a.x-b.x,a.y-b.y),scale:mapViewport.scale}}
+ stage.classList.add('dragging');
+});
+app.addEventListener('pointermove',e=>{
+ if(!mapPointers.has(e.pointerId))return;mapPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(mapPointers.size===1&&mapDrag?.originX!==undefined){mapViewport.x=mapDrag.originX+e.clientX-mapDrag.x;mapViewport.y=mapDrag.originY+e.clientY-mapDrag.y;updateMapCamera()}
+ else if(mapPointers.size===2&&mapDrag?.distance){const [a,b]=[...mapPointers.values()],distance=Math.hypot(a.x-b.x,a.y-b.y),target=Math.max(1,Math.min(2.2,mapDrag.scale*distance/mapDrag.distance));zoomMap(target/mapViewport.scale,(a.x+b.x)/2,(a.y+b.y)/2)}
+});
+function endMapPointer(e){mapPointers.delete(e.pointerId);if(!mapPointers.size){mapDrag=null;document.querySelector('.map-stage')?.classList.remove('dragging')}else{const a=[...mapPointers.values()][0];mapDrag={x:a.x,y:a.y,originX:mapViewport.x,originY:mapViewport.y}}}
+app.addEventListener('pointerup',endMapPointer);app.addEventListener('pointercancel',endMapPointer);
 app.addEventListener('change',e=>{
  const name=e.target.dataset.option;if(!name)return;
  const value=e.target.value;

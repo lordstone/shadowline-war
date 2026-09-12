@@ -25,6 +25,7 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  checks.push('AI invasion target, automatic 3-second queue, pause, preserved action timer and fixed three-card garrison');
  s=createGame({strategies:false,mode:'ai'});s.players[0].strategies=['conscription'];await load(s);await page.locator('[data-action="use-strategy"][data-id="conscription"]').click();
  await click('next-event');assert.equal(await page.locator('.event-cards .playing-card:not(.back)').count(),1);
+ assert.equal(await page.locator('.event-cards + .event-progress').count(),1);
  assert.equal(await page.locator('.event-cards .new-card-badge').count(),1);await drain();
  assert.equal(await page.locator('.hand-tray .new-card-badge').count(),1);checks.push('new card face animation and persistent hand marker');
  s=createGame({strategies:false,mode:'ai'});s.players[0].strategies=['isr'];await load(s);await page.locator('[data-action="use-strategy"][data-id="isr"]').click();
