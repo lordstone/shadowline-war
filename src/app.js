@@ -48,8 +48,8 @@ function header(menu=false){
  '<div class="top-actions">'+(menu?'<button class="identity-chip" data-action="edit-identity"><span>'+identityLogo+'</span><b>'+esc(identityName)+'</b><small>编辑身份</small></button>':'')+btn(muted?'音效关闭':'音效开启','sound','text-button')+btn('规则','rules','text-button')+(menu?'':btn('暂停','pause','icon-button'))+'</div></header>';
 }
 function optionSelect(name,label,entries,value){return '<label class="option"><span>'+label+'</span><select data-option="'+name+'">'+entries.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+t+'</option>').join('')+'</select></label>'}
-function logoPicker(player){const selected=options.playerLogos?.[player]||LOGOS[player];return '<div class="logo-picker" role="group" aria-label="选择徽记">'+LOGOS.map(icon=>'<button class="'+(selected===icon?'active':'')+'" data-action="select-logo" data-player="'+player+'" data-id="'+icon+'" aria-label="选择徽记 '+icon+'">'+icon+'</button>').join('')+'</div>'}
-function identityFields(player,label){return '<div class="identity-fields"><label class="option"><span>'+label+'名称</span><input data-option="playerName'+player+'" maxlength="18" placeholder="'+(options.mode==='local'?'玩家'+(player+1):'玩家')+'" value="'+esc(options.playerNames?.[player]||'')+'"></label>'+logoPicker(player)+'</div>'}
+function logoPicker(player){const selected=options.playerLogos?.[player]||LOGOS[player];return '<div class="logo-picker" role="radiogroup" aria-label="选择徽记">'+LOGOS.map(icon=>'<label class="logo-choice"><input type="radio" name="player-logo-'+player+'" data-option="playerLogo'+player+'" value="'+icon+'" '+(selected===icon?'checked':'')+'><span>'+icon+'</span></label>').join('')+'</div>'}
+function identityFields(player,label){const selected=options.playerLogos?.[player]||LOGOS[player];return '<div class="identity-editor"><div class="identity-preview"><span>'+selected+'</span><small>当前徽记</small></div><div class="identity-controls"><label class="identity-name"><span>'+label+'名称</span><input data-option="playerName'+player+'" maxlength="18" placeholder="'+(options.mode==='local'?'玩家'+(player+1):'玩家')+'" value="'+esc(options.playerNames?.[player]||'')+'"></label><span class="identity-label">选择徽记</span>'+logoPicker(player)+'</div></div>'}
 function menu(){
  const map=MAPS.find(m=>m.id===options.map);
  return header(true)+'<section class="command-menu"><div class="setup-panel"><div class="eyebrow"><span></span> 作战部署 / OPERATION SETUP</div><h1>明面交火。<br><em>暗线制胜。</em></h1><p class="intro">一组牌库，一场信息战争。<br>建立防线，隐藏底牌，夺取敌方首都。</p>'+
@@ -286,7 +286,6 @@ app.addEventListener('click',e=>{
  if(!s){
   if(a.startsWith('mode-'))options.mode=a.slice(5);
   if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id);options.factions=[map.factions[0],map.factions[1]]}
-  if(a==='select-logo'){const p=Number(el.dataset.player);options.playerLogos=[...(options.playerLogos||LOGOS.slice(0,2))];options.playerLogos[p]=id}
   render();return
  }
  if(a==='reserve'){showModal({kind:'reserve',player:Number(el.dataset.player)});return}
@@ -331,6 +330,7 @@ app.addEventListener('change',e=>{
  const name=e.target.dataset.option;if(!name)return;
  const value=e.target.value;
  if(name.startsWith('playerName')){const p=Number(name.slice(-1));options.playerNames=[...(options.playerNames||['',''])];options.playerNames[p]=value;return}
+ if(name.startsWith('playerLogo')){const p=Number(name.slice(-1));options.playerLogos=[...(options.playerLogos||LOGOS.slice(0,2))];options.playerLogos[p]=value;const preview=e.target.closest('.identity-editor')?.querySelector('.identity-preview>span');if(preview)preview.textContent=value;return}
  if(name==='faction0'||name==='faction1'){const p=Number(name.slice(-1)),map=MAPS.find(m=>m.id===options.map);options.factions=[...(options.factions||map.factions)];options.factions[p]=value;options.factions[1-p]=map.factions.find(x=>x!==value);render();return}
  options[name]=['seed','timer','first','maxRounds','eventSeconds'].includes(name)?Math.min(4294967295,Math.max(0,Number(value)||0)):name==='strategies'?value==='true':value;
  if(name==='rules'||name==='map'||name==='deckCount')render();
