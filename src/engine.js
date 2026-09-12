@@ -87,15 +87,18 @@ export function validate(s){
 }
 export function createGame(options={}){
  const opt={...defaults,...options};opt.seed=Number(opt.seed)>>>0;
+ const map=MAPS.find(m=>m.id===opt.map)||MAPS[0];
  const text=(value,fallback)=>String(value||'').trim().slice(0,18)||fallback;
  const local=opt.mode==='local',aiName=opt.difficulty==='easy'?'新兵 AI':'老兵 AI';
  const names=[text(opt.playerNames?.[0],local?'玩家1':'玩家'),text(opt.playerNames?.[1],local?'玩家2':aiName)];
  const logos=[text(opt.playerLogos?.[0],'⟐').slice(0,2),text(opt.playerLogos?.[1],'✣').slice(0,2)];
- const factions=[text(opt.factions?.[0],''),text(opt.factions?.[1],'')];
+ const factions=[text(opt.factions?.[0],map.factions[0]),text(opt.factions?.[1],map.factions[1])];
+ const sides=factions.map((name,p)=>{const side=map.factions.indexOf(name);return side<0?p:side});
+ if(sides[0]===sides[1])sides[1]=1-sides[0];
  opt.playerNames=names;opt.playerLogos=logos;opt.factions=factions;
  const s={version:1,opt,rng:opt.seed,phase:'draft',active:opt.first===1?1:0,round:1,skirmish:0,generated:0,
- players:[{name:names[0],logo:logos[0],faction:factions[0],hand:[],reserve:[],strategies:[],supply:2,wins:0},{name:names[1],logo:logos[1],faction:factions[1],hand:[],reserve:[],strategies:[],supply:2,wins:0}],
- deck:[],fields:structuredClone(MAPS.find(m=>m.id===opt.map)?.fields||MAPS[0].fields),
+ players:[{name:names[0],logo:logos[0],faction:factions[0],side:sides[0],hand:[],reserve:[],strategies:[],supply:2,wins:0},{name:names[1],logo:logos[1],faction:factions[1],side:sides[1],hand:[],reserve:[],strategies:[],supply:2,wins:0}],
+ deck:[],fields:structuredClone(map.fields).map(f=>({...f,owner:f.owner===null?null:sides.indexOf(f.owner)})),
  battle:null,log:[],winner:null,reason:'',draft:[[],[]],drafted:[false,false],turn:1,strategyUsed:false,supplyUsed:false,raid:false,knowledge:[{},{}],
  strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false};
  const deckCount=resolvedDeckCount(opt,s.fields);s.baseDeckSize=54+(deckCount-1)*52;
@@ -118,6 +121,8 @@ function fillMarket(s){
 }
 function refreshMarket(s){s.strategyDiscard.push(...s.strategyMarket.splice(0));fillMarket(s);log(s,'策略市场已刷新。')}
 export function upgradeState(s){
+ const map=MAPS.find(m=>m.id===s.opt.map)||MAPS[0];
+ for(let p=0;p<2;p++)if(!Number.isInteger(s.players[p].side))s.players[p].side=Math.max(0,map.factions.indexOf(s.players[p].faction));
  if(!s.opt.deckCount)s.opt.deckCount='auto';
  if(!s.baseDeckSize)s.baseDeckSize=54;
  if(!Array.isArray(s.strategyDeck)){const held=s.players.flatMap(p=>p.strategies);s.strategyDeck=STRATEGIES.flatMap(c=>Array(Math.max(0,c.count-held.filter(id=>id===c.id).length)).fill(c.id));s.strategyMarket=[];s.strategyDiscard=[]}

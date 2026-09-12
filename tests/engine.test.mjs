@@ -69,6 +69,15 @@ test('player identities default cleanly and retain custom names, logos and facti
  const local=createGame({rules:'classic',strategies:false,mode:'local',playerNames:['','小林'],playerLogos:['⚓','▲'],factions:['海峡联合舰队','波斯湾卫队']});
  assert.deepEqual(local.players.map(p=>[p.name,p.logo,p.faction]),[['玩家1','⚓','海峡联合舰队'],['小林','▲','波斯湾卫队']]);
 });
+test('choosing the opposite faction swaps player themes and capital ownership',()=>{
+ const s=createGame({map:'china_civil_war',rules:'campaign',strategies:false,factions:['解放军','国民政府军'],playerLogos:['★','☀'],seed:19});
+ assert.deepEqual(s.players.map(p=>[p.faction,p.logo,p.side]),[['解放军','★',1],['国民政府军','☀',0]]);
+ assert.equal(s.fields.find(f=>f.id==='yanan').owner,0);
+ assert.equal(s.fields.find(f=>f.id==='nanjing').owner,1);
+ assert.equal(s.fields.find(f=>f.id==='yanan').garrison.length,3);
+ assert.equal(s.fields.find(f=>f.id==='nanjing').garrison.length,3);
+ validate(s);
+});
 test('terrain limits, mountain disclosure, and sea landing formation rules are enforced',()=>{
  assert.equal(terrainLimit({type:'swamp'}),1);assert.equal(garrisonLimit({type:'forest'}),2);assert.equal(garrisonLimit({type:'capital'}),5);
  let mountain=fixture([[13,0],[12,1]],[[2,2]]),mf={id:'mountain',type:'mountain',garrison:[]};
