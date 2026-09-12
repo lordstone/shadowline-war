@@ -18,7 +18,7 @@
     "twoDeckJokers": 2,
     "uniqueCardIds": "passed"
   },
-  "globalVersionBadge": "v1.11.1 visible across all application states",
+  "globalVersionBadge": "v1.11.2 visible across all application states",
   "identityAndMaps": "passed: player identity defaults/customization and eight connected maps",
   "terrainCombatRules": "passed: swamp/forest limits, mountain disclosure, and sea-landing anti-triple rule",
   "revealedKickerComparison": "passed: Q-4 defeats Q-3 before concealed cards are revealed",

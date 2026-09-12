@@ -331,7 +331,7 @@ app.addEventListener('change',e=>{
  const name=e.target.dataset.option;if(!name)return;
  const value=e.target.value;
  if(name.startsWith('playerName')){const p=Number(name.slice(-1));options.playerNames=[...(options.playerNames||['',''])];options.playerNames[p]=value;return}
- if(name==='faction0'||name==='faction1'){const p=Number(name.slice(-1));options.factions=[...(options.factions||['',''])];options.factions[p]=value;return}
+ if(name==='faction0'||name==='faction1'){const p=Number(name.slice(-1)),map=MAPS.find(m=>m.id===options.map);options.factions=[...(options.factions||map.factions)];options.factions[p]=value;options.factions[1-p]=map.factions.find(x=>x!==value);render();return}
  options[name]=['seed','timer','first','maxRounds','eventSeconds'].includes(name)?Math.min(4294967295,Math.max(0,Number(value)||0)):name==='strategies'?value==='true':value;
  if(name==='rules'||name==='map'||name==='deckCount')render();
 });
