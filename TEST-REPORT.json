@@ -1,11 +1,11 @@
 {
   "date": "2026-09-12",
-  "tests": 41,
-  "passed": 41,
+  "tests": 42,
+  "passed": 42,
   "failed": 0,
   "threeCardHands": 24804,
-  "simulatedMatches": 288,
-  "legalActions": 20858,
+  "simulatedMatches": 384,
+  "legalActions": 27589,
   "wildcardJokers": {
     "allThreeCardHands": 24804,
     "categoryCounts": [0, 16500, 5064, 1540, 1212, 228, 260],
@@ -18,16 +18,20 @@
     "twoDeckJokers": 2,
     "uniqueCardIds": "passed"
   },
-  "globalVersionBadge": "v1.11.3 visible across all application states",
+  "globalVersionBadge": "v1.13.4 visible across all application states",
   "identityAndMaps": "passed: player identity defaults/customization and eight connected maps",
   "terrainCombatRules": "passed: swamp/forest limits, mountain disclosure, and sea-landing anti-triple rule",
   "revealedKickerComparison": "passed: Q-4 defeats Q-3 before concealed cards are revealed",
   "compactStrategyShop": "passed: right-side trigger opens the existing market modal",
   "browserUIQA": {
-    "browser": "Chrome via Playwright",
+    "browser": "Chrome via Playwright and live Chromium inspection",
     "viewports": [
       "1440x900",
-      "375x812"
+      "390x600",
+      "390x659",
+      "390x844",
+      "430x700",
+      "834x1112"
     ],
     "checks": [
       "AI invasion target, automatic 3-second queue, pause, preserved action timer and fixed three-card garrison",
@@ -35,17 +39,18 @@
       "strategy target selection and garrison roster",
       "occupation transfer and hotseat privacy before and after handoff",
       "actual deployment to tactical window and successful blitzkrieg",
-      "375px iPhone event and battle layout without page overflow",
+      "390px iPhone event and battle layout without page overflow",
       "AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish",
       "Visible location controls and explicit ordinary-card draw cost at app-window width; collapsed shop, purchase states, refill, hover tooltip and next-turn unlock",
       "Capital capacity-five selection and all target controls visible without page overflow",
-      "Six-map selector grid; 14-node Eastern Front renders 24 readable topology routes with no page errors"
+      "Eight-map selector; complex historical maps render connected, readable topology routes with no page errors",
+      "Compact iPhone Chrome HUD keeps the header, map, target controls, hand and tactics dock inside the visible viewport"
     ],
     "pageErrors": []
   },
   "ipadResponsiveQA": {
     "method": "live in-app Chromium viewport inspection",
-    "viewports": ["1024x768 landscape", "768x1024 portrait"],
+    "viewports": ["1024x768 landscape", "768x1024 portrait", "834x1112 portrait"],
     "documentOverflow": false,
     "handAlwaysInsideViewport": true,
     "mapZoomControl": "1.0 to 1.25 verified",
@@ -71,8 +76,8 @@
     "suppressedReserveRestoration": "passed"
   },
   "mapTopology": {
-    "maps": 6,
-    "newComplexMaps": ["eastern_front:14", "korea:11", "western_front:12"],
+    "maps": 8,
+    "newComplexMaps": ["eastern_front:14", "korea:11", "western_front:12", "hormuz:10", "china_civil_war:13"],
     "bidirectionalLinks": "passed",
     "connectedGraphs": "passed",
     "twoCapitalsEach": "passed"
