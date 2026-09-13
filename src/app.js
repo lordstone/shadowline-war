@@ -52,7 +52,7 @@ function header(menu=false){
  const identityLogo=options.playerLogos?.[0]||LOGOS[0];
  return '<header class="topbar"><a class="brand" href="#" data-action="'+(menu?'none':'pause')+'"><span class="brand-mark">⟐</span><span>暗线战争<small>SHADOWLINE / WAR ROOM</small></span></a>'+
  (menu?'<span class="top-meta">TACTICAL CARD WARFARE <span class="live-dot"></span> 离线就绪</span>':'<div class="round-info"><span>'+(s.opt.rules==='campaign'?'战役':'经典交锋')+'</span><b>'+String(s.round).padStart(2,'0')+'</b><span>回合</span>'+(s.opt.rules==='campaign'&&s.phase!=='draft'?'<span class="action-point '+(s.phase==='campaign'?'available':'spent')+'"><i></i><span class="action-label">主要行动</span><strong>'+(s.phase==='campaign'?'1 / 1':'0 / 1')+'</strong></span>':'')+'<span id="clock" class="clock"></span></div>')+
- '<div class="top-actions">'+(menu?'<button class="identity-chip" data-action="edit-identity" aria-label="选择名字和徽记" title="选择名字和徽记"><span class="identity-emblem">'+identityLogo+'</span><b>'+esc(identityName)+'</b></button>':'')+btn(muted?'音效关闭':'音效开启','sound','text-button')+btn('规则','rules','text-button')+(menu?'':btn('暂停','pause','icon-button'))+'</div></header>';
+ '<div class="top-actions">'+(menu?'<button class="identity-chip" data-action="edit-identity" aria-label="选择名字和徽记" title="选择名字和徽记"><span class="identity-emblem">'+identityLogo+'</span><b>'+esc(identityName)+'</b></button>':'')+btn(muted?'音效关闭':'音效开启','sound','text-button')+(menu?btn('教程','tutorial','text-button'):'')+btn('规则','rules','text-button')+(menu?'':btn('暂停','pause','icon-button'))+'</div></header>';
 }
 function optionSelect(name,label,entries,value){return '<label class="option"><span>'+label+'</span><select data-option="'+name+'">'+entries.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+t+'</option>').join('')+'</select></label>'}
 function logoPicker(player){const selected=options.playerLogos?.[player]||LOGOS[player];return '<div class="logo-picker" role="radiogroup" aria-label="选择徽记">'+LOGOS.map(icon=>'<label class="logo-choice"><input type="radio" name="player-logo-'+player+'" data-option="playerLogo'+player+'" value="'+icon+'" '+(selected===icon?'checked':'')+'><span>'+icon+'</span></label>').join('')+'</div>'}
@@ -173,6 +173,16 @@ const finalRulesHTML=`<div class="eyebrow">FIELD MANUAL / 战地手册</div><h2>
 <h3>战役、驻军与补给</h3><ul><li>每方首都开局部署 3 张暗牌驻军，手中保留 9 张。每个地图回合有 1 次主要行动，可占领、进攻、整编或跳过；只能从己方相邻据点建立进军路线。</li><li>普通据点容量 3，强化据点容量 4，首都容量 5。非首都至少有 1 张明牌，首都可以全暗；防守方公开牌超过 3 张时自动选择最强三张计算，其他守军仍可逐步翻开。</li><li>驻军设定后固定在据点。选择己方据点可消耗主要行动整编，或每回合一次花 3 补给快速换防并保留主要行动。攻击超过 3 张守军的据点时，可花 3 补给围城，随机封锁一张预备守军。</li><li>据点基础产出为 1，油田为 2：驻守 0–1 张明牌时正常产出，2 张明牌时停产，3 张以上明牌时倒扣同等补给。己方据点合计净产出为负时，本回合公开弃置 1 张暗牌；补给最低为 0，不会形成债务。点击军团栏的补给数字可查看本回合流水。</li><li>每回合可花 2 补给从公共牌库抽 1 张暗牌一次，不消耗主要行动。沼泽的攻守与驻军上限均为 1 张，林地均为 2 张；山地进攻至少亮出 2 张。跨海登陆不能组成三条，进攻牌型等级不得低于防守方，同时仍须按正常比较严格压过防线。夺取敌方首都立即赢得战役。</li></ul>
 <h3>策略与商店</h3><p>开局先从三张策略中选择一张。战役模式另有三张公开市场牌：每个地图回合最多购买一张，最多持有三张且不能重复持有同名牌；新购策略在购买者下一个地图回合解锁，市场每三轮整体刷新。战役策略每个地图回合最多使用一次，交锋策略每方每次交锋最多一次。进攻部署后会先进入战术窗口；闪电战只在己方占优时可用，医疗分队从己方公开牌堆恢复卡牌，起义生成额外 A。</p>
 <h3>模式、牌库与操作</h3><p>高级选项可让公共牌库跟随地图，或固定为 1／2 副。跟随地图时，12 个以上据点使用 106 张牌，否则使用 54 张；两副牌包含 104 张普通牌和唯一一对大小王。公共牌库耗尽且任一方暗牌手牌为空时该方失败，同时耗尽则平局。</p><p>经典模式不使用地图、驻军和补给，双方交替先防守。回合上限到达时，经典模式比较公开牌数；战役模式比较公开牌数加每块领地 3 分，相同则平局。手牌可按点数或花色排序；地图支持拖动、滚轮或双指缩放。</p><p>同机双人会在换人时遮蔽手牌，按“准备就绪”后才显示并开始计时；当前不提供两台设备联网。AI 只依据公开信息和自己的牌决策。暂停、规则手册和事件展示会暂停计时及 AI。超时后地图自动跳过，经典防守部署最低单张明牌，进攻或反击自动撤退。存档仅保存在当前浏览器。</p></div>`;
+const TUTORIAL=[
+ {title:'看懂战场与进军路线',tag:'01 / 战区',image:'./assets/tutorial/01-map.png',text:'每回合有 1 次主要行动。点击据点后，脉冲路线和光环会标出所有直接相邻据点；你只能从己方领地沿连接线继续推进。',tip:'先从首都周围建立连续领地，不要让前线与后方断开。'},
+ {title:'占领中立据点并设置驻军',tag:'02 / 占领',image:'./assets/tutorial/02-occupy.png',text:'选择相邻的中立据点，再从底部手牌选 1–3 张驻军。点击同一张牌会在明牌、暗牌和取消之间循环；除首都外必须至少留 1 张明牌。',tip:'明牌越多，防守信息越透明，而且会降低据点补给产出。'},
+ {title:'进攻、部署与连续翻牌',tag:'03 / 交锋',image:'./assets/tutorial/03-battle.png',text:'点击相邻敌方据点发动进攻。先用已经翻开的牌严格压过守军，再确认部署；被压制的一方可逐次翻开暗牌反击，双方可能连续反超。',tip:'牌力为三条 ＞ 同花顺 ＞ 顺子 ＞ 同花 ＞ 对子 ＞ 高牌；平手时防守方占优。'},
+ {title:'积累并花费补给',tag:'04 / 后勤',image:'./assets/tutorial/04-supply.png',text:'据点会在回合开始结算补给。2 点可补 1 张普通暗牌，3 点可快速换防或围城。点击军团栏中的补给数字，可以查看本回合每一笔收入与支出。',tip:'0–1 张明牌正常产出，2 张明牌停产，3 张以上会倒扣据点产出。'},
+ {title:'购买普通牌与策略牌',tag:'05 / 采购',image:'./assets/tutorial/05-market.png',text:'地图行动栏的“补充暗牌”购买普通牌。右侧战术指令旁的钱币按钮打开策略商店；每个地图回合最多购买 1 张策略牌，新牌到你的下一个地图回合才解锁。',tip:'策略牌最多持有 3 张，不能重复购买同名策略。'},
+ {title:'在正确时机使用策略',tag:'06 / 战术',image:'./assets/tutorial/06-strategy.png',text:'战役策略在地图阶段使用，交锋策略在战斗阶段使用。点击策略图标会直接发动，或要求你再选择目标据点；使用后该牌进入弃牌堆。',tip:'进攻部署后会先进入战术窗口，确认没有想用的交锋策略再继续。'},
+ {title:'攻入首都，赢得战役',tag:'07 / 胜负',image:'./assets/tutorial/07-victory.png',text:'攻占敌方首都会立即获胜。若达到回合上限，则按公开牌与领地积分判定；公共牌库耗尽后，无法维持暗牌手牌的一方也会失败。',tip:'首都最多容纳 5 张守军且允许全暗，先切断外围补给再组织决战。'}
+];
+function tutorialView(step=0){const i=Math.max(0,Math.min(TUTORIAL.length-1,Number(step)||0)),t=TUTORIAL[i];return '<div class="tutorial-head"><div><div class="eyebrow">QUICK CAMPAIGN / 新手教程</div><h2>'+t.title+'</h2></div><span>'+(i+1)+' / '+TUTORIAL.length+'</span></div><div class="tutorial-progress">'+TUTORIAL.map((_,n)=>'<i class="'+(n===i?'active':n<i?'done':'')+'"></i>').join('')+'</div><figure class="tutorial-shot"><img src="'+t.image+'" alt="'+esc(t.title+'游戏界面示例')+'"><figcaption>'+t.tag+'</figcaption></figure><p class="tutorial-text">'+t.text+'</p><p class="tutorial-tip"><b>作战提示</b>'+t.tip+'</p><div class="tutorial-actions">'+btn('关闭','close','text-button')+'<span>'+btn('← 上一步','tutorial-step','secondary',i===0,'data-id="'+(i-1)+'"')+btn(i===TUTORIAL.length-1?'完成教程':'下一步 →','tutorial-step','primary',false,'data-id="'+(i+1)+'"')+'</span></div>'}
 function supplyLedgerView(p){
  const pl=s.players[p],report=s.supplyLedger?.[p],entries=report?.entries||[];
  return '<div class="eyebrow">LOGISTICS / 补给流水</div><h2>'+esc(pl.name)+' · '+pl.supply+' 补给</h2><p>'+(report?'第 '+report.round+' 回合，期初 '+report.opening+' 点。':'旧存档尚无本回合明细；下一回合开始后自动记录。')+'</p><div class="supply-ledger">'+(entries.map(e=>'<div><span>'+esc(e.label)+'</span><b class="'+(e.amount<0?'negative':'positive')+'">'+(e.amount>0?'+':'')+e.amount+'</b></div>').join('')||'<div><span>暂无进项或出项</span><b>0</b></div>')+(report?'<div class="ledger-total"><span>本回合净变化</span><b class="'+(report.net<0?'negative':'positive')+'">'+(report.net>0?'+':'')+report.net+'</b></div>':'')+'</div>'+(report?.discardedId!=null?'<p class="ledger-warning">据点净产出为负，本回合已公开弃置一张暗牌。</p>':'')+btn('关闭','close','primary');
@@ -186,6 +196,7 @@ function overlay(){
   content='<div class="eyebrow">PLAYER IDENTITY / 玩家身份</div><h2>'+(p===0?'设置你的名字与徽记':'请将屏幕交给玩家 2')+'</h2><p>'+(final?'玩家 2 可以直接使用默认设置进入战场。':'设置只影响本局显示，不改变玩法。')+'</p>'+identityFields(p,p===0?(options.mode==='local'?'玩家 1':'玩家'):'玩家 2')+'<div class="modal-actions identity-modal-actions">'+(!final?btn('取消','close','secondary'):'')+btn(final?'确认并进入战场 →':'保存身份','identity-save','primary')+'</div>';
  }
  else if(modal==='rules')content=finalRulesHTML+btn('已了解 · 继续','close','primary');
+ else if(typeof modal==='object'&&modal.kind==='tutorial')content=tutorialView(modal.step);
  else if(modal==='market')content='<div class="eyebrow">SUPPLY EXCHANGE / 补给交易所</div><h2>战术商店</h2><p>市场公开可见。购买策略牌不消耗地图行动；买到的策略牌在你的下一个地图回合解锁。</p>'+strategyMarketView()+btn('关闭商店','close','secondary');
  else if(typeof modal==='object'&&modal.kind==='supply')content=supplyLedgerView(modal.player);
  else if(typeof modal==='object'&&modal.kind==='reserve'){const p=s.players[modal.player];content='<h2>'+p.name+' · 公开牌堆</h2><p>这些牌双方均可查看。</p><div class="reserve-cards">'+(p.reserve.map(c=>card(c,{small:true})).join('')||'<p>尚未获得公开牌。</p>')+'</div>'+garrisonRoster(modal.player)+btn('关闭','close','primary')}
@@ -299,6 +310,8 @@ app.addEventListener('click',e=>{
  if(a==='none')return;
  if(a==='next-event'){if(!modal)advanceEvent();return}
  if(a==='sound'){muted=!muted;render();return}
+ if(a==='tutorial'){showModal({kind:'tutorial',step:0});return}
+ if(a==='tutorial-step'){const step=Number(id);if(step>=TUTORIAL.length){modal=null;resume()}else modal={kind:'tutorial',step:Math.max(0,step)};render();return}
  if(a==='rules'){showModal('rules');return}
  if(a==='close'){modal=null;resume();render();return}
  if(a==='edit-identity'){modal={kind:'identity',player:0,final:false};render();return}

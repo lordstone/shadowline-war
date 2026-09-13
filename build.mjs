@@ -22,10 +22,13 @@ const replacements={
  './battlefield.js':'shadow/scene',
  './map-geography.js':'shadow/geography'
 };
+const tutorialImages={};
+for(const name of ['01-map.png','02-occupy.png','03-battle.png','04-supply.png','05-market.png','06-strategy.png','07-victory.png'])tutorialImages[name]='data:image/png;base64,'+(await fs.readFile(path.join(root,'assets/tutorial',name))).toString('base64');
 const imports={};
 for(const [name,file] of Object.entries(modules)){
  let source=await fs.readFile(path.join(root,file),'utf8');
  for(const [from,to] of Object.entries(replacements))source=source.replaceAll("'"+from+"'","'"+to+"'").replaceAll('"'+from+'"','"'+to+'"');
+ if(file==='src/app.js')for(const [image,data] of Object.entries(tutorialImages))source=source.replaceAll('./assets/tutorial/'+image,data);
  imports[name]='data:text/javascript;base64,'+Buffer.from(source).toString('base64');
 }
 let html=await fs.readFile(path.join(root,'index.html'),'utf8');

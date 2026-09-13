@@ -18,7 +18,7 @@
     "twoDeckJokers": 2,
     "uniqueCardIds": "passed"
   },
-  "globalVersionBadge": "v1.14.3 visible across all application states",
+  "globalVersionBadge": "v1.15.0 visible across all application states",
   "identityAndMaps": "passed: player identity defaults/customization and eight connected maps",
   "terrainCombatRules": "passed: swamp/forest limits, mountain disclosure, and sea-landing anti-triple rule",
   "revealedKickerComparison": "passed: Q-4 defeats Q-3 before concealed cards are revealed",
@@ -50,7 +50,8 @@
       "Supply total opens an itemized current-turn income and expense ledger",
       "All eight maps auto-fit to a useful battlefield span with zero overlapping or clipped location controls",
       "Map zoom preserves native-pixel node size and reset returns to each map's fitted view",
-      "Persistent route network remains visible; selecting a location animates exactly its direct routes and neighbors"
+      "Persistent route network remains visible; selecting a location animates exactly its direct routes and neighbors",
+      "Seven-step illustrated tutorial loads all screenshots, advances in order and stays inside a 390x844 viewport"
     ],
     "pageErrors": []
   },
@@ -125,6 +126,13 @@
     "neighborCountMatchesAdjacency": "passed",
     "directionalPulseAnimation": "passed",
     "reducedMotionFallback": "static highlighted routes and neighbors"
+  },
+  "illustratedTutorial": {
+    "steps": 7,
+    "screenshots": 7,
+    "topics": ["map and occupation", "garrison stances", "battle and counter-reveal", "supply", "ordinary and strategy-card purchases", "strategy timing", "victory"],
+    "mobileViewport": "390x844 passed",
+    "standaloneImages": "embedded as data URLs with zero external requests"
   },
   "standaloneBundle": {
     "modules": 8,
