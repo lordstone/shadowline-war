@@ -11,7 +11,7 @@ let handSort='rank';
 let advancedOpen=false;
 let targeting=null;
 let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
-let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map();
+let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map(),fittedMap=null;
 const STORE='shadowline-war-v1';
 const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆',hormuz:'≋',china_civil_war:'山'}[id]||'◇');
 const LOGOS=['⟐','✣','♜','⚓','▲','✦','◈','☄'];
@@ -193,18 +193,28 @@ function overlay(){
  return '<div class="modal-overlay"><section class="modal" role="dialog" aria-modal="true" aria-label="游戏面板">'+content+'</section></div>';
 }
 function mountScene(){
- const mount=document.querySelector('#visual-mount');if(mount){mount.appendChild(sceneEl);sceneEl.hidden=false;scene.resize?.();positionNodes()}else sceneEl.hidden=true;
+ const mount=document.querySelector('#visual-mount');if(mount){mount.appendChild(sceneEl);sceneEl.hidden=false;scene.resize?.();if(s?.phase==='campaign'&&fittedMap!==s.opt.map)fitMapCamera();else positionNodes()}else sceneEl.hidden=true;
+}
+function fitMapCamera(){
+ const stage=document.querySelector('.map-stage');if(!stage||!s?.fields.length)return;
+ const points=s.fields.map(f=>scene.project?.(f)||{x:f.x,y:f.y}),xs=points.map(p=>p.x),ys=points.map(p=>p.y),spanX=Math.max(1,Math.max(...xs)-Math.min(...xs)),spanY=Math.max(1,Math.max(...ys)-Math.min(...ys));
+ const width=stage.clientWidth,height=stage.clientHeight,padX=Math.min(105,Math.max(48,width*.09)),padY=Math.min(72,Math.max(42,height*.13));
+ const scale=Math.max(1,Math.min(2.15,(width-padX*2)/(width*spanX/100),(height-padY*2)/(height*spanY/100))),cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2;
+ mapViewport={scale,x:(50-cx)*width*scale/100,y:(50-cy)*height*scale/100};fittedMap=s.opt.map;updateMapCamera();
 }
 function positionNodes(){
  if(!s||s.phase!=='campaign'||!scene.renderer)return;
  const stage=document.querySelector('.map-stage');if(!stage)return;
- const projected={};
+ const projected={},items=[];
  for(const f of s.fields){const el=stage.querySelector('[data-id="'+f.id+'"]');if(!el)continue;
  const point=scene.project?.(f)||{x:f.x,y:f.y},rawX=50+(point.x-50)*mapViewport.scale+mapViewport.x/stage.clientWidth*100,rawY=50+(point.y-50)*mapViewport.scale+mapViewport.y/stage.clientHeight*100;
- const marginX=mapViewport.scale===1?Math.max(3,(el.offsetWidth/2+5)/stage.clientWidth*100):0,marginY=mapViewport.scale===1?Math.max(3,(el.offsetHeight/2+5)/stage.clientHeight*100):0;
- const visible={x:Math.max(marginX,Math.min(100-marginX,rawX)),y:Math.max(marginY,Math.min(100-marginY,rawY))};projected[f.id]=visible;
- el.style.left=visible.x+'%';el.style.top=visible.y+'%';
+ items.push({f,el,w:el.offsetWidth,h:el.offsetHeight,x:rawX*stage.clientWidth/100,y:rawY*stage.clientHeight/100});
  }
+ if(mapViewport.scale<=2.15){
+  const gap=stage.clientWidth<=520?5:8,clamp=item=>{item.x=Math.max(item.w/2+6,Math.min(stage.clientWidth-item.w/2-6,item.x));item.y=Math.max(11,Math.min(stage.clientHeight-item.h+1,item.y))};
+  for(let pass=0;pass<48;pass++){for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){const a=items[i],b=items[j],dx=b.x-a.x,ay=a.y-5+a.h/2,by=b.y-5+b.h/2,dy=by-ay,ox=(a.w+b.w)/2+gap-Math.abs(dx),oy=(a.h+b.h)/2+gap-Math.abs(dy);if(ox<=0||oy<=0)continue;if(ox<oy){const push=ox/2+.2,sign=dx>=0?1:-1;a.x-=push*sign;b.x+=push*sign}else{const push=oy/2+.2,sign=dy>=0?1:-1;a.y-=push*sign;b.y+=push*sign}}for(const item of items)clamp(item)}
+ }
+ for(const {f,el,x,y} of items){const visible={x:x/stage.clientWidth*100,y:y/stage.clientHeight*100};projected[f.id]=visible;el.style.left=visible.x+'%';el.style.top=visible.y+'%'}
  for(const line of stage.querySelectorAll('.topology-lines line')){const a=projected[line.dataset.a],b=projected[line.dataset.b];if(a&&b){line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y)}}
 }
 function updateMapCamera(){
@@ -214,10 +224,10 @@ function updateMapCamera(){
 }
 function zoomMap(factor,clientX,clientY){
  const stage=document.querySelector('.map-stage');if(!stage)return;
- const box=stage.getBoundingClientRect(),old=mapViewport.scale,next=Math.max(1,Math.min(2.2,old*factor));
+ const box=stage.getBoundingClientRect(),old=mapViewport.scale,next=Math.max(1,Math.min(3.5,old*factor));
  const x=(clientX??box.left+box.width/2)-box.left-box.width/2,y=(clientY??box.top+box.height/2)-box.top-box.height/2;
  mapViewport.x=x-(x-mapViewport.x)*(next/old);mapViewport.y=y-(y-mapViewport.y)*(next/old);mapViewport.scale=next;
- if(next===1){mapViewport.x=0;mapViewport.y=0}updateMapCamera();
+ updateMapCamera();
 }
 
 function eventView(){
@@ -280,10 +290,10 @@ function perform(action){
 }
 function launchGame(){
  const map=MAPS.find(m=>m.id===options.map);options.factions=[options.factions?.[0]||map.factions[0],options.factions?.[1]||map.factions[1]];
- s=createGame(options);targeting=null;events=[];eventEnd=null;newCards.clear();selection.clear();reveals.clear();focus=null;gate=false;modal=null;deadline=null;remaining=null;clockKey='';save();render();sound();
+ s=createGame(options);targeting=null;events=[];eventEnd=null;newCards.clear();selection.clear();reveals.clear();focus=null;gate=false;modal=null;deadline=null;remaining=null;clockKey='';fittedMap=null;save();render();sound();
 }
 app.addEventListener('click',e=>{
- const control=e.target.closest('[data-map-control]');if(control){e.preventDefault();const kind=control.dataset.mapControl;if(kind==='reset'){mapViewport={x:0,y:0,scale:1};updateMapCamera()}else zoomMap(kind==='in'?1.25:.8);return}
+ const control=e.target.closest('[data-map-control]');if(control){e.preventDefault();const kind=control.dataset.mapControl;if(kind==='reset')fitMapCamera();else zoomMap(kind==='in'?1.25:.8);return}
  const el=e.target.closest('[data-action]');if(!el||el.disabled)return;e.preventDefault();const a=el.dataset.action,id=el.dataset.id;
  if(a==='none')return;
  if(a==='next-event'){if(!modal)advanceEvent();return}
@@ -342,7 +352,7 @@ app.addEventListener('pointerdown',e=>{
 app.addEventListener('pointermove',e=>{
  if(!mapPointers.has(e.pointerId))return;mapPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(mapPointers.size===1&&mapDrag?.originX!==undefined){mapViewport.x=mapDrag.originX+e.clientX-mapDrag.x;mapViewport.y=mapDrag.originY+e.clientY-mapDrag.y;updateMapCamera()}
- else if(mapPointers.size===2&&mapDrag?.distance){const [a,b]=[...mapPointers.values()],distance=Math.hypot(a.x-b.x,a.y-b.y),target=Math.max(1,Math.min(2.2,mapDrag.scale*distance/mapDrag.distance));zoomMap(target/mapViewport.scale,(a.x+b.x)/2,(a.y+b.y)/2)}
+ else if(mapPointers.size===2&&mapDrag?.distance){const [a,b]=[...mapPointers.values()],distance=Math.hypot(a.x-b.x,a.y-b.y),target=Math.max(1,Math.min(3.5,mapDrag.scale*distance/mapDrag.distance));zoomMap(target/mapViewport.scale,(a.x+b.x)/2,(a.y+b.y)/2)}
 });
 function endMapPointer(e){mapPointers.delete(e.pointerId);if(!mapPointers.size){mapDrag=null;document.querySelector('.map-stage')?.classList.remove('dragging')}else{const a=[...mapPointers.values()][0];mapDrag={x:a.x,y:a.y,originX:mapViewport.x,originY:mapViewport.y}}}
 app.addEventListener('pointerup',endMapPointer);app.addEventListener('pointercancel',endMapPointer);

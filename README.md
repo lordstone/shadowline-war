@@ -1,9 +1,9 @@
 # 暗线战争 · Shadowline War
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.14.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.14.2-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.14.1**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.14.2**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -208,3 +208,9 @@ iPhone Chrome 采用更紧凑的顶栏、军团状态、目标操作区、手牌
 删除手绘多边形底图，改为 Natural Earth 1:50m 的真实国界、海岸、湖泊和河流轮廓。东线、朝鲜半岛、法德西线、霍尔木兹和中国战区的据点坐标按城市真实经纬度重新投影，地理名称与地图位置保持一致。
 
 历史地图隐藏 Three.js 装饰网格，并删除 WebGL 与 SVG 重复绘制的路线。缩放时路线层不再被重复变换；仅保留一套低对比度据点连线，而且始终位于据点卡片后方。
+
+### 1.14.2 八地图自适应战区视角
+
+所有地图改用按战区范围自动取景的默认视角。历史地图采用与屏幕宽高比一致的俯视投影，不再把东西方向压缩到画面中央；进入战场时会按据点实际跨度自动居中并放大，视角复位也会返回该地图的最佳取景，最大放大倍率提高到 3.5 倍。
+
+据点标签保持原生像素清晰度，并在地图边界内执行碰撞避让。密集地图统一使用顶部锚点，桌面、iPhone 短屏和 iPad 上都不会因自动排布而重叠或被裁切。霍尔木兹战区的东西间距同时扩大，海峡两岸在游戏视角中更容易辨认。

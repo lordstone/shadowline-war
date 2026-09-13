@@ -18,7 +18,7 @@
     "twoDeckJokers": 2,
     "uniqueCardIds": "passed"
   },
-  "globalVersionBadge": "v1.14.1 visible across all application states",
+  "globalVersionBadge": "v1.14.2 visible across all application states",
   "identityAndMaps": "passed: player identity defaults/customization and eight connected maps",
   "terrainCombatRules": "passed: swamp/forest limits, mountain disclosure, and sea-landing anti-triple rule",
   "revealedKickerComparison": "passed: Q-4 defeats Q-3 before concealed cards are revealed",
@@ -47,7 +47,9 @@
       "Compact iPhone Chrome HUD keeps the header, map, target controls, hand and tactics dock inside the visible viewport",
       "Mobile battle grid separates headings, both lines, comparison text and actions at 390x600 and 390x844",
       "Historical map backgrounds render behind topology; every node remains within the map stage",
-      "Supply total opens an itemized current-turn income and expense ledger"
+      "Supply total opens an itemized current-turn income and expense ledger",
+      "All eight maps auto-fit to a useful battlefield span with zero overlapping or clipped location controls",
+      "Map zoom preserves native-pixel node size and reset returns to each map's fitted view"
     ],
     "pageErrors": []
   },
@@ -106,6 +108,15 @@
     "mobileNodeBounds": "12 of 12 western-front nodes inside the 390x844 map stage",
     "routeLayer": "single SVG topology layer outside transformed camera and behind every node",
     "historicalWebGLGrid": "disabled"
+  },
+  "adaptiveMapViewport": {
+    "mapsChecked": 8,
+    "defaultFit": "aspect-aware, centered per map bounds",
+    "maximumZoom": 3.5,
+    "desktopNodeOverlap": 0,
+    "desktopClippedNodes": 0,
+    "shortMobileCollisionLimit": "passed at 390x600",
+    "resetToFittedView": "passed"
   },
   "standaloneBundle": {
     "modules": 8,

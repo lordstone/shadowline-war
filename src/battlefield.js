@@ -13,26 +13,27 @@ export class Battlefield{
  const key=new THREE.DirectionalLight(0xf2d5a6,3.4);key.position.set(-12,20,8);this.scene.add(key);
  const rim=new THREE.DirectionalLight(0x4198c1,2);rim.position.set(10,8,-12);this.scene.add(rim);
  this.ground=new THREE.Group();this.scene.add(this.ground);
- const base=new THREE.Mesh(new THREE.CylinderGeometry(21,23,1.6,6),new THREE.MeshStandardMaterial({color:0x111f25,roughness:1,metalness:.25}));base.position.y=-1.6;this.ground.add(base);
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(21,23,1.6,6),new THREE.MeshStandardMaterial({color:0x111f25,roughness:1,metalness:.25}));base.position.y=-1.6;this.base=base;this.ground.add(base);
  const grid=new THREE.GridHelper(70,50,0x27434a,0x13232a);grid.position.y=-2.5;this.grid=grid;this.scene.add(grid);
  this.mapGroup=new THREE.Group();this.ground.add(this.mapGroup);
  const positions=[];for(let i=0;i<180;i++)positions.push(Math.sin(i*12.34)*27,((i*7)%80)/8,Math.cos(i*3.3)*23);
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
  this.particles=new THREE.Points(geo,new THREE.PointsMaterial({color:0x6b9dab,size:.045,transparent:true,opacity:.65}));this.scene.add(this.particles);
- this.resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);this.renderer.setSize(w,h);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld()};
+ this.resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);this.renderer.setSize(w,h);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();if(this.geographic&&this.fields.length)this.setMap(this.fields,true)};
  window.addEventListener('resize',this.resize);this.resize();
  this.tick=this.tick.bind(this);this.frame=requestAnimationFrame(this.tick);
  }catch(e){this.renderer?.dispose();this.renderer=null;container.classList.add('no-webgl');console.warn('WebGL unavailable; using tactical 2D map.',e.message)}
  }
  setMap(fields,geographic=false){
- this.fields=fields;if(!this.renderer)return;
- this.grid.visible=!geographic;
+ this.fields=fields;this.geographic=geographic;if(!this.renderer)return;
+ this.grid.visible=!geographic;this.base.visible=!geographic;
  const xs=fields.map(f=>f.x),ys=fields.map(f=>f.y),spanX=Math.max(...xs)-Math.min(...xs),spanY=Math.max(...ys)-Math.min(...ys),vertical=spanY>spanX*1.35;this.xScale=vertical?.39:.32;
- this.camera.position.set(0,vertical?42:24,vertical?16:29);this.camera.fov=vertical?40:38;this.camera.lookAt(0,0,0);this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();
+ if(geographic){const height=42;this.camera.position.set(0,height,.01);this.camera.fov=38;this.camera.lookAt(0,0,0);this.zScale=height*Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2))/50;this.xScale=this.zScale*this.camera.aspect}
+ else{this.zScale=.28;this.camera.position.set(0,vertical?42:24,vertical?16:29);this.camera.fov=vertical?40:38;this.camera.lookAt(0,0,0)}this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();
  for(const child of [...this.mapGroup.children]){this.mapGroup.remove(child);child.traverse(o=>{o.geometry?.dispose();if(o.material)for(const m of(Array.isArray(o.material)?o.material:[o.material]))m.dispose()})}
  this.markers=[];
  const material=(color,metalness=.25)=>new THREE.MeshStandardMaterial({color,roughness:.8,metalness});
- const coords=f=>new THREE.Vector3((f.x-50)*this.xScale,0,(f.y-52)*.28);
+ const coords=f=>new THREE.Vector3((f.x-50)*this.xScale,0,(f.y-(geographic?50:52))*this.zScale);
  for(const f of fields){
  const pos=coords(f),color=f.owner===0?0x57c9d5:f.owner===1?0xef795e:0x8d927c;
  const tile=new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.8,.8,6),material(0x273a3c));tile.position.copy(pos);tile.position.y=-.65;this.mapGroup.add(tile);
@@ -56,7 +57,7 @@ export class Battlefield{
  const light=new THREE.Mesh(new THREE.BoxGeometry(.7,.055,.06),new THREE.MeshBasicMaterial({color}));light.position.set(0,.55,.6);node.add(light);
  }
  }
- project(f){const p=new THREE.Vector3((f.x-50)*(this.xScale||.32),.1,(f.y-52)*.28);p.project(this.camera);return {x:(p.x+1)*50,y:(1-p.y)*50}}
+ project(f){const p=new THREE.Vector3((f.x-50)*(this.xScale||.32),.1,(f.y-(this.geographic?50:52))*(this.zScale||.28));p.project(this.camera);return {x:(p.x+1)*50,y:(1-p.y)*50}}
  setMode(mode){this.mode=mode;this.container.classList.toggle('battle-backdrop',mode==='battle')}
  tick(now){this.frame=requestAnimationFrame(this.tick);if(document.hidden||now-this.time<33)return;this.time=now;
  if(!this.reduced){this.particles.rotation.y=now*.000008;this.markers.forEach((m,i)=>{m.rotation.y=now*.0007;m.position.y=4.3+Math.sin(now*.0015+i)*.1})}
