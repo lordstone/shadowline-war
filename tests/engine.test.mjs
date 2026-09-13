@@ -173,8 +173,14 @@ test('rank-up is temporary and scouting reveals',()=>{
  for(const id of ['rank_up','scouting']){
  let s=confrontation();s.players[0].strategies=[id];s=next(s,{type:'strategy',id});validate(s);
  if(id==='scouting')assert.ok(s.battle.lines[1].every(c=>c.open));
+ if(id==='rank_up')assert.equal(s.battle.lines[0].find(c=>c.boost)?.boost,2);
 
  }
+});
+test('rebalanced logistics strategies provide predictable useful value',()=>{
+ let s=createGame({strategies:false,seed:120});s.players[0].strategies=['conscription'];const hand=s.players[0].hand.length,deck=s.deck.length;s=next(s,{type:'strategy',id:'conscription'});assert.equal(s.players[0].hand.length,hand+2);assert.equal(s.deck.length,deck-2);
+ let support=createGame({strategies:false,seed:121});support.players[0].strategies=['international_support'];support.players[0].supply=0;support=next(support,{type:'strategy',id:'international_support'});assert.equal(support.players[0].supply,6);
+ let medical=createGame({strategies:false,seed:122});medical.players[0].strategies=['meds_team'];const exposed=medical.players[0].hand.splice(0,3).sort((a,b)=>a.rank-b.rank);medical.players[0].reserve.push(...exposed);medical=next(medical,{type:'strategy',id:'meds_team'});assert.ok(medical.players[0].hand.some(c=>c.id===exposed.at(-1).id));validate(s);validate(support);validate(medical);
 });
 test('all campaign strategy effects preserve cards and enforce target requirements',()=>{
  for(const id of STRATEGIES.filter(x=>x.phase==='campaign').map(x=>x.id)){
@@ -195,8 +201,8 @@ test('adjacency, supply once per turn, occupation and capture-capital victory',(
  const enemy=s.fields.find(f=>f.owner===1),center=s.fields.find(f=>f.id==='center_town');
  assert.equal(act(s,0,{type:'attack',field:enemy.id}).ok,false);
  s=next(s,{type:'supply'});assert.equal(act(s,0,{type:'supply'}).ok,false);
- s=next(s,{type:'occupy',field:center.id,cards:[{id:s.players[0].hand[0].id,open:true}]});assert.equal(s.active,1);
- s=next(s,{type:'pass'});s=next(s,{type:'attack',field:enemy.id});
+ s=next(s,{type:'occupy',field:center.id,cards:[{id:s.players[0].hand[0].id,open:true}]});assert.equal(s.active,0);assert.equal(s.actionSpent,true);
+ s=next(s,{type:'pass'});s=next(s,{type:'pass'});s=next(s,{type:'attack',field:enemy.id});
  assert.equal(s.phase,'attack');assert.equal(s.active,0);assert.equal(s.battle.lines[1].length,3);
  const assault=s.players[0].hand.sort((a,b)=>a.rank-b.rank).slice(-1).map(c=>({id:c.id,open:true}));
  s=next(s,{type:'deploy',cards:assault});assert.equal(s.active,1);
@@ -301,12 +307,55 @@ test('siege spends supply, suppresses one reserve without revealing it, and rest
 
 test('reorganizing costs a map action; rapid redeployment costs supply and preserves it',()=>{
  let normal=createGame({strategies:false,seed:55}),cap=normal.fields.find(f=>f.owner===0),replacement=normal.players[0].hand.slice(0,2),oldIds=cap.garrison.map(c=>c.id);
- normal=next(normal,{type:'reorganize',field:cap.id,cards:replacement.map((c,i)=>({id:c.id,open:i===0}))});assert.equal(normal.active,1);
- assert.ok(oldIds.every(id=>normal.players[0].hand.some(c=>c.id===id)));assert.deepEqual(normal.fields.find(f=>f.id===cap.id).garrison.map(c=>c.id),replacement.map(c=>c.id));
+ cap.garrison[0].open=true;
+ normal=next(normal,{type:'reorganize',field:cap.id,cards:replacement.map((c,i)=>({id:c.id,open:i===0}))});assert.equal(normal.active,0);assert.equal(normal.actionSpent,true);
+ assert.ok(normal.players[0].reserve.some(c=>c.id===oldIds[0]));assert.ok(oldIds.slice(1).every(id=>normal.players[0].hand.some(c=>c.id===id)));assert.ok(!normal.players[0].hand.some(c=>c.id===oldIds[0]));assert.deepEqual(normal.fields.find(f=>f.id===cap.id).garrison.map(c=>c.id),replacement.map(c=>c.id));
  let rapid=createGame({strategies:false,seed:56});cap=rapid.fields.find(f=>f.owner===0);rapid.players[0].supply=5;replacement=rapid.players[0].hand.slice(0,3);
+ const revealed=cap.garrison[0].id;cap.garrison[0].open=true;
  rapid=next(rapid,{type:'rapid_redeploy',field:cap.id,cards:replacement.map(c=>({id:c.id,open:false}))});
- assert.equal(rapid.active,0);assert.equal(rapid.players[0].supply,2);assert.equal(rapid.rapidRedeployUsed,true);assert.ok(rapid.fields.find(f=>f.id===cap.id).garrison.every(c=>!c.open));
+ assert.equal(rapid.active,0);assert.equal(rapid.players[0].supply,2);assert.equal(rapid.rapidRedeployUsed,true);assert.ok(rapid.players[0].reserve.some(c=>c.id===revealed));assert.ok(!rapid.players[0].hand.some(c=>c.id===revealed));assert.ok(rapid.fields.find(f=>f.id===cap.id).garrison.every(c=>!c.open));
  assert.equal(act(rapid,0,{type:'rapid_redeploy',field:cap.id,cards:[{id:rapid.players[0].hand[0].id,open:false}]}).ok,false);validate(rapid);
+});
+
+test('partial rapid rotation costs one supply per card and preserves revealed information',()=>{
+ let s=createGame({strategies:false,seed:57}),cap=s.fields.find(f=>f.owner===0),outOpen=cap.garrison[0],outHidden=cap.garrison[1],incoming=s.players[0].hand.slice(0,2);
+ cap.garrison[0].open=true;s.players[0].supply=4;
+ s=next(s,{type:'rotate_garrison',field:cap.id,outIds:[outOpen.id,outHidden.id],cards:[{id:incoming[0].id,open:true},{id:incoming[1].id,open:false}]});
+ assert.equal(s.active,0);assert.equal(s.players[0].supply,2);assert.equal(s.rapidRedeployUsed,true);
+ assert.ok(s.players[0].reserve.some(c=>c.id===outOpen.id));assert.ok(!s.players[0].hand.some(c=>c.id===outOpen.id));assert.ok(s.players[0].hand.some(c=>c.id===outHidden.id));
+ assert.deepEqual(new Set(s.fields.find(f=>f.id===cap.id).garrison.map(c=>c.id)),new Set([cap.garrison[2].id,...incoming.map(c=>c.id)]));
+ assert.equal(act(s,0,{type:'rotate_garrison',field:cap.id,outIds:[cap.garrison[2].id],cards:[{id:s.players[0].hand[0].id,open:false}]}).ok,false);validate(s);
+});
+
+test('partial rotation cannot remove the last open defender from a non-capital',()=>{
+ let s=createGame({strategies:false,seed:58}),field=s.fields.find(f=>f.owner===null),first=s.players[0].hand[0];
+ s=next(s,{type:'occupy',field:field.id,cards:[{id:first.id,open:true}]});
+ field=s.fields.find(f=>f.id===field.id);s.players[0].supply=3;
+ const incoming=s.players[0].hand[0],r=act(s,0,{type:'rotate_garrison',field:field.id,outIds:[first.id],cards:[{id:incoming.id,open:false}]});
+ assert.equal(r.ok,false);assert.match(r.error,/至少需要保留 1 张明牌/);validate(s);
+});
+
+test('campaign primary action stays with the player until explicit end turn',()=>{
+ let s=createGame({strategies:false,seed:59}),field=s.fields.find(f=>f.owner===null),card=s.players[0].hand[0];
+ s=next(s,{type:'occupy',field:field.id,cards:[{id:card.id,open:true}]});
+ assert.equal(s.active,0);assert.equal(s.phase,'campaign');assert.equal(s.actionSpent,true);
+ const blocked=s.fields.find(f=>f.owner===null);assert.equal(act(s,0,{type:'occupy',field:blocked.id,cards:[{id:s.players[0].hand[0].id,open:true}]}).ok,false);
+ s.players[0].supply=2;s=next(s,{type:'supply'});assert.equal(s.active,0);assert.equal(s.supplyUsed,true);
+ s=next(s,{type:'pass'});assert.equal(s.active,1);assert.equal(s.actionSpent,false);validate(s);
+});
+
+test('campaign battles do not refill both private hands to twelve',()=>{
+ let s=createGame({strategies:false,seed:60}),enemy=s.fields.find(f=>f.owner===1);
+ s.players[0].reserve.push(...s.players[0].hand.splice(0,3));s.raid=true;const before=s.players[0].hand.length;
+ s=next(s,{type:'attack',field:enemy.id});s=next(s,{type:'fold'});
+ assert.equal(s.phase,'campaign');assert.equal(s.active,0);assert.equal(s.actionSpent,true);assert.equal(s.players[0].hand.length,before);validate(s);
+});
+
+test('historical deployment controls every historical location with one open and two hidden defenders',()=>{
+ const standard=createGame({strategies:false,map:'korea',deployment:'standard',seed:61});assert.equal(standard.fields.filter(f=>f.owner!==null).length,2);
+ const historical=createGame({strategies:false,map:'korea',deployment:'historical',seed:61});assert.equal(historical.fields.filter(f=>f.owner!==null).length,historical.fields.length);
+ for(const field of historical.fields.filter(f=>!f.capital)){assert.equal(field.garrison.length,Math.min(3,garrisonLimit(field)));assert.equal(field.garrison.filter(c=>c.open).length,1)}
+ assert.ok(historical.fields.filter(f=>f.capital).every(f=>f.garrison.length===3&&f.garrison.every(c=>!c.open)));validate(historical);
 });
 
 test('successive counterleads allow both sides to reveal until suppressed line is exhausted',()=>{

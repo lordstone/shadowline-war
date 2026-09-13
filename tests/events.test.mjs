@@ -16,9 +16,9 @@ test('new cards have private faces and own-hand new markers; harvest lists locat
  let s=createGame({strategies:false});s.players[0].strategies=['conscription'];
  let a={type:'strategy',id:'conscription'},r=act(s,0,a);
  const mine=actionEvents(s,r.state,a,0).find(e=>e.kind==='cards');
- assert.equal(mine.cards.length,1);assert.deepEqual(mine.newIds,[mine.cards[0].id]);
+ assert.equal(mine.cards.length,2);assert.deepEqual(new Set(mine.newIds),new Set(mine.cards.map(c=>c.id)));
  const other=actionEvents(s,r.state,a,1).find(e=>e.kind==='cards');
- assert.deepEqual(other.cards,[{hidden:true}]);assert.deepEqual(other.newIds,[]);
+ assert.deepEqual(other.cards,[{hidden:true},{hidden:true}]);assert.deepEqual(other.newIds,[]);
  a={type:'pass'};r=act(s,0,a);
  const harvest=actionEvents(s,r.state,a,0).find(e=>e.kind==='resources');
  assert.ok(r.state.fields.some(f=>f.owner===harvest.owner&&harvest.detail.includes(f.label)));
@@ -26,7 +26,7 @@ test('new cards have private faces and own-hand new markers; harvest lists locat
 test('strategy purchase produces a priced acquisition event',()=>{
  const s=createGame({strategies:false});s.opt.strategies=true;s.players[0].supply=10;s.strategyMarket=['conscription'];s.strategyDeck=['spy'];s.strategyDiscard=[];s.strategyLocked=[[],[]];s.marketBought=false;
  const a={type:'buy_strategy',id:'conscription'},r=act(s,0,a);assert.equal(r.ok,true);
- const event=actionEvents(s,r.state,a,0)[0];assert.equal(event.kind,'purchase');assert.equal(event.strategy.id,'conscription');assert.match(event.detail,/4 点补给/);
+ const event=actionEvents(s,r.state,a,0)[0];assert.equal(event.kind,'purchase');assert.equal(event.strategy.id,'conscription');assert.match(event.detail,/3 点补给/);
 });
 test('negative garrison upkeep reports its ledger and public discard',()=>{
  let s=createGame({strategies:false,map:'duel',seed:94});const capital=s.fields.find(f=>f.owner===0&&f.capital);capital.garrison.forEach(c=>c.open=true);

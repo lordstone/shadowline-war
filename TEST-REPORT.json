@@ -1,14 +1,22 @@
 {
   "date": "2026-09-13",
-  "tests": 47,
-  "passed": 47,
+  "tests": 53,
+  "passed": 53,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 384,
-  "legalActions": 27449,
+  "legalActions": 38063,
   "wildcardJokers": {
     "allThreeCardHands": 24804,
-    "categoryCounts": [0, 16500, 5064, 1540, 1212, 228, 260],
+    "categoryCounts": [
+      0,
+      16500,
+      5064,
+      1540,
+      1212,
+      228,
+      260
+    ],
     "naturalTieBreak": "passed",
     "bigJokerTieBreak": "passed"
   },
@@ -18,7 +26,7 @@
     "twoDeckJokers": 2,
     "uniqueCardIds": "passed"
   },
-  "globalVersionBadge": "v1.15.1 visible across all application states",
+  "globalVersionBadge": "v1.16.0 visible across all application states",
   "identityAndMaps": "passed: player identity defaults/customization and eight connected maps",
   "terrainCombatRules": "passed: swamp/forest limits, mountain disclosure, and sea-landing anti-triple rule",
   "revealedKickerComparison": "passed: Q-4 defeats Q-3 before concealed cards are revealed",
@@ -57,7 +65,11 @@
   },
   "ipadResponsiveQA": {
     "method": "live in-app Chromium viewport inspection",
-    "viewports": ["1024x768 landscape", "768x1024 portrait", "834x1112 portrait"],
+    "viewports": [
+      "1024x768 landscape",
+      "768x1024 portrait",
+      "834x1112 portrait"
+    ],
     "documentOverflow": false,
     "handAlwaysInsideViewport": true,
     "mapZoomControl": "1.0 to 1.25 verified",
@@ -98,7 +110,13 @@
   },
   "mapTopology": {
     "maps": 8,
-    "newComplexMaps": ["eastern_front:14", "korea:11", "western_front:12", "hormuz:10", "china_civil_war:13"],
+    "newComplexMaps": [
+      "eastern_front:14",
+      "korea:11",
+      "western_front:12",
+      "hormuz:10",
+      "china_civil_war:13"
+    ],
     "bidirectionalLinks": "passed",
     "connectedGraphs": "passed",
     "twoCapitalsEach": "passed"
@@ -130,7 +148,16 @@
   "illustratedTutorial": {
     "steps": 8,
     "screenshots": 8,
-    "topics": ["map and occupation", "garrison stances", "battle and counter-reveal", "supply", "ordinary-card purchase", "strategy-card market purchase", "strategy timing", "victory"],
+    "topics": [
+      "map and occupation",
+      "garrison stances",
+      "battle and counter-reveal",
+      "supply",
+      "ordinary-card purchase",
+      "strategy-card market purchase",
+      "strategy timing",
+      "victory"
+    ],
     "mobileViewport": "390x844 passed",
     "standaloneImages": "embedded as data URLs with zero external requests"
   },
@@ -140,5 +167,33 @@
     "fileURLStartupAndDraft": "passed",
     "externalRequests": 0,
     "pageErrors": []
+  },
+  "campaignCardEconomy": {
+    "automaticBattleRefill": "disabled in campaign; retained in classic",
+    "conscription": "draws two",
+    "medical": "recovers highest public card",
+    "strategyPrices": "3-7 supply"
+  },
+  "turnFlow": {
+    "primaryAction": "sets actionSpent and retains active player",
+    "logisticsAfterPrimary": "passed",
+    "explicitEndTurn": "passed"
+  },
+  "garrisonRotation": {
+    "partialCost": "one supply per card",
+    "fullCost": 3,
+    "revealedReturn": "public reserve",
+    "concealedReturn": "private hand",
+    "lastOpenDefense": "protected"
+  },
+  "historicalDeployment": {
+    "default": "standard",
+    "maps": [
+      "eastern_front",
+      "korea",
+      "western_front",
+      "china_civil_war"
+    ],
+    "controlAndGarrisons": "passed"
   }
 }

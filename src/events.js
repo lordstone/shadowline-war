@@ -14,7 +14,10 @@ export function actionEvents(before,after,action,perspective){
  const f=field(action.field);add('occupation',name(actor)+'占领'+f.label,'所选牌已转为据点驻军，没有丢失。可点击该据点或军团面板查看。',{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
  }
  if(['reorganize','rapid_redeploy'].includes(action.type)){
- const f=field(action.field),rapid=action.type==='rapid_redeploy';add('garrison',name(actor)+(rapid?'完成快速换防':'完成驻军整编'),f.label+'现有 '+f.garrison.length+' 张固定驻军；'+(rapid?'消耗 3 点补给，地图行动仍可继续。':'本次地图行动结束。'),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
+ const f=field(action.field),rapid=action.type==='rapid_redeploy',old=before.fields.find(x=>x.id===f.id).garrison,open=old.filter(c=>c.open).length,hidden=old.length-open;add('garrison',name(actor)+(rapid?'完成整队快速换防':'完成驻军整编'),f.label+'现有 '+f.garrison.length+' 张固定驻军；撤下的 '+open+' 张明牌进入公开牌堆，'+hidden+' 张暗牌返回手牌。'+(rapid?'消耗 3 点补给，地图行动仍可继续。':'本次地图行动结束。'),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
+ }
+ if(action.type==='rotate_garrison'){
+ const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison.filter(c=>action.outIds.includes(c.id)),open=old.filter(c=>c.open).length,hidden=old.length-open;add('garrison',name(actor)+'完成快速轮换',f.label+'轮换 '+old.length+' 张驻军并消耗 '+old.length+' 点补给；撤下的 '+open+' 张明牌进入公开牌堆，'+hidden+' 张暗牌返回手牌。',{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
  }
  if(action.type==='strategy'){
  const strategy=strategyById(action.id);

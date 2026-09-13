@@ -112,10 +112,14 @@ export function createGame(options={}){
  players:[{name:names[0],logo:logos[0],faction:factions[0],side:sides[0],hand:[],reserve:[],strategies:[],supply:2,wins:0},{name:names[1],logo:logos[1],faction:factions[1],side:sides[1],hand:[],reserve:[],strategies:[],supply:2,wins:0}],
  deck:[],fields:structuredClone(map.fields).map(f=>({...f,owner:f.owner===null?null:sides.indexOf(f.owner)})),
  battle:null,log:[],winner:null,reason:'',draft:[[],[]],drafted:[false,false],turn:1,strategyUsed:false,supplyUsed:false,raid:false,knowledge:[{},{}],
- strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false,supplyLedger:[null,null]};
+ strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false,actionSpent:false,supplyLedger:[null,null]};
  const deckCount=resolvedDeckCount(opt,s.fields);s.baseDeckSize=54+(deckCount-1)*52;
  s.deck=shuffle(s,makeDeck(deckCount));for(let i=0;i<12;i++)for(let p=0;p<2;p++)s.players[p].hand.push(s.deck.pop());
- if(opt.rules==='campaign'){for(const f of s.fields.filter(f=>f.capital))for(let i=0;i<3;i++)f.garrison.push({...s.players[f.owner].hand.pop(),open:false});}
+ if(opt.rules==='campaign'){
+  if(opt.deployment==='historical'&&map.historical)for(const f of s.fields){const side=map.historical.control[f.id];f.owner=side===undefined?null:sides.indexOf(side)}
+  for(const f of s.fields.filter(f=>f.capital))for(let i=0;i<3;i++)f.garrison.push({...s.players[f.owner].hand.pop(),open:false});
+  if(opt.deployment==='historical'&&map.historical)for(const f of s.fields.filter(f=>f.owner!==null&&!f.capital))for(let i=0;i<Math.min(3,garrisonLimit(f));i++)f.garrison.push({...clean(s.deck.pop()),open:i===0});
+ }
  else s.fields=[];
  const available=STRATEGIES.filter(c=>opt.rules==='campaign'||c.phase==='battle');
  if(opt.strategies){s.strategyDeck=shuffle(s,available.flatMap(c=>Array(c.count).fill(c.id)));for(let p=0;p<2;p++)s.draft[p]=s.strategyDeck.splice(-3)}
@@ -139,6 +143,7 @@ export function upgradeState(s){
  if(Array.isArray(s.opt.factions))s.opt.factions=s.opt.factions.map(name=>renamedFactions[name]||name);
  for(let p=0;p<2;p++)if(!Number.isInteger(s.players[p].side))s.players[p].side=Math.max(0,map.factions.indexOf(s.players[p].faction));
  if(!s.opt.deckCount)s.opt.deckCount='auto';
+ if(!s.opt.deployment)s.opt.deployment='standard';
  if(!s.baseDeckSize)s.baseDeckSize=54;
  if(!Array.isArray(s.strategyDeck)){const held=s.players.flatMap(p=>p.strategies);s.strategyDeck=STRATEGIES.flatMap(c=>Array(Math.max(0,c.count-held.filter(id=>id===c.id).length)).fill(c.id));s.strategyMarket=[];s.strategyDiscard=[]}
  if(!Array.isArray(s.strategyMarket))s.strategyMarket=[];
@@ -146,6 +151,7 @@ export function upgradeState(s){
  if(!Array.isArray(s.strategyLocked))s.strategyLocked=[[],[]];
  if(typeof s.marketBought!=='boolean')s.marketBought=false;
  if(typeof s.rapidRedeployUsed!=='boolean')s.rapidRedeployUsed=false;
+ if(typeof s.actionSpent!=='boolean')s.actionSpent=false;
  if(!Array.isArray(s.supplyLedger))s.supplyLedger=[null,null];
  const template=MAPS.find(m=>m.id===s.opt.map);if(template)for(const f of s.fields)f.fortified=!!template.fields.find(x=>x.id===f.id)?.fortified;
  if(s.opt.rules==='campaign')for(const f of s.fields)if(f.owner!==null&&!f.capital&&f.garrison.length&&!f.garrison.some(c=>c.open))f.garrison[0].open=true;
@@ -180,7 +186,7 @@ function income(s){
  log(s,p.name+(operationalNet>=0?'收获 ':'承担 ')+Math.abs(operationalNet)+' 点补给净额。');
 }
 function nextCampaign(s){
- s.active=1-s.active;s.turn++;s.round=Math.floor((s.turn-1)/2)+1;s.phase='campaign';s.strategyUsed=false;s.supplyUsed=false;s.marketBought=false;s.rapidRedeployUsed=false;s.raid=false;s.strategyLocked[s.active]=[];
+ s.active=1-s.active;s.turn++;s.round=Math.floor((s.turn-1)/2)+1;s.phase='campaign';s.strategyUsed=false;s.supplyUsed=false;s.marketBought=false;s.rapidRedeployUsed=false;s.actionSpent=false;s.raid=false;s.strategyLocked[s.active]=[];
  if(exhausted(s))return;
  if(s.round>s.opt.maxRounds){const a=score(s,0),b=score(s,1);finish(s,a===b?null:a>b?0:1,'达到回合上限：比较公开牌数 + 每块领地 3 分');return}
  if(s.active===(s.opt.first===1?1:0)&&s.round>1&&(s.round-1)%3===0)refreshMarket(s);
@@ -225,10 +231,11 @@ function settle(s,winner){
  else log(s,f.label+'的固定驻军守住据点。');
  if(winner===b.attacker&&f.capital){finish(s,winner,'夺取敌方首都');return}
  }
+ if(s.opt.rules==='campaign'){
+  if(exhausted(s))return;s.phase='campaign';s.actionSpent=true;log(s,s.players[s.active].name+'的主要行动已完成，可继续后勤与策略操作。');
+ }else{
  replenish(s);
  if(exhausted(s))return;
- if(s.opt.rules==='campaign')nextCampaign(s);
- else{
  s.round++;s.turn++;if(s.round>s.opt.maxRounds){const a=score(s,0),b=score(s,1);finish(s,a===b?null:a>b?0:1,'达到交锋上限：比较公开战利品数');return}
  startBattle(s,b.defender,b.attacker,null);
  }
@@ -251,6 +258,7 @@ function strategyError(s,p,id,fieldId){
  if(c.phase==='campaign'&&!campaign)return '这张策略卡只能在地图行动阶段使用。';
  if(c.phase==='battle'&&!['tactics','counter'].includes(s.phase))return '双方部署后，在战术窗口或反击阶段使用。';
  if(campaign?s.strategyUsed:s.battle.strategyUsed[p])return '本回合已经使用过策略卡。';
+ if(['revolution','airborne_raid'].includes(id)&&s.actionSpent)return '本回合主要行动已经完成。';
  const enemy=1-p,f=target(s,fieldId),line=s.battle?.lines[p]||[],other=s.battle?.lines[enemy]||[];
  if(['conscription','paratrooper'].includes(id)&&!s.deck.length)return '公共牌库已空。';
  if(id==='meds_team'&&!s.players[p].reserve.length)return '没有可回收的公开牌。';
@@ -288,6 +296,10 @@ function garrisonFromHand(s,p,specs,field){
  if(line.some(c=>!c))return {error:'只能选择自己的手牌驻军。'};
  return {line};
 }
+function returnGarrisonCards(s,p,cards){
+ s.players[p].reserve.push(...cards.filter(c=>c.open).map(clean));
+ s.players[p].hand.push(...cards.filter(c=>!c.open).map(clean));
+}
 function strategy(s,p,id,fieldId){
  const error=strategyError(s,p,id,fieldId);if(error)return error;
  const pl=s.players[p],enemy=1-p,f=target(s,fieldId),pick=a=>a[Math.floor(random(s)*a.length)];
@@ -296,19 +308,19 @@ function strategy(s,p,id,fieldId){
  if(s.phase==='campaign')s.strategyUsed=true;else s.battle.strategyUsed[p]=true;
  log(s,pl.name+'使用「'+strategyById(id).name+'」。');
  switch(id){
- case 'conscription':pl.hand.push(clean(s.deck.pop()));break;
- case 'meds_team':pl.hand.push(clean(pl.reserve.splice(Math.floor(random(s)*pl.reserve.length),1)[0]));break;
+ case 'conscription':for(let i=0;i<2&&s.deck.length;i++)pl.hand.push(clean(s.deck.pop()));break;
+ case 'meds_team':{const best=pl.reserve.reduce((a,c,i)=>!a||c.rank>a.card.rank?{card:c,index:i}:a,null);pl.hand.push(clean(pl.reserve.splice(best.index,1)[0]));break}
  case 'spy':{const c=pick(s.battle.lines[enemy].filter(c=>!c.open));s.knowledge[p][c.id]=true;break}
  case 'isr':pick(f.garrison.filter(c=>!c.open)).open=true;break;
  case 'paratrooper':s.battle.lines[p].push({...clean(s.deck.pop()),open:true});if(s.phase==='counter')resolveCounter(s);break;
- case 'rank_up':{const c=pick(s.battle.lines[p].filter(c=>rankUpAllowed(s,p,s.battle.lines[p],c)));c.boost=(c.boost||0)+1;if(s.phase==='counter')resolveCounter(s);break}
+ case 'rank_up':{const c=pick(s.battle.lines[p].filter(c=>rankUpAllowed(s,p,s.battle.lines[p],c)));c.boost=Math.min(13-c.rank,(c.boost||0)+2);if(s.phase==='counter')resolveCounter(s);break}
  case 'scouting':pick(s.battle.lines[enemy].filter(c=>!c.open)).open=true;resolveCounter(s);break;
  case 'peace_talk':settle(s,null);break;
- case 'revolution':f.owner=p;f.garrison.push({id:s.baseDeckSize+s.generated++,rank:1,suit:Math.floor(random(s)*4),open:true});nextCampaign(s);break;
+ case 'revolution':f.owner=p;f.garrison.push({id:s.baseDeckSize+s.generated++,rank:1,suit:Math.floor(random(s)*4),open:true});s.actionSpent=true;break;
  case 'blitzkrieg':settle(s,leading(s));break;
- case 'international_support':supplyFlow(s,p,'国际援助',1+Math.floor(random(s)*13));break;
+ case 'international_support':supplyFlow(s,p,'国际援助',6);break;
  case 'airborne_raid':s.raid=true;break;
- case 'economic_sanctions':f.blockedUntil=s.round+Math.floor(random(s)*13)+1;break;
+ case 'economic_sanctions':f.blockedUntil=s.round+3;break;
  }
  return null;
 }
@@ -330,16 +342,35 @@ function apply(s,p,a){
  if(a.type==='pass'){log(s,s.players[p].name+'结束地图行动。');nextCampaign(s);return null}
  const f=target(s,a.field);
  if(!f)return '请选择地图据点。';
+ if(s.actionSpent&&['occupy','reorganize','attack','siege'].includes(a.type))return '本回合主要行动已经完成；可以继续补牌、购买或使用策略，最后点击结束行动。';
  if(['reorganize','rapid_redeploy'].includes(a.type)){
  if(f.owner!==p)return '只能调整己方据点的驻军。';
  if(a.type==='rapid_redeploy'&&(s.rapidRedeployUsed||s.players[p].supply<3))return s.rapidRedeployUsed?'本回合已经快速换防。':'快速换防需要 3 点补给。';
  const prepared=garrisonFromHand(s,p,a.cards,f);if(prepared.error)return prepared.error;
  const selected=new Set(prepared.line.map(c=>c.id));
  s.players[p].hand=s.players[p].hand.filter(c=>!selected.has(c.id));
- s.players[p].hand.push(...f.garrison.map(clean));f.garrison=prepared.line;
+ returnGarrisonCards(s,p,f.garrison);f.garrison=prepared.line;
  if(a.type==='rapid_redeploy'){supplyFlow(s,p,'快速换防 · '+f.label,-3);s.rapidRedeployUsed=true;log(s,s.players[p].name+'花费 3 点补给，快速调整'+f.label+'驻军。')}
- else{log(s,s.players[p].name+'整编'+f.label+'驻军并结束地图行动。');nextCampaign(s)}
+ else{s.actionSpent=true;log(s,s.players[p].name+'整编'+f.label+'驻军，主要行动已完成。')}
  return null;
+ }
+ if(a.type==='rotate_garrison'){
+  if(f.owner!==p)return '只能轮换己方据点的驻军。';
+  if(s.rapidRedeployUsed)return '本回合已经进行过快速轮换或换防。';
+  const outIds=Array.isArray(a.outIds)?a.outIds:[],specs=Array.isArray(a.cards)?a.cards:[],cost=outIds.length;
+  if(cost<1||cost!==specs.length)return '快速轮换必须等量选择撤下和派入的牌。';
+  if(new Set(outIds).size!==cost||new Set(specs.map(c=>c.id)).size!==cost)return '不能重复选择轮换牌。';
+  if(s.players[p].supply<cost)return '快速轮换需要 '+cost+' 点补给。';
+  const outgoing=outIds.map(id=>f.garrison.find(c=>c.id===id));
+  if(outgoing.some(c=>!c))return '只能撤下该据点的驻军。';
+  const incoming=specs.map(spec=>{const c=s.players[p].hand.find(c=>c.id===spec.id);return c?{...clean(c),open:!!spec.open}:null});
+  if(incoming.some(c=>!c))return '只能派入自己的手牌。';
+  const removed=new Set(outIds),added=new Set(incoming.map(c=>c.id)),line=[...f.garrison.filter(c=>!removed.has(c.id)),...incoming];
+  if(!f.capital&&!line.some(c=>c.open))return '非首都据点至少需要保留 1 张明牌驻军。';
+  s.players[p].hand=s.players[p].hand.filter(c=>!added.has(c.id));
+  returnGarrisonCards(s,p,outgoing);f.garrison=line;
+  supplyFlow(s,p,'快速轮换 · '+f.label,-cost);s.rapidRedeployUsed=true;
+  log(s,s.players[p].name+'花费 '+cost+' 点补给，轮换'+f.label+'的 '+cost+' 张驻军。');return null;
  }
  if(f.owner===p)return '请选择中立或敌方据点。';
  if(!reachable(s,p,f))return '目标必须与己方领地相邻。';
@@ -348,7 +379,7 @@ function apply(s,p,a){
  const specs=Array.isArray(a.cards)?a.cards:a.card!==undefined?[{id:a.card,open:true}]:[];
  const prepared=garrisonFromHand(s,p,specs,f);if(prepared.error)return prepared.error;
  const selected=new Set(prepared.line.map(c=>c.id));s.players[p].hand=s.players[p].hand.filter(c=>!selected.has(c.id));f.owner=p;f.garrison=prepared.line;
- log(s,s.players[p].name+'占领'+f.label+'。');nextCampaign(s);return null;
+ log(s,s.players[p].name+'占领'+f.label+'，主要行动已完成。');s.actionSpent=true;return null;
  }
  if(['attack','siege'].includes(a.type)){
   if(f.owner===null)return '中立据点请使用占领。';
@@ -452,7 +483,14 @@ export function aiAction(s,p,level='normal'){
  // Availability is evaluated against own/visible resources, no hidden ranks.
  if(!canStrategy(s,p,id,f?.id)&&['conscription','meds_team','revolution','international_support','economic_sanctions','isr'].includes(id))return {type:'strategy',id,field:f?.id};
  }
+ const rotation=v.fields.find(f=>f.owner===p&&f.garrison.filter(c=>c.open).length>=2);
+ if(rotation&&pl.supply>=1&&!v.rapidRedeployUsed&&pl.hand.length){
+  const outgoing=rotation.garrison.filter(c=>c.open).sort((a,b)=>a.rank-b.rank||a.id-b.id)[0];
+  const incoming=[...pl.hand].sort((a,b)=>a.rank-b.rank||a.id-b.id)[0];
+  return {type:'rotate_garrison',field:rotation.id,outIds:[outgoing.id],cards:[{id:incoming.id,open:false}]};
+ }
  if(pl.hand.length<10&&pl.supply>=2&&!v.supplyUsed&&v.deck.length)return {type:'supply'};
+ if(v.actionSpent)return {type:'pass'};
  if(enemy.length&&(pl.hand.length>=3||!neutral.length))return {type:enemy[0].garrison.length>3&&pl.supply>=3?'siege':'attack',field:enemy[0].id};
  if(neutral.length&&pl.hand.length>1)return {type:'occupy',field:neutral[0].id,cards:[{id:[...pl.hand].sort((a,b)=>a.rank-b.rank)[0].id,open:true}]};
  if(enemy.length&&pl.hand.length)return {type:enemy[0].garrison.length>3&&pl.supply>=3?'siege':'attack',field:enemy[0].id};
