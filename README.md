@@ -1,9 +1,9 @@
 # 暗线战争 · Shadowline War
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.12.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.12.8-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.12.3**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.12.8**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -59,7 +59,7 @@
 - 超时行动、存档恢复与隐藏信息隔离；
 - 144场跨地图、规则、策略开关、AI风格的完整对局，共8,440次合法行动。
 
-已在 Chrome 中完成 8 组真实浏览器交互回归：AI 入侵与计时暂停、新牌展示、策略目标选择、驻军查看、同机交接保密、闪电战窗口、AI 反超后玩家继续翻牌、商店收展与策略悬停；覆盖 1440×900 桌面与 390×844 手机视口，无页面脚本错误或游戏页面滚动。测试覆盖这些场景，不代表绝对没有其他 bug。
+已在 Chrome 中完成真实浏览器交互回归：AI 入侵与计时暂停、新牌展示、策略目标选择、驻军查看、同机交接保密、闪电战窗口、AI 反超后玩家继续翻牌、商店收展与策略悬停；覆盖桌面、390×844 iPhone 与 834×1112 iPad 视口，并验证手牌和战术栏始终保留在屏幕内。测试覆盖这些场景，不代表绝对没有其他 bug。
 
 浏览器测试导出 tests/browser.test.mjs 的 browserChecks(browser, url)，传入 Playwright 的 Chromium Browser 实例即可运行；需先启动本地服务器。独立 HTML 校验：npm run test:bundle。
 

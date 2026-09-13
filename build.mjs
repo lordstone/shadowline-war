@@ -28,7 +28,7 @@ for(const [name,file] of Object.entries(modules)){
 }
 let html=await fs.readFile(path.join(root,'index.html'),'utf8');
 const css=await fs.readFile(path.join(root,'src/style.css'),'utf8');
-html=html.replace('<link rel="stylesheet" href="./src/style.css">','<style>'+css+'</style>');
-html=html.replace('<script type="module" src="./src/app.js"></script>','<script type="importmap">'+JSON.stringify({imports})+'</script><script type="module">import "shadow/app";</script>');
+html=html.replace(/<link rel="stylesheet" href="\.\/src\/style\.css(?:\?v=[^"]+)?">/,'<style>'+css+'</style>');
+html=html.replace(/<script type="module" src="\.\/src\/app\.js(?:\?v=[^"]+)?"><\/script>/,'<script type="importmap">'+JSON.stringify({imports})+'</script><script type="module">import "shadow/app";</script>');
 await fs.writeFile(path.join(root,'暗线战争.html'),html);
 console.log('Built standalone offline HTML: '+Buffer.byteLength(html)+' bytes');

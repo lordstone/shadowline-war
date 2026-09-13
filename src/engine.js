@@ -62,7 +62,7 @@ export function compare(a,b){return compareEvaluation(evaluation(a),evaluation(b
 export function handName(cards){return ['未出牌','高牌','对子','同花','顺子','同花顺','三条'][power(cards)[0]]}
 export function opened(s,p){return s.battle?.lines[p].filter(c=>c.open)||[]}
 export function terrainLimit(f){return f?.type==='swamp'?1:f?.type==='forest'?2:3}
-export function garrisonLimit(f){return Math.min(f?.capital?5:f?.fortified?4:3,terrainLimit(f))}
+export function garrisonLimit(f){return f?.type==='swamp'?1:f?.type==='forest'?2:f?.capital||f?.type==='capital'?5:f?.fortified?4:3}
 export function battleLineLimit(s,p){const b=s.battle,f=b?.field?target(s,b.field):null;return b&&p===b.attacker?terrainLimit(f):garrisonLimit(f)}
 function mapFor(s){return MAPS.find(m=>m.id===s.opt.map)}
 function isSeaLink(s,a,b){return (mapFor(s)?.seaLinks||[]).some(([x,y])=>(x===a&&y===b)||(x===b&&y===a))}

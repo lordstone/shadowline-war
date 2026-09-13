@@ -20,7 +20,8 @@ test('new cards have private faces and own-hand new markers; harvest lists locat
  const other=actionEvents(s,r.state,a,1).find(e=>e.kind==='cards');
  assert.deepEqual(other.cards,[{hidden:true}]);assert.deepEqual(other.newIds,[]);
  a={type:'pass'};r=act(s,0,a);
- assert.match(actionEvents(s,r.state,a,0).find(e=>e.kind==='resources').detail,/首都/);
+ const harvest=actionEvents(s,r.state,a,0).find(e=>e.kind==='resources');
+ assert.ok(r.state.fields.some(f=>f.owner===harvest.owner&&harvest.detail.includes(f.label)));
 });
 test('strategy purchase produces a priced acquisition event',()=>{
  const s=createGame({strategies:false});s.opt.strategies=true;s.players[0].supply=10;s.strategyMarket=['conscription'];s.strategyDeck=['spy'];s.strategyDiscard=[];s.strategyLocked=[[],[]];s.marketBought=false;

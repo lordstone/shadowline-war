@@ -64,7 +64,10 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:fileURLToPath(new URL('../../shadowline-event-mobile.png',import.meta.url)),fullPage:true});
  await page.getByRole('button',{name:'暂停',exact:true}).click();await click('close');await drain();
  const mobileMetrics=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,width:innerWidth,height:innerHeight,battle:document.querySelector('.battle-area')?.getBoundingClientRect().toJSON(),hand:document.querySelector('.hand-tray')?.getBoundingClientRect().toJSON(),intel:document.querySelector('.intel-panel')?.getBoundingClientRect().toJSON()}));
- assert.ok(mobileMetrics.scrollWidth<=mobileMetrics.width&&mobileMetrics.scrollHeight<=mobileMetrics.height,JSON.stringify(mobileMetrics));checks.push('390px mobile event and battle layout without page overflow');
+ assert.ok(mobileMetrics.scrollWidth<=mobileMetrics.width&&mobileMetrics.scrollHeight<=mobileMetrics.height&&mobileMetrics.hand?.height>=112&&mobileMetrics.hand.bottom<=mobileMetrics.height&&mobileMetrics.intel?.height>=58&&mobileMetrics.intel.bottom<=mobileMetrics.height,JSON.stringify(mobileMetrics));
+ await page.setViewportSize({width:834,height:1112});
+ const tabletMetrics=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,width:innerWidth,height:innerHeight,hand:document.querySelector('.hand-tray')?.getBoundingClientRect().toJSON(),intel:document.querySelector('.intel-panel')?.getBoundingClientRect().toJSON()}));
+ assert.ok(tabletMetrics.scrollWidth<=tabletMetrics.width&&tabletMetrics.scrollHeight<=tabletMetrics.height&&tabletMetrics.hand?.height>=122&&tabletMetrics.hand.bottom<=tabletMetrics.height&&tabletMetrics.intel?.height>=64&&tabletMetrics.intel.bottom<=tabletMetrics.height,JSON.stringify(tabletMetrics));checks.push('iPhone and iPad battle layouts reserve visible hand and command trays without page overflow');
  assert.deepEqual(errors,[]);await page.close();return {checks,pageErrors:errors};
 }
 
