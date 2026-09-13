@@ -1,9 +1,9 @@
 # 暗线战争 · Shadowline War
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.14.0-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.14.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.14.0**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.14.1**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -80,6 +80,8 @@
 - `docs/`：后续功能设计文档；在线大厅目前只处于规划阶段。
 
 Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证保留于 vendor/THREE-LICENSE.txt。无遥测，无远程资源，无外部字体。存档属于本机浏览器的数据；更换端口或浏览器会使用独立存档。
+
+历史战区底图由 [Natural Earth 1:50m 公共领域数据](https://www.naturalearthdata.com/)离线生成，使用国家轮廓、湖泊和河流数据；游戏运行时不会请求地图服务。生成说明与来源记录见 `tools/natural-earth/README.md`。
 
 ## 许可证
 
@@ -200,3 +202,9 @@ iPhone Chrome 采用更紧凑的顶栏、军团状态、目标操作区、手牌
 战斗和据点内的可见牌会按当前最强牌型编队。顺子、同花与同花顺从小到大排列，超过三张的守军优先显示最强三张组合；敌方暗牌仍保持牌背和稳定位置，不泄露排序信息。
 
 补给新增驻军维护：据点有 0–1 张明牌时正常产出，2 张明牌时停产，3 张以上明牌时倒扣该据点原产出。全军本回合据点净产出为负时，公开随机弃置一张暗牌；补给保持最低为 0，不产生债务或连续弃牌。顶栏补给数字可在鼠标悬停时预览，也可点击打开逐项收支窗口，手机与触控设备使用同一窗口。
+
+### 1.14.1 真实地理底图与路线层修复
+
+删除手绘多边形底图，改为 Natural Earth 1:50m 的真实国界、海岸、湖泊和河流轮廓。东线、朝鲜半岛、法德西线、霍尔木兹和中国战区的据点坐标按城市真实经纬度重新投影，地理名称与地图位置保持一致。
+
+历史地图隐藏 Three.js 装饰网格，并删除 WebGL 与 SVG 重复绘制的路线。缩放时路线层不再被重复变换；仅保留一套低对比度据点连线，而且始终位于据点卡片后方。

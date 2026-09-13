@@ -1,3 +1,4 @@
 node_modules/
+tools/natural-earth/*.geojson
 .DS_Store
 *.log

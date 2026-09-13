@@ -3,6 +3,7 @@ import {MAPS,STRATEGIES,defaults,strategyById,SUITS} from './data.js';
 import {createGame,act,face,handName,power,compare,opened,leading,reachable,garrisonLimit,seaLanding,battleLineLimit,canStrategy,canBuyStrategy,aiAction,timeoutAction,validate,upgradeState,resolvedDeckCount,orderForDisplay} from './engine.js';
 import {Battlefield} from './battlefield.js';
 import {actionEvents} from './events.js';
+import {GEO_BACKDROPS} from './map-geography.js';
 const app=document.querySelector('#app'),sceneEl=document.querySelector('#scene');
 const scene=new Battlefield(sceneEl);
 let s=null,options={...defaults,seed:Math.floor(Math.random()*4294967296)},selection=new Map(),reveals=new Set(),focus=null,gate=false,modal=null,aiTask=null,deadline=null,remaining=null,clockKey='',muted=false;
@@ -13,13 +14,6 @@ let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
 let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map();
 const STORE='shadowline-war-v1';
 const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆',hormuz:'≋',china_civil_war:'山'}[id]||'◇');
-const GEO_BACKDROPS={
- eastern_front:'<path d="M2 8L21 6 32 13 47 10 58 16 77 12 98 21 96 82 83 88 70 80 58 92 42 86 29 93 14 83 3 66Z"/><path class="water" d="M13 4L39 4 47 13 33 19 17 16ZM68 82Q78 72 94 78L96 96 70 96Z"/><path class="river" d="M73 13Q64 34 69 51T76 88"/><text x="23" y="12">波罗的海</text><text x="77" y="91">黑海</text>',
- korea:'<path d="M34 2Q47 7 57 18T63 36Q72 47 66 59T72 78Q68 91 57 98L47 91 43 75 37 65 40 48 33 34 29 18Z"/><path class="water" d="M0 0H28L33 100H0ZM72 0H100V100H67Q79 70 72 0Z"/><path class="border" d="M35 38Q50 34 65 39"/><text x="6" y="48">黄海</text><text x="79" y="48">日本海</text>',
- western_front:'<path d="M0 10L25 8 36 15 45 10 64 8 82 14 100 10V100H0Z"/><path class="water" d="M0 0H100V10L82 14 64 8 45 10 36 15 25 8 0 10Z"/><path class="border" d="M46 18Q51 38 47 58T54 91M67 11Q62 33 68 52T72 91"/><path class="river" d="M64 9Q58 27 65 44T61 78"/><text x="8" y="7">北海</text><text x="57" y="40">莱茵河</text>',
- hormuz:'<path d="M0 0H100V37Q82 31 70 38T48 35Q33 43 0 37Z"/><path d="M0 72Q24 65 43 70T72 62Q87 58 100 65V100H0Z"/><path class="water" d="M0 38Q30 46 48 39T70 42Q85 34 100 40V64Q82 57 70 64T43 72Q24 66 0 73Z"/><path class="island" d="M45 49Q55 45 66 50L60 56 47 57Z"/><text x="39" y="64">霍尔木兹海峡</text>',
- china_civil_war:'<path d="M22 2L55 5 78 13 91 28 88 45 96 60 87 75 80 96 61 91 48 98 33 88 20 71 6 60 13 42 5 27Z"/><path class="river" d="M15 65Q35 58 52 65T90 67M28 42Q48 35 68 43T90 42"/><path class="water" d="M91 0H100V100H81Q92 76 87 61T91 0Z"/><text x="55" y="62">长江</text><text x="58" y="40">黄河</text>'
-};
 const LOGOS=['⟐','✣','♜','⚓','▲','✦','◈','☄'];
 const factionLogo=(map,faction)=>map.factionLogos?.[map.factions.indexOf(faction)]||LOGOS[Math.max(0,map.factions.indexOf(faction))];
 const sideOf=p=>s?.players[p]?.side??p;
@@ -83,7 +77,7 @@ function menu(){
  '<p class="option-note">当前牌库：'+(resolvedDeckCount(options,map.fields)===2?'2 副，共 106 张（仅一对大小王）':'1 副，共 54 张')+'。跟随地图时，12 个以上据点使用 2 副，其余使用 1 副。</p></div></details>'+
  btn('进入战场 <span>→</span>','start','primary launch')+(saved()?btn('继续本机存档','load','resume-button'):'')+
  '<div class="menu-foot">'+(resolvedDeckCount(options,map.fields)===2?'106':'54')+' 张扑克牌 <i></i> 隐藏信息博弈 <i></i> 无需联网</div></div>'+
- '<div class="menu-visual"><div class="map-heading"><span>战区预览 / '+map.id.toUpperCase()+'</span><b>'+map.name+'</b></div><div class="scene-mount" id="visual-mount"></div><div class="visual-corner tl"></div><div class="visual-corner br"></div><div class="map-caption"><span class="coordinates">SECTOR '+map.fields.length+' / '+(options.rules==='classic'?'SKIRMISH':'CAPITAL STRIKE')+'</span><p>'+map.desc+'</p></div><div class="side-word">SHADOWLINE</div></div></section>';
+ '<div class="menu-visual"><div class="map-heading"><span>战区预览 / '+map.id.toUpperCase()+'</span><b>'+map.name+'</b></div><div class="scene-mount" id="visual-mount"></div>'+geoBackdrop(map)+'<div class="visual-corner tl"></div><div class="visual-corner br"></div><div class="map-caption"><span class="coordinates">SECTOR '+map.fields.length+' / '+(options.rules==='classic'?'SKIRMISH':'CAPITAL STRIKE')+'</span><p>'+map.desc+'</p></div><div class="side-word">SHADOWLINE</div></div></section>';
 }
 function playerPanel(p){
  const pl=s.players[p],report=s.supplyLedger?.[p],tip=report?'第 '+report.round+' 回合：'+report.entries.map(e=>e.label+' '+(e.amount>0?'+':'')+e.amount).join('；'):'尚未进行本回合补给结算';
@@ -114,7 +108,7 @@ function mapView(){
  const limit=garrisonLimit(f),chosen=[...selection].map(([id,open])=>({id,open})),placementValid=chosen.length>0&&chosen.length<=limit&&(f?.capital||chosen.some(c=>c.open));
  const terrainNote=!f?'':f.type==='swamp'?'沼泽：攻守与驻军最多 1 张。':f.type==='forest'?'林地：攻守与驻军最多 2 张。':f.type==='mountain'?'山地：进攻至少亮出 2 张牌。':f.type==='port'&&seaLanding(s,p,f)?'跨海登陆：不能组成三条，进攻牌型须不低于守军。':'';
  const topology='<svg class="topology-lines" viewBox="0 0 100 100" preserveAspectRatio="none">'+s.fields.flatMap(a=>a.links.filter(id=>a.id.localeCompare(id)<0).map(id=>{const b=s.fields.find(f=>f.id===id);return b?'<line data-a="'+a.id+'" data-b="'+b.id+'" x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>':''})).join('')+'</svg>';
- return (targeting?'<div class="targeting-note">'+strategyById(targeting).name+'：点击符合条件的地图据点'+btn('取消','cancel-target','text-button')+'</div>':'')+'<div class="war-map"><div class="map-title"><div class="eyebrow">战术地图 / LIVE OPERATIONS</div><h2>'+map.name+'</h2></div><div class="map-stage '+(s.fields.length>9?'dense-map':'')+'"><div class="map-camera" style="--map-x:'+mapViewport.x+'px;--map-y:'+mapViewport.y+'px;--map-scale:'+mapViewport.scale+'"><div id="visual-mount" class="scene-mount"></div>'+geoBackdrop(map)+topology+'</div><div class="node-layer">'+s.fields.map(f=>'<button class="map-node owner-'+(f.owner===null?'null':sideOf(f.owner))+' '+(f.id===focus?'focused ':'')+(reachable(s,p,f)&&f.owner!==p?'reachable':'')+'" data-action="focus" data-id="'+f.id+'" style="left:'+f.x+'%;top:'+f.y+'%"><span class="node-icon">'+fieldIcon(f)+'</span><b>'+f.label+'</b>'+mapGarrison(f,p)+'<small>'+(f.owner===null?'中立区域':f.owner===p?'己方控制':'敌方控制')+' · 容量 '+garrisonLimit(f)+(f.blockedUntil>=s.round?' · 封锁中':'')+'</small></button>').join('')+'</div><div class="map-controls"><button data-map-control="in" aria-label="放大战场">＋</button><button data-map-control="out" aria-label="缩小战场">－</button><button data-map-control="reset" aria-label="重置战场视图">⌖</button></div><span class="map-gesture-hint">拖动战场 · 双指或滚轮缩放</span><span class="map-compass">N<br>↑</span></div>'+
+ return (targeting?'<div class="targeting-note">'+strategyById(targeting).name+'：点击符合条件的地图据点'+btn('取消','cancel-target','text-button')+'</div>':'')+'<div class="war-map"><div class="map-title"><div class="eyebrow">战术地图 / LIVE OPERATIONS</div><h2>'+map.name+'</h2></div><div class="map-stage '+(s.fields.length>9?'dense-map':'')+'"><div class="map-camera" style="--map-x:'+mapViewport.x+'px;--map-y:'+mapViewport.y+'px;--map-scale:'+mapViewport.scale+'"><div id="visual-mount" class="scene-mount"></div>'+geoBackdrop(map)+'</div>'+topology+'<div class="node-layer">'+s.fields.map(f=>'<button class="map-node owner-'+(f.owner===null?'null':sideOf(f.owner))+' '+(f.id===focus?'focused ':'')+(reachable(s,p,f)&&f.owner!==p?'reachable':'')+'" data-action="focus" data-id="'+f.id+'" style="left:'+f.x+'%;top:'+f.y+'%"><span class="node-icon">'+fieldIcon(f)+'</span><b>'+f.label+'</b>'+mapGarrison(f,p)+'<small>'+(f.owner===null?'中立区域':f.owner===p?'己方控制':'敌方控制')+' · 容量 '+garrisonLimit(f)+(f.blockedUntil>=s.round?' · 封锁中':'')+'</small></button>').join('')+'</div><div class="map-controls"><button data-map-control="in" aria-label="放大战场">＋</button><button data-map-control="out" aria-label="缩小战场">－</button><button data-map-control="reset" aria-label="重置战场视图">⌖</button></div><span class="map-gesture-hint">拖动战场 · 双指或滚轮缩放</span><span class="map-compass">N<br>↑</span></div>'+
  '<div class="target-bar"><div><small>当前目标</small><b>'+(f?f.label+' · 容量 '+limit:'选择地图上的据点')+'</b><p>'+(f?f.owner===p?'固定驻军不可直接取回；选择 1–'+limit+' 张手牌可整编换防。':!can?'目标尚不相邻，需要先建立进军路线。':f.owner===null?'选择 1–'+limit+' 张手牌驻军，非首都至少 1 张明牌。':'守军公开牌超过 3 张时自动计算最强三张；可用围城封锁一张预备守军。':'青色：'+s.players.find(pl=>pl.side===0).faction+'；橙色：'+s.players.find(pl=>pl.side===1).faction+'。')+'</p>'+(terrainNote?'<span class="garrison-info">'+terrainNote+'</span>':'')+(f?.garrison.length?'<span class="garrison-info">驻军：'+f.garrison.map(c=>f.owner===p||c.open?face(c)+(SUITS[c.suit]||'★'):'未知暗牌').join(' / ')+'</span>':'')+'</div>'+
  '<div class="target-actions">'+(f?.owner===null?btn('部署驻军并占领 →','occupy','primary',!actionable||!can||!placementValid):f?.owner===1-p?btn('发动进攻 →','attack','primary danger',!actionable||!can)+btn('围城 · 3 补给','siege','secondary',!actionable||!can||f.garrison.length<=3||s.players[p].supply<3,'title="封锁一张第4或第5位预备守军，本次交锋不参与牌型"'):f?.owner===p?btn('整编驻军 →','reorganize','primary',!actionable||!placementValid)+btn('快速换防 · 3','rapid_redeploy','secondary',!actionable||!placementValid||s.rapidRedeployUsed||s.players[p].supply<3):'')+
  btn('补充暗牌 · 2 补给','supply','secondary',!actionable||s.supplyUsed||s.players[p].supply<2||!s.deck.length,'title="消耗 2 点补给，从公共牌库随机抽取 1 张暗牌"')+btn('结束行动','pass','text-button',!actionable)+'</div></div></div>';
@@ -251,12 +245,12 @@ function garrisonRoster(p){
 function render(){
  clearTimeout(aiTask);
  document.body.appendChild(sceneEl);
- if(!s){app.innerHTML=menu()+overlay();scene.setMap(MAPS.find(m=>m.id===options.map).fields);scene.setMode('map')}
+ if(!s){app.innerHTML=menu()+overlay();scene.setMap(MAPS.find(m=>m.id===options.map).fields,!!GEO_BACKDROPS[options.map]);scene.setMode('map')}
  else if(events.length){app.innerHTML=header()+eventView()+(modal?overlay():'')}
  else if(gate){app.innerHTML=header()+overlay()}
  else{
  app.innerHTML=s.phase==='over'?result():s.phase==='draft'?header()+draft():game();
- if(s.phase==='campaign')scene.setMap(themedFields(s.fields));
+ if(s.phase==='campaign')scene.setMap(themedFields(s.fields),!!GEO_BACKDROPS[s.opt.map]);
  scene.setMode(s.phase==='campaign'?'map':'battle');
  app.insertAdjacentHTML('beforeend',overlay());
  }

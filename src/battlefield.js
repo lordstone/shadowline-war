@@ -14,7 +14,7 @@ export class Battlefield{
  const rim=new THREE.DirectionalLight(0x4198c1,2);rim.position.set(10,8,-12);this.scene.add(rim);
  this.ground=new THREE.Group();this.scene.add(this.ground);
  const base=new THREE.Mesh(new THREE.CylinderGeometry(21,23,1.6,6),new THREE.MeshStandardMaterial({color:0x111f25,roughness:1,metalness:.25}));base.position.y=-1.6;this.ground.add(base);
- const grid=new THREE.GridHelper(70,50,0x27434a,0x13232a);grid.position.y=-2.5;this.scene.add(grid);
+ const grid=new THREE.GridHelper(70,50,0x27434a,0x13232a);grid.position.y=-2.5;this.grid=grid;this.scene.add(grid);
  this.mapGroup=new THREE.Group();this.ground.add(this.mapGroup);
  const positions=[];for(let i=0;i<180;i++)positions.push(Math.sin(i*12.34)*27,((i*7)%80)/8,Math.cos(i*3.3)*23);
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
@@ -24,8 +24,9 @@ export class Battlefield{
  this.tick=this.tick.bind(this);this.frame=requestAnimationFrame(this.tick);
  }catch(e){this.renderer?.dispose();this.renderer=null;container.classList.add('no-webgl');console.warn('WebGL unavailable; using tactical 2D map.',e.message)}
  }
- setMap(fields){
+ setMap(fields,geographic=false){
  this.fields=fields;if(!this.renderer)return;
+ this.grid.visible=!geographic;
  const xs=fields.map(f=>f.x),ys=fields.map(f=>f.y),spanX=Math.max(...xs)-Math.min(...xs),spanY=Math.max(...ys)-Math.min(...ys),vertical=spanY>spanX*1.35;this.xScale=vertical?.39:.32;
  this.camera.position.set(0,vertical?42:24,vertical?16:29);this.camera.fov=vertical?40:38;this.camera.lookAt(0,0,0);this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();
  for(const child of [...this.mapGroup.children]){this.mapGroup.remove(child);child.traverse(o=>{o.geometry?.dispose();if(o.material)for(const m of(Array.isArray(o.material)?o.material:[o.material]))m.dispose()})}
@@ -53,9 +54,6 @@ export class Battlefield{
  }else{building(0,0,.8,1.2,.8,0x697771);building(-.7,.55,.45,.6,.45,0x4e6160);building(.7,.4,.55,.9,.55,0x42575a)}
  if(f.fortified&&!f.capital){for(const x of[-1.05,1.05])building(x,-.55,.28,.85,.28,0x8b806b)}
  const light=new THREE.Mesh(new THREE.BoxGeometry(.7,.055,.06),new THREE.MeshBasicMaterial({color}));light.position.set(0,.55,.6);node.add(light);
- for(const id of f.links){if(f.id.localeCompare(id)>=0)continue;const dest=fields.find(t=>t.id===id);if(!dest)continue;const a=pos.clone(),b=coords(dest);a.y=-.15;b.y=-.15;
- const g=new THREE.BufferGeometry().setFromPoints([a,b]);this.mapGroup.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:0x66858a,transparent:true,opacity:.4})));
- }
  }
  }
  project(f){const p=new THREE.Vector3((f.x-50)*(this.xScale||.32),.1,(f.y-52)*.28);p.project(this.camera);return {x:(p.x+1)*50,y:(1-p.y)*50}}

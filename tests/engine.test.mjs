@@ -409,7 +409,11 @@ test('one revealed garrison produces normally while two revealed garrisons stop 
 });
 
 test('historical capital ownership matches the named factions',()=>{
- const korea=MAPS.find(m=>m.id==='korea'),west=MAPS.find(m=>m.id==='western_front');
+ const korea=MAPS.find(m=>m.id==='korea'),west=MAPS.find(m=>m.id==='western_front'),east=MAPS.find(m=>m.id==='eastern_front'),china=MAPS.find(m=>m.id==='china_civil_war'),hormuz=MAPS.find(m=>m.id==='hormuz');
  assert.equal(korea.fields.find(f=>f.id==='pyongyang').owner,0);assert.equal(korea.fields.find(f=>f.id==='busan').owner,1);
  assert.equal(west.fields.find(f=>f.id==='berlin').owner,0);assert.equal(west.fields.find(f=>f.id==='paris').owner,1);
+ assert.ok(west.fields.find(f=>f.id==='paris').x<west.fields.find(f=>f.id==='berlin').x);assert.ok(west.fields.find(f=>f.id==='hamburg').y<west.fields.find(f=>f.id==='munich').y);
+ assert.ok(korea.fields.find(f=>f.id==='pyongyang').y<korea.fields.find(f=>f.id==='seoul').y&&korea.fields.find(f=>f.id==='seoul').y<korea.fields.find(f=>f.id==='busan').y);
+ assert.ok(east.fields.find(f=>f.id==='berlin').x<east.fields.find(f=>f.id==='moscow').x);assert.ok(china.fields.find(f=>f.id==='yanan').x<china.fields.find(f=>f.id==='beiping').x&&china.fields.find(f=>f.id==='shenyang').y<china.fields.find(f=>f.id==='nanjing').y);
+ assert.ok(hormuz.fields.find(f=>f.id==='bandar').y<hormuz.fields.find(f=>f.id==='oman_hq').y);
 });

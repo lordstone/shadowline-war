@@ -70,7 +70,7 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  assert.ok(tabletMetrics.scrollWidth<=tabletMetrics.width&&tabletMetrics.scrollHeight<=tabletMetrics.height&&tabletMetrics.hand?.height>=122&&tabletMetrics.hand.bottom<=tabletMetrics.height&&tabletMetrics.intel?.height>=64&&tabletMetrics.intel.bottom<=tabletMetrics.height,JSON.stringify(tabletMetrics));checks.push('iPhone and iPad battle layouts reserve visible hand and command trays without page overflow');
  // Stress the campaign HUD with twelve cards, three selected cards, target actions and a tactic.
  s=createGame({strategies:false,mode:'ai',map:'china_civil_war',seed:913});s.players[0].hand.push(...s.deck.splice(0,3));s.players[0].strategies=['spy'];
- await load(s);assert.equal(await page.locator('.geo-backdrop').count(),1);
+ await load(s);assert.equal(await page.locator('.geo-backdrop').count(),1);assert.equal(await page.locator('.map-camera .topology-lines').count(),0);assert.equal(await page.locator('.map-stage > .topology-lines').count(),1);assert.ok(await page.locator('.geo-backdrop .land').count()>0);
  await page.locator('[data-action="supply-ledger"][data-player="0"]').click();assert.match(await page.locator('.supply-ledger').innerText(),/据点产出|本回合净变化/);await click('close');
  const adjacent=s.fields.find(f=>f.owner===null&&f.links.some(id=>s.fields.find(x=>x.id===id)?.owner===0));
  await page.locator('[data-action="focus"][data-id="'+adjacent.id+'"]').click();const stressCards=page.locator('.hand-tray [data-action="card"]');for(let i=0;i<3;i++)await stressCards.nth(i).click();

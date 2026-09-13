@@ -10,6 +10,7 @@ const modules={
  'shadow/engine':'src/engine.js',
  'shadow/scene':'src/battlefield.js',
  'shadow/events':'src/events.js',
+ 'shadow/geography':'src/map-geography.js',
  'shadow/app':'src/app.js'
 };
 const replacements={
@@ -18,7 +19,8 @@ const replacements={
  './data.js':'shadow/data',
  './engine.js':'shadow/engine',
  './events.js':'shadow/events',
- './battlefield.js':'shadow/scene'
+ './battlefield.js':'shadow/scene',
+ './map-geography.js':'shadow/geography'
 };
 const imports={};
 for(const [name,file] of Object.entries(modules)){
