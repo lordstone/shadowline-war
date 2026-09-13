@@ -1,11 +1,11 @@
 {
-  "date": "2026-09-12",
-  "tests": 42,
-  "passed": 42,
+  "date": "2026-09-13",
+  "tests": 47,
+  "passed": 47,
   "failed": 0,
   "threeCardHands": 24804,
   "simulatedMatches": 384,
-  "legalActions": 27589,
+  "legalActions": 27449,
   "wildcardJokers": {
     "allThreeCardHands": 24804,
     "categoryCounts": [0, 16500, 5064, 1540, 1212, 228, 260],
@@ -18,7 +18,7 @@
     "twoDeckJokers": 2,
     "uniqueCardIds": "passed"
   },
-  "globalVersionBadge": "v1.13.4 visible across all application states",
+  "globalVersionBadge": "v1.14.0 visible across all application states",
   "identityAndMaps": "passed: player identity defaults/customization and eight connected maps",
   "terrainCombatRules": "passed: swamp/forest limits, mountain disclosure, and sea-landing anti-triple rule",
   "revealedKickerComparison": "passed: Q-4 defeats Q-3 before concealed cards are revealed",
@@ -44,7 +44,10 @@
       "Visible location controls and explicit ordinary-card draw cost at app-window width; collapsed shop, purchase states, refill, hover tooltip and next-turn unlock",
       "Capital capacity-five selection and all target controls visible without page overflow",
       "Eight-map selector; complex historical maps render connected, readable topology routes with no page errors",
-      "Compact iPhone Chrome HUD keeps the header, map, target controls, hand and tactics dock inside the visible viewport"
+      "Compact iPhone Chrome HUD keeps the header, map, target controls, hand and tactics dock inside the visible viewport",
+      "Mobile battle grid separates headings, both lines, comparison text and actions at 390x600 and 390x844",
+      "Historical map backgrounds render behind topology; every node remains within the map stage",
+      "Supply total opens an itemized current-turn income and expense ledger"
     ],
     "pageErrors": []
   },
@@ -60,6 +63,20 @@
     "rankThenSuit": "covered by browser regression",
     "suitThenRank": "covered by browser regression",
     "mutatesGameState": false
+  },
+  "formationDisplay": {
+    "strongestThreeFirst": "passed",
+    "straightLowToHigh": "passed",
+    "flushLowToHigh": "passed",
+    "wildcardGapPlacement": "passed",
+    "enemyHiddenInformation": "preserved"
+  },
+  "supplyUpkeep": {
+    "zeroOrOneRevealed": "normal site production",
+    "twoRevealed": "site production stops",
+    "threeOrMoreRevealed": "site yield becomes an equal expense",
+    "negativeOperationalNet": "one random hand card publicly discarded",
+    "ledger": "income, expenses, cap adjustments and discard recorded"
   },
   "mapTacticalOverlayQA": {
     "koreaCamera": "vertical top-down with expanded east-west spacing",
@@ -81,6 +98,12 @@
     "bidirectionalLinks": "passed",
     "connectedGraphs": "passed",
     "twoCapitalsEach": "passed"
+  },
+  "historicalMapPresentation": {
+    "fadedGeographicBackdrops": ["eastern_front", "korea", "western_front", "hormuz", "china_civil_war"],
+    "koreaCapitals": "北方人民军 at 平壤; 联合国军 at 釜山",
+    "westernFrontCapitals": "德军西线集团 at 柏林; 法英联军 at 巴黎",
+    "mobileNodeBounds": "12 of 12 western-front nodes inside the 390x844 map stage"
   },
   "standaloneBundle": {
     "modules": 7,

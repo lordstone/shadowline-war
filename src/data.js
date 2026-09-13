@@ -57,7 +57,7 @@ export const MAPS=[
  f('stalingrad','斯大林格勒','town',88,70,['kharkov','caucasus','moscow'],null,false,true),
  f('moscow','莫斯科指挥部','capital',91,30,['smolensk','leningrad','stalingrad'],1,true)]},
  {id:'korea',name:'半岛拉锯',subtitle:'11 个据点 · 山地与港口',desc:'以朝鲜半岛的狭长地形为灵感。东西海岸线由山地走廊切开，仁川与元山提供侧翼通道，首尔是全图关键枢纽。',factions:['北方人民军','联合国军'],seaLinks:[['incheon','wonsan']],fields:[
- f('pyongyang','平壤指挥部','capital',41,18,['sinuiju','wonsan','kaesong'],1,true),
+ f('pyongyang','平壤指挥部','capital',41,18,['sinuiju','wonsan','kaesong'],0,true),
  f('sinuiju','鸭绿江补给线','oil',24,7,['pyongyang','chosin']),
  f('chosin','长津山地','mountain',61,8,['sinuiju','wonsan']),
  f('wonsan','元山港','port',73,25,['pyongyang','chosin','chuncheon','incheon']),
@@ -67,9 +67,9 @@ export const MAPS=[
  f('chuncheon','春川山口','mountain',69,45,['wonsan','kaesong','seoul','daegu']),
  f('daejeon','大田','town',43,67,['incheon','seoul','daegu']),
  f('daegu','大邱防线','town',61,78,['chuncheon','daejeon','busan'],null,false,true),
- f('busan','釜山指挥部','capital',73,92,['daegu'],0,true)]},
+ f('busan','釜山指挥部','capital',73,92,['daegu'],1,true)]},
  {id:'western_front',name:'法德西线',subtitle:'12 个据点 · 河谷突破',desc:'以法国战役方向的低地、阿登和莱茵交通网为灵感。北部港区适合迂回，中部要塞密集，南部路线更长但防线较薄。',factions:['德军西线集团','法英联军'],seaLinks:[['belgium','hamburg']],fields:[
- f('paris','巴黎指挥部','capital',11,55,['reims','belgium','alsace'],0,true),
+ f('paris','巴黎指挥部','capital',11,55,['reims','belgium','alsace'],1,true),
  f('reims','兰斯','town',28,52,['paris','belgium','sedan']),
  f('belgium','比利时低地','port',39,18,['paris','reims','ardennes','hamburg']),
  f('sedan','色当要塞','town',41,51,['reims','ardennes','luxembourg','alsace'],null,false,true),
@@ -80,7 +80,7 @@ export const MAPS=[
  f('ruhr','鲁尔工业区','oil',70,34,['ardennes','hamburg','frankfurt','berlin']),
  f('frankfurt','法兰克福','town',70,55,['luxembourg','ruhr','munich','berlin'],null,false,true),
  f('munich','慕尼黑','town',74,80,['alsace','frankfurt','berlin']),
- f('berlin','柏林指挥部','capital',90,39,['hamburg','ruhr','frankfurt','munich'],1,true)]},
+ f('berlin','柏林指挥部','capital',90,39,['hamburg','ruhr','frankfurt','munich'],0,true)]},
  {id:'hormuz',name:'霍尔木兹海峡',subtitle:'10 个据点 · 海峡封锁',desc:'围绕海峡、岛屿与油港展开争夺。陆上走廊稳定，跨海登陆更难形成决定性牌型。',factions:['海峡联合舰队','波斯湾卫队'],seaLinks:[['musandam','qeshm'],['gulf_port','qeshm']],fields:[
  f('oman_hq','马斯喀特指挥部','capital',12,70,['gulf_port','musandam'],0,true),f('gulf_port','苏哈尔港','port',28,72,['oman_hq','musandam','island','qeshm','desert']),f('musandam','穆桑代姆','mountain',28,30,['oman_hq','gulf_port','island','qeshm','offshore']),f('island','海峡中岛','town',47,48,['gulf_port','musandam','qeshm','bandar'],null,false,true),f('qeshm','格什姆港','port',62,56,['gulf_port','musandam','island','bandar','iran_coast']),f('bandar','阿巴斯油港','oil',66,28,['island','qeshm','iran_hq','offshore']),f('iran_coast','沿岸山口','mountain',72,75,['qeshm','iran_hq','desert']),f('iran_hq','波斯湾指挥部','capital',88,47,['bandar','iran_coast'],1,true),f('offshore','外海锚地','port',42,18,['musandam','bandar']),f('desert','内陆沙漠','town',45,84,['gulf_port','iran_coast'],null,false)]},
  {id:'china_civil_war',name:'山河决战',subtitle:'13 个据点 · 铁路与江河',desc:'按中国东部实际相对方位绘制：东北在右上，陕北在左，长江中下游和东南沿海在下方。铁路枢纽连接南北战线。',factions:['国民政府军','解放军'],factionLogos:['☀','★'],fields:[

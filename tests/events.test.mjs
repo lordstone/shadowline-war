@@ -28,3 +28,9 @@ test('strategy purchase produces a priced acquisition event',()=>{
  const a={type:'buy_strategy',id:'conscription'},r=act(s,0,a);assert.equal(r.ok,true);
  const event=actionEvents(s,r.state,a,0)[0];assert.equal(event.kind,'purchase');assert.equal(event.strategy.id,'conscription');assert.match(event.detail,/4 点补给/);
 });
+test('negative garrison upkeep reports its ledger and public discard',()=>{
+ let s=createGame({strategies:false,map:'duel',seed:94});const capital=s.fields.find(f=>f.owner===0&&f.capital);capital.garrison.forEach(c=>c.open=true);
+ s=act(s,0,{type:'pass'}).state;const before=s,a={type:'pass'},r=act(before,1,a);assert.equal(r.ok,true);
+ const events=actionEvents(before,r.state,a,0),resource=events.find(e=>e.kind==='resources'),discard=events.find(e=>e.title==='补给赤字 · 公开弃牌');
+ assert.match(resource.detail,/三张以上明牌维护 -1/);assert.equal(discard.cards.length,1);assert.equal(discard.cards[0].hidden,undefined);
+});

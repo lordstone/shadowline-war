@@ -60,6 +60,18 @@ function evaluation(cards){
 export function power(cards){return evaluation(cards).value}
 export function compare(a,b){return compareEvaluation(evaluation(a),evaluation(b))}
 export function handName(cards){return ['未出牌','高牌','对子','同花','顺子','同花顺','三条'][power(cards)[0]]}
+export function orderForDisplay(cards){
+ const source=[...cards];if(source.length<2)return source;
+ let chosen=source;
+ if(source.length>3){chosen=null;for(let i=0;i<source.length;i++)for(let j=i+1;j<source.length;j++)for(let k=j+1;k<source.length;k++){const candidate=[source[i],source[j],source[k]];if(!chosen||compareEvaluation(evaluation(candidate),evaluation(chosen))>0)chosen=candidate}}
+ const value=power(chosen),category=value[0];let ordered;
+ if(category===4||category===5){
+  const expected=[value[1]-2,value[1]-1,value[1]],ordinary=chosen.filter(c=>c.rank<=13),jokers=chosen.filter(c=>c.rank>13).sort((a,b)=>a.rank-b.rank),used=new Set();
+  ordered=expected.map(rank=>{const card=ordinary.find(c=>c.rank+(c.boost||0)===rank&&!used.has(c.id));if(card){used.add(card.id);return card}return jokers.shift()}).filter(Boolean);
+ }else if(category===2){const pair=value[1];ordered=[...chosen].sort((a,b)=>Number((b.rank+(b.boost||0))===pair)-Number((a.rank+(a.boost||0))===pair)||a.rank-b.rank||a.suit-b.suit)}
+ else ordered=[...chosen].sort((a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id);
+ const picked=new Set(ordered.map(c=>c.id));return [...ordered,...source.filter(c=>!picked.has(c.id)).sort((a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id)];
+}
 export function opened(s,p){return s.battle?.lines[p].filter(c=>c.open)||[]}
 export function terrainLimit(f){return f?.type==='swamp'?1:f?.type==='forest'?2:3}
 export function garrisonLimit(f){return f?.type==='swamp'?1:f?.type==='forest'?2:f?.capital||f?.type==='capital'?5:f?.fortified?4:3}
@@ -100,7 +112,7 @@ export function createGame(options={}){
  players:[{name:names[0],logo:logos[0],faction:factions[0],side:sides[0],hand:[],reserve:[],strategies:[],supply:2,wins:0},{name:names[1],logo:logos[1],faction:factions[1],side:sides[1],hand:[],reserve:[],strategies:[],supply:2,wins:0}],
  deck:[],fields:structuredClone(map.fields).map(f=>({...f,owner:f.owner===null?null:sides.indexOf(f.owner)})),
  battle:null,log:[],winner:null,reason:'',draft:[[],[]],drafted:[false,false],turn:1,strategyUsed:false,supplyUsed:false,raid:false,knowledge:[{},{}],
- strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false};
+ strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false,supplyLedger:[null,null]};
  const deckCount=resolvedDeckCount(opt,s.fields);s.baseDeckSize=54+(deckCount-1)*52;
  s.deck=shuffle(s,makeDeck(deckCount));for(let i=0;i<12;i++)for(let p=0;p<2;p++)s.players[p].hand.push(s.deck.pop());
  if(opt.rules==='campaign'){for(const f of s.fields.filter(f=>f.capital))for(let i=0;i<3;i++)f.garrison.push({...s.players[f.owner].hand.pop(),open:false});}
@@ -134,6 +146,7 @@ export function upgradeState(s){
  if(!Array.isArray(s.strategyLocked))s.strategyLocked=[[],[]];
  if(typeof s.marketBought!=='boolean')s.marketBought=false;
  if(typeof s.rapidRedeployUsed!=='boolean')s.rapidRedeployUsed=false;
+ if(!Array.isArray(s.supplyLedger))s.supplyLedger=[null,null];
  const template=MAPS.find(m=>m.id===s.opt.map);if(template)for(const f of s.fields)f.fortified=!!template.fields.find(x=>x.id===f.id)?.fortified;
  if(s.opt.rules==='campaign')for(const f of s.fields)if(f.owner!==null&&!f.capital&&f.garrison.length&&!f.garrison.some(c=>c.open))f.garrison[0].open=true;
  if(s.opt.rules==='campaign'&&s.opt.strategies)fillMarket(s);
@@ -150,7 +163,22 @@ function exhausted(s){
 function score(s,p){return s.players[p].reserve.length+s.fields.filter(f=>f.owner===p).length*3}
 function finish(s,winner,reason){s.phase='over';s.winner=winner;s.reason=reason;s.battle=null;log(s,winner===null?'战局结束：双方平局。':s.players[winner].name+'赢得大局。')}
 function begin(s){s.active=s.opt.first===1?1:0;if(s.opt.rules==='classic')startBattle(s,1-s.active,s.active,null);else{fillMarket(s);s.phase='campaign';income(s)}}
-function income(s){const p=s.players[s.active],before=p.supply;p.supply=Math.min(30,p.supply+s.fields.filter(f=>f.owner===s.active&&f.blockedUntil<s.round).reduce((n,f)=>n+(f.type==='oil'?2:1),0));log(s,p.name+'收获 '+(p.supply-before)+' 点补给。')}
+function ledger(s,p){return s.supplyLedger[p]||(s.supplyLedger[p]={round:s.round,opening:s.players[p].supply,entries:[],net:0,discardedId:null})}
+function supplyFlow(s,p,label,amount){const report=ledger(s,p),before=s.players[p].supply,after=Math.max(0,Math.min(30,before+amount)),actual=after-before;s.players[p].supply=after;report.entries.push({label,amount:actual});report.net+=actual;return actual}
+function income(s){
+ const who=s.active,p=s.players[who],opening=p.supply,report={round:s.round,opening,entries:[],net:0,discardedId:null};s.supplyLedger[who]=report;
+ let operationalNet=0;
+ for(const f of s.fields.filter(f=>f.owner===who)){
+  const base=f.type==='oil'?2:1,open=f.garrison.filter(c=>c.open).length,blocked=f.blockedUntil>=s.round;
+  const amount=blocked?0:open>=3?-base:open===2?0:base;
+  report.entries.push({label:f.label+(blocked?' · 被封锁':open>=3?' · 三张以上明牌维护':open===2?' · 两张明牌停产':' · 据点产出'),amount});operationalNet+=amount;
+ }
+ const raw=opening+operationalNet,persisted=Math.max(0,Math.min(30,raw));p.supply=persisted;report.net=persisted-opening;
+ if(raw>30)report.entries.push({label:'仓储上限溢出',amount:30-raw});
+ if(raw<0)report.entries.push({label:'库存不足抵扣',amount:-raw});
+ if(operationalNet<0&&p.hand.length){const card=p.hand.splice(Math.floor(random(s)*p.hand.length),1)[0];p.reserve.push(clean(card));report.discardedId=card.id;log(s,p.name+'补给净收入为负，公开弃置 1 张暗牌。')}
+ log(s,p.name+(operationalNet>=0?'收获 ':'承担 ')+Math.abs(operationalNet)+' 点补给净额。');
+}
 function nextCampaign(s){
  s.active=1-s.active;s.turn++;s.round=Math.floor((s.turn-1)/2)+1;s.phase='campaign';s.strategyUsed=false;s.supplyUsed=false;s.marketBought=false;s.rapidRedeployUsed=false;s.raid=false;s.strategyLocked[s.active]=[];
  if(exhausted(s))return;
@@ -249,7 +277,7 @@ export function canBuyStrategy(s,p,id){
 }
 function buyStrategy(s,p,id){
  const error=canBuyStrategy(s,p,id);if(error)return error;
- const c=strategyById(id),i=s.strategyMarket.indexOf(id);s.players[p].supply-=c.price;s.players[p].strategies.push(id);s.strategyLocked[p].push(id);s.strategyMarket.splice(i,1);s.marketBought=true;fillMarket(s);log(s,s.players[p].name+'花费 '+c.price+' 点补给购买「'+c.name+'」，下回合解锁。');return null;
+ const c=strategyById(id),i=s.strategyMarket.indexOf(id);supplyFlow(s,p,'购买「'+c.name+'」',-c.price);s.players[p].strategies.push(id);s.strategyLocked[p].push(id);s.strategyMarket.splice(i,1);s.marketBought=true;fillMarket(s);log(s,s.players[p].name+'花费 '+c.price+' 点补给购买「'+c.name+'」，下回合解锁。');return null;
 }
 function garrisonFromHand(s,p,specs,field){
  const limit=garrisonLimit(field);
@@ -278,7 +306,7 @@ function strategy(s,p,id,fieldId){
  case 'peace_talk':settle(s,null);break;
  case 'revolution':f.owner=p;f.garrison.push({id:s.baseDeckSize+s.generated++,rank:1,suit:Math.floor(random(s)*4),open:true});nextCampaign(s);break;
  case 'blitzkrieg':settle(s,leading(s));break;
- case 'international_support':pl.supply=Math.min(30,pl.supply+1+Math.floor(random(s)*13));break;
+ case 'international_support':supplyFlow(s,p,'国际援助',1+Math.floor(random(s)*13));break;
  case 'airborne_raid':s.raid=true;break;
  case 'economic_sanctions':f.blockedUntil=s.round+Math.floor(random(s)*13)+1;break;
  }
@@ -297,7 +325,7 @@ function apply(s,p,a){
  if(a.type==='buy_strategy')return buyStrategy(s,p,a.id);
  if(a.type==='supply'){
  if(s.supplyUsed)return '每个地图回合只能补给一次。';if(s.players[p].supply<2||!s.deck.length)return '需要 2 点补给和非空公共牌库。';
- s.players[p].supply-=2;s.players[p].hand.push(clean(s.deck.pop()));s.supplyUsed=true;log(s,s.players[p].name+'补充了一张暗牌。');return null;
+ supplyFlow(s,p,'补充暗牌',-2);s.players[p].hand.push(clean(s.deck.pop()));s.supplyUsed=true;log(s,s.players[p].name+'补充了一张暗牌。');return null;
  }
  if(a.type==='pass'){log(s,s.players[p].name+'结束地图行动。');nextCampaign(s);return null}
  const f=target(s,a.field);
@@ -309,7 +337,7 @@ function apply(s,p,a){
  const selected=new Set(prepared.line.map(c=>c.id));
  s.players[p].hand=s.players[p].hand.filter(c=>!selected.has(c.id));
  s.players[p].hand.push(...f.garrison.map(clean));f.garrison=prepared.line;
- if(a.type==='rapid_redeploy'){s.players[p].supply-=3;s.rapidRedeployUsed=true;log(s,s.players[p].name+'花费 3 点补给，快速调整'+f.label+'驻军。')}
+ if(a.type==='rapid_redeploy'){supplyFlow(s,p,'快速换防 · '+f.label,-3);s.rapidRedeployUsed=true;log(s,s.players[p].name+'花费 3 点补给，快速调整'+f.label+'驻军。')}
  else{log(s,s.players[p].name+'整编'+f.label+'驻军并结束地图行动。');nextCampaign(s)}
  return null;
  }
@@ -327,7 +355,7 @@ function apply(s,p,a){
   if(a.type==='siege'){
    if(f.garrison.length<=3)return '该据点没有可封锁的预备守军。';
    if(s.players[p].supply<3)return '围城需要 3 点补给。';
-   s.players[p].supply-=3;
+   supplyFlow(s,p,'围城 · '+f.label,-3);
   }
   startBattle(s,p,1-p,f.id,a.type==='siege');return null
  }

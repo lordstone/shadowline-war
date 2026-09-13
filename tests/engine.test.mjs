@@ -1,7 +1,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,terrainLimit,battleLineLimit,resolvedDeckCount,leading} from '../src/engine.js';
+import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,terrainLimit,battleLineLimit,resolvedDeckCount,leading,orderForDisplay} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
@@ -380,4 +380,36 @@ test('AI can purchase from the public market and used strategies enter the disca
 test('older version-one saves gain a valid strategy market without losing their state',()=>{
  const s=createGame({strategies:false});s.opt.strategies=true;const hand=s.players[0].hand.map(c=>c.id);delete s.strategyDeck;delete s.strategyMarket;delete s.strategyDiscard;delete s.strategyLocked;delete s.marketBought;
  upgradeState(s);assert.equal(s.strategyMarket.length,3);assert.deepEqual(s.strategyLocked,[[],[]]);assert.deepEqual(s.players[0].hand.map(c=>c.id),hand);validate(s);
+});
+
+test('battle and garrison display order presents the strongest formation from low to high',()=>{
+ const cards=[{id:1,rank:9,suit:2},{id:2,rank:7,suit:2},{id:3,rank:8,suit:2},{id:4,rank:3,suit:0}];
+ assert.deepEqual(orderForDisplay(cards).map(c=>c.rank),[7,8,9,3]);
+ const flush=[{id:5,rank:12,suit:1},{id:6,rank:2,suit:1},{id:7,rank:7,suit:1}];
+ assert.deepEqual(orderForDisplay(flush).map(c=>c.rank),[2,7,12]);
+ const wildcard=[{id:8,rank:5,suit:0},{id:9,rank:7,suit:1},{id:10,rank:14,suit:4}];
+ assert.deepEqual(orderForDisplay(wildcard).map(c=>c.rank),[5,14,7]);
+});
+
+test('revealed garrisons reduce supply and a negative field total publicly discards one hand card',()=>{
+ let s=createGame({strategies:false,map:'duel',seed:812});
+ const capital=s.fields.find(f=>f.owner===0&&f.capital),beforeSupply=s.players[0].supply,beforeHand=s.players[0].hand.length,beforeReserve=s.players[0].reserve.length;
+ capital.garrison.forEach(c=>c.open=true);
+ s=next(s,{type:'pass'});s=next(s,{type:'pass'});
+ assert.equal(s.players[0].supply,beforeSupply-1);assert.equal(s.players[0].hand.length,beforeHand-1);assert.equal(s.players[0].reserve.length,beforeReserve+1);
+ assert.equal(s.supplyLedger[0].net,-1);assert.equal(s.supplyLedger[0].entries.find(e=>e.label.includes('三张以上明牌')).amount,-1);assert.ok(Number.isInteger(s.supplyLedger[0].discardedId));validate(s);
+});
+
+test('one revealed garrison produces normally while two revealed garrisons stop that field',()=>{
+ for(const [openCount,expected] of [[1,1],[2,0]]){
+  let s=createGame({strategies:false,map:'duel',seed:900+openCount});const capital=s.fields.find(f=>f.owner===0&&f.capital),before=s.players[0].supply;
+  capital.garrison.forEach((c,i)=>c.open=i<openCount);s=next(s,{type:'pass'});s=next(s,{type:'pass'});
+  assert.equal(s.players[0].supply,before+expected);assert.equal(s.supplyLedger[0].net,expected);validate(s);
+ }
+});
+
+test('historical capital ownership matches the named factions',()=>{
+ const korea=MAPS.find(m=>m.id==='korea'),west=MAPS.find(m=>m.id==='western_front');
+ assert.equal(korea.fields.find(f=>f.id==='pyongyang').owner,0);assert.equal(korea.fields.find(f=>f.id==='busan').owner,1);
+ assert.equal(west.fields.find(f=>f.id==='berlin').owner,0);assert.equal(west.fields.find(f=>f.id==='paris').owner,1);
 });

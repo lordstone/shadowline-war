@@ -49,10 +49,13 @@ export function actionEvents(before,after,action,perspective){
  }
  for(let p=0;p<2;p++){
  const gained=after.players[p].supply-before.players[p].supply;
- if(gained>0){
- const harvest=after.turn!==before.turn||before.phase==='draft';
- const sources=harvest?after.fields.filter(f=>f.owner===p&&f.blockedUntil<after.round).map(f=>f.label+' +'+(f.type==='oil'?2:1)).join('、'):'策略援助';
- add('resources',name(p)+'获得 '+gained+' 点补给',sources+'。当前补给 '+after.players[p].supply+' / 30。',{owner:p});
+ const report=after.supplyLedger?.[p],harvest=report&&report!==before.supplyLedger?.[p]&&(after.turn!==before.turn||before.phase==='draft');
+ if(harvest){
+  const details=report.entries.map(e=>e.label+' '+(e.amount>0?'+':'')+e.amount).join('；');
+  add('resources',name(p)+'本回合补给净额 '+(report.net>0?'+':'')+report.net,details+'。当前补给 '+after.players[p].supply+' / 30。',{owner:p});
+  if(report.discardedId!==null){const discarded=after.players[p].reserve.find(c=>c.id===report.discardedId);if(discarded)add('cards','补给赤字 · 公开弃牌',name(p)+'本回合据点净产出为负，公开弃置 1 张暗牌。',{owner:p,cards:[visible(discarded,p,true)]})}
+ }else if(gained>0){
+  add('resources',name(p)+'获得 '+gained+' 点补给','策略或其他战术效果。当前补给 '+after.players[p].supply+' / 30。',{owner:p});
  }
  const fresh=after.players[p].hand.filter(c=>before.deck.some(d=>d.id===c.id));
  if(fresh.length)add('cards',name(p)+'获得 '+fresh.length+' 张新牌',p===perspective?'这些新牌已加入手牌，并以「新」标记。':'对手获得暗牌，点数保持隐藏。',{owner:p,cards:fresh.map(c=>visible(c,p)),newIds:p===perspective?fresh.map(c=>c.id):[]});
