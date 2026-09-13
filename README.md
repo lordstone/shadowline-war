@@ -1,9 +1,9 @@
 # 暗线战争 · Shadowline War
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.16.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.16.4-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.16.3**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.16.4**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -88,6 +88,12 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.16.4 卡背小字改用 SVG 强制适配
+
+前三次修复在线上验证都没过：这次先在本地用无头浏览器实际渲染确认。根因是之前依赖的 cqw 相对单位和超小字号（2-5px）在部分手机浏览器上不可靠——旧浏览器不支持 cqw 会回退到 14px 继承字号，另一些浏览器有最小字号或自动放大。
+
+改法：卡背小字不再用 HTML 文字排印，改用内联 SVG `<text>` 并加 `textLength="114" lengthAdjust="spacingAndGlyphs"`，把 "SHADOWLINE" 十个字母强制压进固定宽度，随卡片百分比缩放（58/69/73/85px 都实测不溢出），不再依赖 cqw、container-type 和超小字号；S 恢复固定 32px。
 
 ## 1.16.3 卡背小字随卡片尺寸缩放
 
