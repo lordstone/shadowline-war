@@ -41,7 +41,7 @@ function card(c,{hidden=false,selected=false,stance=null,interactive=false,small
  const tag=interactive?'button':'div';
  const attributes=interactive?' data-action="'+action+'" data-id="'+c.id+'" aria-label="'+esc(label+(stance===true?'，已选明牌':stance===false?'，已选暗牌':'，点击选择'))+'" aria-pressed="'+selected+'"':'';
  return '<'+tag+' class="playing-card '+color+' '+(hidden?'back ':'')+(selected?'selected ':'')+(small?'small ':'')+(stance===false?'concealed ':'')+(revealable?'revealable ':'')+'"'+attributes+'>'+
- (hidden?'<span class="card-back-mark">S<span>SHADOWLINE</span></span>':'<span class="card-corner">'+face(c)+'<i>'+(SUITS[c.suit]||'★')+'</i></span><span class="card-suit">'+(SUITS[c.suit]||'★')+'</span><span class="card-bottom">'+face(c)+'</span>')+
+ (hidden?'<span class="card-back-mark">S<svg class="card-back-caption" viewBox="0 0 120 16" aria-hidden="true"><text x="60" y="12" text-anchor="middle" textLength="114" lengthAdjust="spacingAndGlyphs">SHADOWLINE</text></svg></span>':'<span class="card-corner">'+face(c)+'<i>'+(SUITS[c.suit]||'★')+'</i></span><span class="card-suit">'+(SUITS[c.suit]||'★')+'</span><span class="card-bottom">'+face(c)+'</span>')+
  (stance!==null?'<span class="stance">'+(revealable?(selected?'已选择':'点击翻开'):(stance?'明部署':'暗部署'))+'</span>':'')+(peek?'<span class="peek">已侦察</span>':'')+(c.boost?'<span class="boost">+'+c.boost+'</span>':'')+(!hidden&&newCards.has(c.id)?'<span class="new-card-badge">新</span>':'')+'</'+tag+'>';
 }
 function strategyCard(id,action='choose-strategy',disabled=false){
