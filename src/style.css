@@ -129,11 +129,11 @@ html:has(.game-layout){height:100dvh;overflow:hidden}
  #app:has(.game-layout) .army-stats span{font-size:7px}
  #app:has(.game-layout)>.game-layout{grid-template-rows:minmax(0,1fr) 56px;padding-left:5px;padding-right:5px}
  #app:has(.game-layout) .play-column{grid-template-rows:minmax(0,1fr) 104px}
- #app:has(.game-layout) .war-map{grid-template-rows:minmax(0,1fr) 76px}
- #app:has(.game-layout) .target-bar{flex-direction:row;align-items:center;justify-content:space-between;height:76px;gap:6px}
+ #app:has(.game-layout) .war-map{grid-template-rows:minmax(0,1fr) auto}
+ #app:has(.game-layout) .target-bar{flex-direction:row;align-items:center;justify-content:space-between;min-height:76px;height:auto;overflow:visible;gap:6px}
  #app:has(.game-layout) .target-bar>div:first-child{max-height:60px}
  #app:has(.game-layout) .target-bar p{display:none}
- #app:has(.game-layout) .target-actions{align-content:center;align-self:center;width:190px;height:58px;min-height:58px;max-height:58px;gap:3px}
+ #app:has(.game-layout) .target-actions{align-content:center;align-self:center;width:190px;min-height:58px;max-height:none;overflow:visible;gap:3px}
  #app:has(.game-layout) .target-actions .primary,#app:has(.game-layout) .target-actions .secondary{padding:6px 7px;font-size:8px}
  #app:has(.game-layout) .target-actions .text-button{padding:3px 7px;font-size:8px}
  #app:has(.game-layout) .hand-tray{height:104px;min-height:104px;padding:5px 7px}
