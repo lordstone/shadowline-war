@@ -1,9 +1,9 @@
 # 暗线战争 · Shadowline War
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.14.2-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.14.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.14.2**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.14.3**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -214,3 +214,7 @@ iPhone Chrome 采用更紧凑的顶栏、军团状态、目标操作区、手牌
 所有地图改用按战区范围自动取景的默认视角。历史地图采用与屏幕宽高比一致的俯视投影，不再把东西方向压缩到画面中央；进入战场时会按据点实际跨度自动居中并放大，视角复位也会返回该地图的最佳取景，最大放大倍率提高到 3.5 倍。
 
 据点标签保持原生像素清晰度，并在地图边界内执行碰撞避让。密集地图统一使用顶部锚点，桌面、iPhone 短屏和 iPad 上都不会因自动排布而重叠或被裁切。霍尔木兹战区的东西间距同时扩大，海峡两岸在游戏视角中更容易辨认。
+
+### 1.14.3 进军路线脉冲
+
+地图在未选择目标时持续显示完整据点连接网络。选择任一据点后，其直接相邻路线会变为高亮脉冲线，相邻据点同步出现扩散光环；其他路线降低亮度，让玩家立即看清从当前位置能够到达哪里。路线端点继续跟随据点的自适应排布、拖动和缩放。
