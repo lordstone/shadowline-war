@@ -210,3 +210,5 @@ html:has(.game-layout){height:100dvh;overflow:hidden}
  #app:has(.game-layout) .line-cards .playing-card,#app:has(.game-layout) .card-slot{height:min(62px,100%);min-height:46px}
  #app:has(.game-layout) .battle-actions{min-height:54px;padding-top:4px;padding-bottom:4px}.battle-actions b{font-size:8px}.battle-actions button{padding:5px 6px;font-size:8px}
 }
+.pass-action{border-color:#d8bb8299;color:var(--gold);background:#d8bb8212;font-weight:650;letter-spacing:.8px}
+.pass-action:hover:not(:disabled){border-color:var(--gold);color:#ead1a2;background:#d8bb8226;box-shadow:0 0 16px #d8bb8233}
