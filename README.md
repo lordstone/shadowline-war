@@ -1,9 +1,9 @@
 # 暗线战争 · Shadowline War
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.15.0-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.15.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.15.0**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.15.1**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -219,8 +219,8 @@ iPhone Chrome 采用更紧凑的顶栏、军团状态、目标操作区、手牌
 
 地图在未选择目标时持续显示完整据点连接网络。选择任一据点后，其直接相邻路线会变为高亮脉冲线，相邻据点同步出现扩散光环；其他路线降低亮度，让玩家立即看清从当前位置能够到达哪里。路线端点继续跟随据点的自适应排布、拖动和缩放。
 
-## 1.15.0 图解新手教程
+## 1.15.1 图解新手教程与采购步骤校对
 
-主菜单“规则”旁新增“教程”入口。七步引导使用游戏真实界面截图讲解地图连接与占领、驻军明暗部署、攻防与连续翻牌、补给收支、普通牌与策略牌购买、策略使用时机，以及首都和其他胜负条件。教程支持前后切换、进度提示和随时关闭，并针对 390px iPhone 窄屏提供单列阅读布局。
+主菜单“规则”旁新增“教程”入口。八步引导使用游戏真实界面截图讲解地图连接与占领、驻军明暗部署、攻防与连续翻牌、补给收支、普通牌与策略牌购买、策略使用时机，以及首都和其他胜负条件。教程支持前后切换、进度提示和随时关闭，并针对 390px iPhone 窄屏提供单列阅读布局。
 
-服务器版直接加载本地教程图片；构建离线单文件时，七张截图会转换为内嵌数据，因此双击 `暗线战争.html` 时仍然完整可用且不产生网络请求。
+服务器版直接加载本地教程图片；构建离线单文件时，八张截图会转换为内嵌数据，因此双击 `暗线战争.html` 时仍然完整可用且不产生网络请求。

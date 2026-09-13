@@ -7,7 +7,7 @@ const match=html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
 assert.ok(match,'Import map is present');
 const {imports}=JSON.parse(match[1]);
 const appSource=Buffer.from(imports['shadow/app'].split(',')[1],'base64').toString('utf8');
-assert.equal((appSource.match(/data:image\/png;base64,/g)||[]).length,7);
+assert.equal((appSource.match(/data:image\/png;base64,/g)||[]).length,8);
 assert.ok(!appSource.includes('./assets/tutorial/'));
 const modules=new Map();
 for(const [id,uri] of Object.entries(imports)){
@@ -20,4 +20,4 @@ await modules.get('shadow/app').link(id=>{
 assert.equal(modules.size,8);
 assert.ok(!/<link[^>]+href=/.test(html));
 assert.ok(!/src="https?:/.test(html));
-console.log('PASS: all eight standalone modules parse and link; seven tutorial screenshots are embedded; no external scripts or styles required.');
+console.log('PASS: all eight standalone modules parse and link; eight tutorial screenshots are embedded; no external scripts or styles required.');

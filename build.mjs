@@ -23,7 +23,7 @@ const replacements={
  './map-geography.js':'shadow/geography'
 };
 const tutorialImages={};
-for(const name of ['01-map.png','02-occupy.png','03-battle.png','04-supply.png','05-market.png','06-strategy.png','07-victory.png'])tutorialImages[name]='data:image/png;base64,'+(await fs.readFile(path.join(root,'assets/tutorial',name))).toString('base64');
+for(const name of ['01-map.png','02-occupy.png','03-battle.png','04-supply.png','05-draw.png','05-market.png','06-strategy.png','07-victory.png'])tutorialImages[name]='data:image/png;base64,'+(await fs.readFile(path.join(root,'assets/tutorial',name))).toString('base64');
 const imports={};
 for(const [name,file] of Object.entries(modules)){
  let source=await fs.readFile(path.join(root,file),'utf8');
