@@ -2,7 +2,7 @@ name: Deploy Pages (release + preview)
 
 on:
   push:
-    branches: [release, main]
+    branches: [release]
   workflow_dispatch:
 
 permissions:
