@@ -1,9 +1,9 @@
 # 暗线战争 · Shadowline War
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.16.10-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.16.11-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.16.10**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.16.11**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -89,9 +89,9 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
 
-## 1.16.10 选图界面显示"史实 / 对战"标签
+## 1.16.11 新增仓库全局开发规则 AGENTS.md
 
-选择战场时每张地图右上角带类型标签：史实地图（东线纵深、半岛拉锯、法德西线、山河决战）显示金色"史实"，对战地图显示灰色"对战"，一眼区分。
+仓库此前缺少统一的开发规则（issue #30）。新增 `AGENTS.md`，固化 7 条全局规则：commit message 必须有意义、按意群组织 commit、任何改动走 PR 由 lordstone 审核 merge、PR 附浏览器实测截图、PR 加 label、README changelog 倒序、semver 版本规则（小 fix→patch、玩法变动→minor、架构变动→major）。同时记录了每个 PR 的标准动作（bump version 三处一致、README changelog、重建离线单文件）与构建／测试命令。
 
 ## 1.16.7 放大后所有据点仍可拖回视野
 
