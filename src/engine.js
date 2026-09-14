@@ -78,7 +78,7 @@ export function terrainLimit(f){return f?.type==='swamp'?1:f?.type==='forest'?2:
 export function garrisonLimit(f){return f?.type==='swamp'?1:f?.type==='forest'?2:f?.capital||f?.type==='capital'?5:f?.fortified?4:3}
 export function battleLineLimit(s,p){const b=s.battle,f=b?.field?target(s,b.field):null;return b&&p===b.attacker?terrainLimit(f):garrisonLimit(f)}
 function mapFor(s){return MAPS.find(m=>m.id===s.opt.map)}
-function isSeaLink(s,a,b){return (mapFor(s)?.seaLinks||[]).some(([x,y])=>(x===a&&y===b)||(x===b&&y===a))}
+export function isSeaLink(s,a,b){return (mapFor(s)?.seaLinks||[]).some(([x,y])=>(x===a&&y===b)||(x===b&&y===a))}
 export function seaLanding(s,p,f){if(s.raid)return false;const origins=s.fields.filter(x=>x.owner===p&&x.links.includes(f.id));return origins.length>0&&origins.every(x=>isSeaLink(s,x.id,f.id))}
 function seaFormationLegal(cards){return power(cards)[0]!==6}
 function rankUpAllowed(s,p,line,c){return c.open&&c.rank+(c.boost||0)<13&&(!s.battle?.seaLanding||p!==s.battle.attacker||seaFormationLegal(line.map(x=>x===c?{...x,boost:(x.boost||0)+1}:x)))}
