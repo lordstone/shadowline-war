@@ -220,7 +220,7 @@ function overlay(){
  else if(modal==='market')content='<div class="eyebrow">SUPPLY EXCHANGE / 补给交易所</div><h2>战术商店</h2><p>市场公开可见。购买策略牌不消耗地图行动；买到的策略牌在你的下一个地图回合解锁。</p>'+strategyMarketView()+btn('关闭商店','close','secondary');
  else if(typeof modal==='object'&&modal.kind==='supply')content=supplyLedgerView(modal.player);
  else if(typeof modal==='object'&&modal.kind==='rotation')content=rotationView(modal);
- else if(typeof modal==='object'&&modal.kind==='reserve'){const p=s.players[modal.player];content='<h2>'+p.name+' · 公开牌堆</h2><p>这些牌双方均可查看。</p><div class="reserve-cards">'+(p.reserve.map(c=>card(c,{small:true})).join('')||'<p>尚未获得公开牌。</p>')+'</div>'+garrisonRoster(modal.player)+btn('关闭','close','primary')}
+ else if(typeof modal==='object'&&modal.kind==='reserve'){const p=s.players[modal.player],sort=modal.sort||'rank',cards=[...p.reserve].sort(sort==='suit'?(a,b)=>a.suit-b.suit||a.rank-b.rank||a.id-b.id:(a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id);content='<div class="reserve-heading"><div><h2>'+p.name+' · 公开牌堆</h2><p>这些牌双方均可查看。</p></div><span class="hand-sort-toggle" role="group" aria-label="公开牌排序"><button class="'+(sort==='rank'?'active':'')+'" data-action="reserve-sort" data-id="rank" aria-pressed="'+(sort==='rank')+'">点数</button><button class="'+(sort==='suit'?'active':'')+'" data-action="reserve-sort" data-id="suit" aria-pressed="'+(sort==='suit')+'">花色</button></span></div><div class="reserve-cards">'+(cards.map(c=>card(c,{small:true})).join('')||'<p>尚未获得公开牌。</p>')+'</div>'+garrisonRoster(modal.player)+btn('关闭','close','primary')}
  else if(modal==='exit')content='<h2>离开当前战局？</h2><p>本机存档会保留，可从主菜单继续。</p><div class="modal-actions">'+btn('返回战局','close','primary')+btn('保存并退出','exit','secondary')+'</div>';
  else content='<div class="eyebrow">TACTICAL PAUSE</div><h2>战场已暂停</h2><p>行动计时与电脑对手均已暂停。</p><div class="pause-actions">'+btn('继续战斗 →','close','primary')+btn('查看规则','rules','secondary')+btn('保存并返回主菜单','exit','secondary')+btn('投降','resign','text-button')+'</div>';
  return '<div class="modal-overlay"><section class="modal" role="dialog" aria-modal="true" aria-label="游戏面板">'+content+'</section></div>';
@@ -386,7 +386,8 @@ app.addEventListener('click',e=>{
   if(a==='rotate-in'){modal.stances=modal.stances||{};if(!(n in modal.stances))modal.stances[n]=true;else if(modal.stances[n])modal.stances[n]=false;else delete modal.stances[n];render();return}
   if(a==='rotate-submit'){const action={type:'rotate_garrison',field:modal.field,outIds:[...(modal.outIds||[])],cards:Object.entries(modal.stances||{}).map(([id,open])=>({id:Number(id),open}))};modal=null;resume();perform(action);return}
  }
- if(a==='reserve'){showModal({kind:'reserve',player:Number(el.dataset.player)});return}
+ if(a==='reserve'){showModal({kind:'reserve',player:Number(el.dataset.player),sort:'rank'});return}
+ if(a==='reserve-sort'&&modal?.kind==='reserve'){modal.sort=id==='suit'?'suit':'rank';render();return}
  if(a==='supply-ledger'){showModal({kind:'supply',player:Number(el.dataset.player)});return}
  if(a==='open-market'){showModal('market');return}
  if(a==='buy-strategy'){modal=null;resume();perform({type:'buy_strategy',id});return}
