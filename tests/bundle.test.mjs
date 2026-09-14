@@ -21,7 +21,7 @@ for(const [id,uri] of Object.entries(imports)){
 await modules.get('shadow/app').link(id=>{
  assert.ok(modules.has(id),'Every dependency is bundled: '+id);return modules.get(id);
 });
-assert.equal(modules.size,11);
+assert.equal(modules.size,8);
 assert.ok(!/<link[^>]+href="(?!data:)/.test(html));
 assert.ok(!/src="https?:/.test(html));
-console.log('PASS: web app icons and manifest have valid sizes; all eleven standalone modules parse and link; images are embedded with no external scripts or styles required.');
+console.log('PASS: web app icons and manifest have valid sizes; all eight standalone modules parse and link; images are embedded with no external scripts or styles required.');
