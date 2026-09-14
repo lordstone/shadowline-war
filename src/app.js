@@ -248,11 +248,22 @@ function clampMapViewport(){
  for(const f of s.fields){const p=scene.project?.(f)||{x:f.x,y:f.y};
   if(p.x<minX)minX=p.x;if(p.x>maxX)maxX=p.x;if(p.y<minY)minY=p.y;if(p.y>maxY)maxY=p.y;}
  const mX=Math.min(120,W*.18),mY=Math.min(120,H*.18);
- let loX=-mX-W/2-(minX-50)/100*W*sc,hiX=W+mX-W/2-(maxX-50)/100*W*sc;
- if(loX>hiX){const t=loX;loX=hiX;hiX=t}
+ // content box edges in screen px at zero camera offset
+ const cL=W/2+(minX-50)/100*W*sc,cR=W/2+(maxX-50)/100*W*sc;
+ const cT=H/2+(minY-50)/100*H*sc,cB=H/2+(maxY-50)/100*H*sc;
+ // an extreme node must always be able to come fully on screen (issue #16 follow-up:
+ // at high zoom the content spread dwarfs the margin band, trapping end nodes off-screen)
+ const nodeEl=document.querySelector('.map-node');
+ const hw=(nodeEl?.offsetWidth||100)/2,hh=(nodeEl?.offsetHeight||100)/2,o=24;
+ let loX,hiX;
+ if(cR-cL<=W){loX=-mX-cL;hiX=W+mX-cR;}
+ else{loX=Math.min(hw-cL,W-hw-cR)-o;hiX=Math.max(hw-cL,W-hw-cR)+o;}
+ let loY,hiY;
+ if(cB-cT<=H){loY=-mY-cT;hiY=H+mY-cB;}
+ else{loY=Math.min(hh-cT,H-hh-cB)-o;hiY=Math.max(hh-cT,H-hh-cB)+o;}
+ if(loX>hiX){const t=(loX+hiX)/2;loX=hiX=t;}
+ if(loY>hiY){const t=(loY+hiY)/2;loY=hiY=t;}
  mapViewport.x=Math.max(loX,Math.min(hiX,mapViewport.x));
- let loY=-mY-H/2-(minY-50)/100*H*sc,hiY=H+mY-H/2-(maxY-50)/100*H*sc;
- if(loY>hiY){const t=loY;loY=hiY;hiY=t}
  mapViewport.y=Math.max(loY,Math.min(hiY,mapViewport.y));
 }
 function updateMapCamera(){
