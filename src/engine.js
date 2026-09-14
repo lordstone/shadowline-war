@@ -356,15 +356,13 @@ function apply(s,p,a){
  const f=target(s,a.field);
  if(!f)return '请选择地图据点。';
  if(s.actionSpent&&['occupy','reorganize','attack','siege'].includes(a.type))return '本回合主要行动已经完成；可以继续补牌、购买或使用策略，最后点击结束行动。';
- if(['reorganize','rapid_redeploy'].includes(a.type)){
+ if(a.type==='reorganize'){
  if(f.owner!==p)return '只能调整己方据点的驻军。';
- if(a.type==='rapid_redeploy'&&(s.rapidRedeployUsed||s.players[p].supply<3))return s.rapidRedeployUsed?'本回合已经快速换防。':'快速换防需要 3 点补给。';
  const prepared=garrisonFromHand(s,p,a.cards,f);if(prepared.error)return prepared.error;
  const selected=new Set(prepared.line.map(c=>c.id));
  s.players[p].hand=s.players[p].hand.filter(c=>!selected.has(c.id));
  returnGarrisonCards(s,p,f.garrison);f.garrison=prepared.line;
- if(a.type==='rapid_redeploy'){supplyFlow(s,p,'快速换防 · '+f.label,-3);s.rapidRedeployUsed=true;log(s,s.players[p].name+'花费 3 点补给，快速调整'+f.label+'驻军。')}
- else{s.actionSpent=true;log(s,s.players[p].name+'整编'+f.label+'驻军，主要行动已完成。')}
+ s.actionSpent=true;log(s,s.players[p].name+'整编'+f.label+'驻军，主要行动已完成。');
  return null;
  }
  if(a.type==='rotate_garrison'){
