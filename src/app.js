@@ -33,7 +33,7 @@ function sound(type='click'){
  if(muted||!(s?.opt.sound??options.sound))return;
  try{const ctx=sound.ctx||(sound.ctx=new(window.AudioContext||window.webkitAudioContext)());ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(type==='win'?440:220,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(type==='win'?880:130,ctx.currentTime+.14);g.gain.setValueAtTime(.045,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.22);o.start();o.stop(ctx.currentTime+.23)}catch{}
 }
-function save(){try{if(s&&s.phase!=='over')localStorage.setItem(STORE,JSON.stringify(s));else localStorage.removeItem(STORE)}catch{}}
+function save(){try{if(!s)return;if(s.phase!=='over')localStorage.setItem(STORE,JSON.stringify(s));else localStorage.removeItem(STORE)}catch{}}
 function saved(){try{const value=JSON.parse(localStorage.getItem(STORE));if(value?.version===1){upgradeState(value);validate(value);return value}}catch{}return null}
 function pause(){if(deadline!==null){remaining=Math.max(0,deadline-Date.now());deadline=null}if(eventEnd!==null){eventRemaining=Math.max(0,eventEnd-Date.now());eventEnd=null}clearTimeout(aiTask)}
 function resume(){if(events.length){eventEnd=Date.now()+(eventRemaining??3000);eventRemaining=null}else if(remaining!==null){deadline=Date.now()+remaining;remaining=null}}
@@ -219,10 +219,12 @@ function tutorialSteps(){return [
 ]}
 function tutorialView(step=0){const steps=tutorialSteps(),i=Math.max(0,Math.min(steps.length-1,Number(step)||0)),st=steps[i];return '<div class="tutorial-head"><div><div class="eyebrow">'+t('tutorial.eyebrow')+'</div><h2>'+st.title+'</h2></div><span>'+(i+1)+' / '+steps.length+'</span></div><div class="tutorial-progress" style="--tutorial-steps:'+steps.length+'">'+steps.map((_,n)=>'<i class="'+(n===i?'active':n<i?'done':'')+'"></i>').join('')+'</div><figure class="tutorial-shot"><img src="'+st.image+'" alt="'+esc(t('tutorial.shot_alt',{title:st.title}))+'"><figcaption>'+st.tag+'</figcaption></figure><p class="tutorial-text">'+st.text+'</p><p class="tutorial-tip"><b>'+t('tutorial.tip_label')+'</b>'+st.tip+'</p><div class="tutorial-actions">'+btn(t('tutorial.close'),'close','text-button')+'<span>'+btn(t('tutorial.prev'),'tutorial-step','secondary',i===0,'data-id="'+(i-1)+'"')+btn(i===steps.length-1?t('tutorial.done'):t('tutorial.next')+' →','tutorial-step','primary',false,'data-id="'+(i+1)+'"')+'</span></div>'}
 function eventView(ev){
- const isBattle=ev.type==='battle',f=ev.data?.field?ev.data.field:null,m=f?s.fields.find(x=>x.id===f.id):null;
- const title=isBattle?t('modal.event.title_battle',{field:m?fieldName(s.opt.map,m):'',name:ev.data?.name||''}):t('modal.event.title',{type:ev.data?.name||''});
- const summary=isBattle?ev.data?.summary:t('modal.event.summary',{duration:(s.opt.eventSeconds||3)});
- return '<div class="event-detail"><div class="event-eyebrow"><span class="'+ev.type+'">'+(isBattle?t('modal.event.tag_battle'):t('modal.event.tag_campaign'))+'</span><b>'+title+'</b></div>'+(ev.rendered?'<div class="event-body">'+ev.rendered+'</div>':'<p class="event-summary">'+summary+'</p>')+'<div class="event-actions"><span>'+t('modal.event.hint')+'</span><span class="event-countdown" id="event-countdown"></span>'+btn(t('modal.event.continue'),'event-continue','primary')+'</div></div>';
+ const map=ev.map||s.fields,field=ev.field&&map.find(f=>f.id===ev.field);
+ const paths=map.flatMap(f=>f.links.filter(id=>f.id.localeCompare(id)<0).map(id=>{const to=map.find(x=>x.id===id);return to?'<line x1="'+f.x+'" y1="'+f.y+'" x2="'+to.x+'" y2="'+to.y+'"/>':''})).join('');
+ const diagram=field?'<div class="event-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+paths+'</svg>'+map.map(f=>'<div class="event-map-node '+(f.id===ev.field?'hit':'')+' owner-'+(f.owner===null?'null':sideOf(f.owner))+'" style="left:'+f.x+'%;top:'+f.y+'%"><i>'+fieldIcon(f)+'</i><b>'+fieldName(s.opt.map,f)+'</b></div>').join('')+'</div>':'';
+ const strategy=ev.strategy?'<div class="event-strategy-card"><span>'+ev.strategy.icon+'</span><div><b>'+strategyText(ev.strategy.id).name+'</b><small>'+strategyText(ev.strategy.id).desc+'</small></div><strong>'+ev.strategy.price+' '+t('game.panel.supply')+'</strong></div>':'';
+ const cards=(ev.cards||[]).length?'<div class="event-cards">'+ev.cards.map(c=>card(c,{hidden:!!c.hidden,small:ev.cards.length>6})).join('')+'</div>':'';
+ return '<section class="event-screen event-'+ev.kind+'" role="status" aria-live="polite"><div class="event-panel"><div class="event-eyebrow"><span class="'+ev.kind+'">'+t('modal.event.tag_campaign')+'</span><b>'+esc(ev.title)+'</b></div><p class="event-summary">'+esc(ev.detail)+'</p>'+diagram+strategy+cards+'<div class="event-actions"><span>'+t('modal.event.hint')+'</span>'+btn(t('modal.event.continue'),'event-continue','primary')+'</div></div></section>';
 }
 function supplyLedgerView(){
  const p=modal,report=s.supplyLedger?.[p],entries=report?.entries||[];
@@ -237,6 +239,11 @@ function rotationView(strategyId){
  const canSwap=picked.length===2&&picked[0]!==picked[1];
  return '<div class="eyebrow">'+t('modal.rotation.eyebrow')+'</div><h2>'+strategyText(strategyId).name+'</h2><p class="modal-desc">'+t('modal.rotation.desc')+'</p><p class="modal-desc">'+t('modal.rotation.picked',{n:picked.length})+'</p><div class="choose-grid">'+s.fields.map(f=>'<div class="choose-card rotation-card '+(modal.picked.has(f.id)?'chosen':'')+'" data-action="rotation-toggle" data-id="'+f.id+'" role="checkbox" aria-checked="'+modal.picked.has(f.id)+'" tabindex="0"><b>'+fieldName(s.opt.map,f)+'</b><span>'+t('modal.rotation.count',{n:f.garrison.length})+'</span><span class="choose-mark">'+(modal.picked.has(f.id)?'✓':'')+'</span></div>').join('')+'</div><div class="modal-actions">'+btn(t('modal.cancel'),'close','text-button')+btn(t('modal.rotation.confirm'),'rotation-confirm','primary',!canSwap,'data-id="'+strategyId+'"')+'</div>';
 }
+function garrisonRotationView(config){
+ const f=s.fields.find(x=>x.id===config.field),p=viewer(),out=new Set(config.outIds||[]),stances=config.stances||{},incoming=Object.keys(stances).map(Number),cost=out.size;
+ const kept=f.garrison.filter(c=>!out.has(c.id)),added=incoming.map(id=>({...s.players[p].hand.find(c=>c.id===id),open:!!stances[id]})),valid=cost>0&&cost===incoming.length&&cost<=s.players[p].supply&&(f.capital||[...kept,...added].some(c=>c.open));
+ return '<div class="eyebrow">'+t('modal.garrison_rotation.eyebrow')+'</div><h2>'+t('modal.garrison_rotation.title',{field:fieldName(s.opt.map,f)})+'</h2><p class="modal-desc">'+t('modal.garrison_rotation.desc')+'</p><div class="rotation-grid"><section><h3>'+t('modal.garrison_rotation.out',{n:out.size})+'</h3><div class="rotation-cards">'+f.garrison.map(c=>card(c,{small:true,interactive:true,selected:out.has(c.id),stance:c.open,action:'rotate-out'})).join('')+'</div></section><section><h3>'+t('modal.garrison_rotation.in',{n:incoming.length})+'</h3><div class="rotation-cards">'+s.players[p].hand.map(c=>card(c,{small:true,interactive:true,selected:incoming.includes(c.id),stance:incoming.includes(c.id)?!!stances[c.id]:null,action:'rotate-in'})).join('')+'</div></section></div><p class="modal-desc">'+t('modal.garrison_rotation.cost',{n:cost})+'</p><div class="modal-actions">'+btn(t('modal.cancel'),'close','secondary')+btn(t('modal.garrison_rotation.confirm'),'rotate-submit','primary',!valid)+'</div>';
+}
 function handoverView(){
  return '<div class="eyebrow">'+t('modal.handover.eyebrow')+'</div><h2>'+t('modal.handover.title',{n:s.active})+'</h2><p class="modal-desc">'+t('modal.handover.desc',{name:s.players[s.active].name})+'</p><div class="modal-actions">'+btn(t('modal.handover.confirm'),'handover-confirm','primary')+'</div>';
 }
@@ -244,8 +251,8 @@ function identityView(){
  return '<div class="eyebrow">'+t('modal.identity.eyebrow')+'</div><h2>'+t('modal.identity.title')+'</h2><p class="modal-desc">'+t('modal.identity.desc')+'</p>'+identityFields(0,options.mode==='local'?t('menu.player_local0'):t('menu.player_single'))+(options.mode==='local'?identityFields(1,t('menu.player_local1')):'')+'<div class="modal-actions">'+btn(t('modal.identity.confirm'),'identity-confirm','primary')+'</div>';
 }
 function marketView(){
- const p=viewer(),all=s.strategyMarket.filter(id=>s.players[0].strategies.includes(id)||s.players[1].strategies.includes(id));
- return '<div class="eyebrow">'+t('modal.market.eyebrow')+'</div><h2>'+t('modal.market.title')+'</h2><p class="modal-desc">'+t('modal.market.desc',{supply:s.players[p].supply})+'</p><div class="strategy-grid">'+all.map(id=>strategyCard(id,'buy-strategy',!!canBuyStrategy(s,p,id))).join('')+'</div>'+btn(t('modal.close'),'close','primary');
+ const p=viewer();
+ return '<div class="eyebrow">'+t('modal.market.eyebrow')+'</div><h2>'+t('modal.market.title')+'</h2><p class="modal-desc">'+t('modal.market.desc',{supply:s.players[p].supply})+'</p><div class="market-list">'+s.strategyMarket.map((id,index)=>{const c=strategyById(id),st=strategyText(id),reason=canBuyStrategy(s,p,id),label=!reason?t('game.market.buy',{price:c.price}):reason==='need_supply'?t('game.market.need',{price:c.price}):reason==='duplicate_strategy'?t('game.market.owned'):reason==='strategies_full'?t('game.market.full'):reason==='market_bought'?t('game.market.bought_one'):t('game.market.unavailable');return '<article class="market-card"><span class="market-icon">'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div>'+btn(label,'buy-strategy','market-buy',!!reason,'data-id="'+id+'" data-index="'+index+'"')+'</article>'}).join('')+'</div>'+btn(t('modal.close'),'close','primary');
 }
 function logView(){
  return '<div class="eyebrow">'+t('modal.log.eyebrow')+'</div><h2>'+t('modal.log.title')+'</h2><div class="full-log">'+battleLogList()+'</div>'+btn(t('modal.close'),'close','primary');
@@ -256,27 +263,28 @@ function quitConfirm(){
 function pauseView(){
  return '<div class="eyebrow">'+t('modal.pause.eyebrow')+'</div><h2>'+t('modal.pause.title')+'</h2><p class="modal-desc">'+t('modal.pause.desc')+'</p><div class="modal-actions"><div>'+btn(t('modal.pause.save_exit'),'save-exit','secondary')+'</div><div>'+btn(t('modal.pause.quit_no_save'),'quit-game','text-button')+btn(t('modal.pause.resume'),'close','primary')+'</div></div>';
 }
-function modalView(){
+function modalView(kind=modal){
  let content='';
- if(typeof modal==='number')content=supplyLedgerView();
- else if(modal==='event'&&events.length)content=eventView(events[0]);
- else if(modal==='market')content=marketView();
- else if(modal==='log')content=logView();
+ if(typeof kind==='number')content=supplyLedgerView();
+ else if(kind==='event'&&events.length)content=eventView(events[0]);
+ else if(kind==='market')content=marketView();
+ else if(kind==='log')content=logView();
  else if(modal&&modal.rotation==='medic')content=medicView(modal.strategyId);
+ else if(modal&&modal.rotation==='garrison')content=garrisonRotationView(modal);
  else if(modal&&modal.rotation==='rotation')content=rotationView(modal.strategyId);
- else if(modal==='identity')content=identityView();
+ else if(kind==='identity')content=identityView();
  else if(modal&&modal.tutorial==='tutorial')content=tutorialView(modal.step);
- else if(modal==='rules')content=rulesHTML()+btn(t('modal.rules_ok'),'close','primary');
- else if(modal==='quit')content=quitConfirm();
- else if(modal==='pause')content=pauseView();
- else if(modal==='handover')content=handoverView();
- return '<div class="modal-mask" data-action="mask"><div class="modal" role="dialog" aria-modal="true" aria-label="'+t('modal.aria')+'" data-modal>'+(modal==='event'?'':btn(t('modal.close'),'close','icon-button modal-x'))+'<div class="modal-body">'+content+'</div></div></div>';
+ else if(kind==='rules')content=rulesHTML()+btn(t('modal.rules_ok'),'close','primary');
+ else if(kind==='quit')content=quitConfirm();
+ else if(kind==='pause')content=pauseView();
+ else if(kind==='handover')content=handoverView();
+ return '<div class="modal-overlay" data-action="mask"><div class="modal" role="dialog" aria-modal="true" aria-label="'+t('modal.aria')+'" data-modal>'+(kind==='event'?'':btn(t('modal.close'),'close','icon-button modal-x'))+'<div class="modal-body">'+content+'</div></div></div>';
 }
 function overlay(){
  let html='';
- if(events.length&&modal!=='event'&&modal)html+='<div class="event-next"><span>'+t('game.overlay.next_event')+'</span>'+btn(t('modal.event.continue'),'event-continue','text-button')+'</div>';
- else if(events.length&&modal!=='event')html+='<div class="event-banner" data-action="event-continue"><span>'+t('game.overlay.tap_event')+'</span></div>';
- if(gate)html+='<div class="privacy-gate"><div class="privacy-content"><div class="eyebrow">'+t('game.gate.eyebrow')+'</div><h2>'+t('game.gate.title',{n:s.active})+'</h2><p>'+t('game.gate.desc',{name:s.players[s.active].name})+'</p>'+btn(t('game.gate.confirm'),'handover-confirm','primary')+'</div></div>';
+ if(events.length&&modal)html+='<div class="event-next"><span>'+t('game.overlay.next_event')+'</span></div>';
+ else if(events.length)html+=eventView(events[0]);
+ if(gate)html+='<div class="handoff"><div class="handoff-symbol">'+s.players[s.active].logo+'</div><div class="eyebrow">'+t('game.gate.eyebrow')+'</div><h1>'+t('game.gate.title',{n:s.active+1})+'</h1><p>'+t('game.gate.desc',{name:s.players[s.active].name})+'</p>'+btn(t('game.gate.confirm',{name:s.players[s.active].name}),'handover-confirm','primary')+'</div>';
  if(modal)html+=modalView();
  return html;
 }
@@ -304,8 +312,9 @@ function updateCardSelectionUI(cid){
 
 function render(){
  const key=clockKey;
- if(!s){app.innerHTML=menu();clockKey='';mountVisual();return}
- app.innerHTML='<div class="game-shell" data-phase="'+s.phase+'">'+(s.phase==='over'?result():game())+overlay()+'</div><div id="toast" class="toast" role="status"></div>';
+ if(!s){app.innerHTML=menu()+overlay();clockKey='';mountVisual();return}
+ const content=events.length&&!modal?header()+eventView(events[0]):gate&&!modal?header()+overlay():(s.phase==='over'?result():game())+overlay();
+ app.innerHTML='<div class="game-shell" data-phase="'+s.phase+'">'+content+'</div>';
  mountVisual();
  requestAnimationFrame(()=>{if(!s)return;document.querySelectorAll('.strategy-token .strategy-tooltip').forEach(el=>{const r=el.getBoundingClientRect();el.style.transform=r.left<160?'translateX(calc(-100% - 18px))':''})});
  if(s.phase==='draft'&&isAI()&&s.active===1)queueAI(()=>perform(aiAction(s,1)));
@@ -318,35 +327,23 @@ function startRotationPicker(strategyId){showModal({rotation:'rotation',strategy
 function startMedicPicker(strategyId){showModal({rotation:'medic',strategyId,chosen:new Set()})}
 function rotationFields(){return s.fields.filter(f=>modal.picked.has(f.id))}
 function runStrategy(id){
- const p=viewer(),c=strategyById(id);
- if(c.phase==='campaign'&&c.id==='rapid_redeploy'){startRotationPicker(id);return}
- if(c.phase==='campaign'&&c.id==='medic_team'){startMedicPicker(id);return}
- if(c.phase==='campaign'&&(c.id==='surround'||c.id==='deep_raid'||c.id==='blitzkrieg'||c.id==='siege_artillery'||c.id==='airstrike')){
-  if(!focus){toast(t('toast.strategy_target_first'));return}
-  const f=s.fields.find(x=>x.id===focus);
-  if(!(f&&f.owner===1-p&&reachable(s,p,f))){toast(t('toast.strategy_target_unreachable'));return}
-  if(c.id==='airstrike'&&!s.fields.some(x=>x.owner===p&&x.links.includes(f.id))){toast(t('toast.airstrike_adjacent'));return}
-  targeting=id;render();return
- }
- const reason=canStrategy(s,p,id,focus);
- if(reason){toast(reason);return}
- doStrategy(p,id,focus,null);
-}
-function doStrategy(p,id,fieldId,extra){
- const usedTargeting=id===targeting;targeting=null;modal=null;selection.clear();
- const res=act(s,p,{type:'strategy',id,field:fieldId,extra});
- if(res.error){toast(res.error);render();return}
- if(res.usedSupply)toast(t('toast.strategy_used',{name:strategyText(id).name,n:res.usedSupply}));
- if(res.event){queueEvent({type:'campaign',data:{name:strategyText(id).name,rendered:res.event}});return}
- newCards.clear();eventQueueToLog();render();
+ const reason=canStrategy(s,viewer(),id,focus),targeted=['isr','revolution','economic_sanctions'].includes(id);
+ if(reason){if(s.phase==='campaign'&&targeted&&s.fields.some(f=>!canStrategy(s,viewer(),id,f.id))){targeting=id;toast(t('toast.strategy_target_first'));render()}else toast(reason);return}
+ if(id==='meds_team'){targeting=null;startMedicPicker(id);return}
+ targeting=null;perform({type:'strategy',id,field:focus});
 }
 function queueEvent(ev){events.push(ev);pause();if(s&&s.phase!=='over')save()}
-function eventQueueToLog(){for(const ev of events.splice(0))if(ev.rendered||ev.data?.summary)s.log.unshift({round:s.round,text:ev.data.name+' —— '+stripTags(ev.rendered||ev.data.summary||'')});if(eventEnd!==null){eventEnd=null;eventRemaining=null}}
+function eventQueueToLog(){for(const ev of events.splice(0))s.log.unshift({round:s.round,text:ev.title+' —— '+ev.detail});eventEnd=null;eventRemaining=null}
+function advanceEvent(){
+ const ev=events.shift();if(ev)s.log.unshift({round:s.round,text:ev.title+' —— '+ev.detail});
+ eventEnd=events.length?Date.now()+(s.opt.eventSeconds||3)*1000:null;
+ if(!events.length){eventRemaining=null;resume()}render();
+}
 const stripTags=html=>String(html||'').replace(/<[^>]*>/g,'');
 function medicConfirm(strategyId){
- const p=viewer(),ids=[...modal.chosen].slice(0,2);
+ const ids=[...modal.chosen].slice(0,2);
  if(!ids.length)return;
- modal=null;selection.clear();doStrategy(p,strategyId,null,{cards:ids});
+ modal=null;selection.clear();resume();perform({type:'strategy',id:strategyId,cards:ids});
 }
 function rotationConfirm(strategyId){
  const p=viewer(),fields=rotationFields();
@@ -356,31 +353,17 @@ function rotationConfirm(strategyId){
  if(res.usedSupply)toast(t('toast.strategy_used',{name:strategyText(strategyId).name,n:res.usedSupply}));
  newCards.clear();eventQueueToLog();render();
 }
-function occupy(fieldId,chosen){
+function occupy(fieldId,chosen,type='occupy'){
  const f=s.fields.find(x=>x.id===fieldId);
  if(!chosen.length){toast(t('toast.choose_cards_first'));return}
  if(chosen.length>garrisonLimit(f)){toast(t('toast.garrison_full',{n:garrisonLimit(f)}));return}
  if(!chosen.some(c=>c.open)){toast(t('toast.garrison_need_open'));return}
- const res=act(s,viewer(),{type:'deploy',field:fieldId,deploy:chosen});
- if(res.error){toast(res.error);return}
- const label=fieldName(s.opt.map,s.fields.find(x=>x.id===fieldId));
- const res2=act(s,viewer(),{type:'occupy',field:fieldId});
- if(res2.error){toast(res2.error);render();return}
- selection.clear();toast(t('toast.occupy_ok',{label}));newCards.clear();eventQueueToLog();render();
+ perform({type,field:fieldId,cards:chosen});
 }
-function supplyToHand(count=3){
- const p=viewer(),res=act(s,p,{type:'supply'});
- if(res.error){toast(res.error);return}
- const drawn=res.drew||[];
- newCards=new Set(drawn);
- toast(t('toast.supply_drawn',{n:drawn.length}));
- eventQueueToLog();render();
-}
+function supplyToHand(){perform({type:'supply'})}
 function timedOut(){
  const p=s.active;if(s.opt.mode==='ai'&&p===1&&isAI())return;
- const res=timeoutAction(s,p);
- if(res.event){queueEvent({type:'campaign',data:{name:t('game.timeout_name'),rendered:res.event}});render();return}
- toast(t('toast.timeout_pass',{name:s.players[p].name}));newCards.clear();eventQueueToLog();render();
+ perform(timeoutAction(s,p));
 }
 function queueAI(fn){
  clearTimeout(aiTask);pause();
@@ -503,15 +486,15 @@ document.addEventListener('click',e=>{
  if(a==='mode-ai'||a==='mode-local'){options.mode=a==='mode-ai'?'ai':'local';advancedOpen=true;render();return}
  if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id);options.factions=[0,1];options.playerLogos=[factionLogo(map,0),factionLogo(map,1)];options.deployment=map.historical?'historical':'standard';options.deckCount='auto';render();return}
  if(a==='start'){launchGame();return}
- if(a==='load'){const value=saved();if(value){options=value.opt;gate=false;s=value;focus=null;selection.clear();reveals.clear();toast(t('toast.loaded'))}pause();render();return}
+ if(a==='load'){const value=saved();if(value){options=value.opt;gate=value.opt.mode==='local';s=value;focus=null;selection.clear();reveals.clear();toast(t('toast.loaded'))}pause();render();return}
  if(a==='sound'){muted=!muted;render();return}
  if(a==='tutorial'){modal={tutorial:'tutorial',step:0};render();return}
  if(a==='rules'){modal='rules';render();return}
  if(a==='pause'){showModal('pause');return}
  if(a==='edit-identity'){showModal('identity');return}
  if(a==='tutorial-step'){modal.step=Number(id);render();return}
- if(a==='close'){if(modal==='event')eventQueueToLog();if(modal&&modal.rotation)modal=null;else modal=null;render();return}
- if(a==='mask'&&e.target.classList.contains('modal-mask')&&modal!=='event'&&(!modal||!modal.rotation)){if(modal==='event')eventQueueToLog();modal=null;render();return}
+ if(a==='close'){modal=null;resume();render();return}
+ if(a==='mask'&&e.target.classList.contains('modal-overlay')&&modal!=='event'&&(!modal||!modal.rotation)){modal=null;render();return}
  if(a==='quit'){showModal('quit');return}
  if(a==='save-exit'){save();s=null;modal=null;render();return}
  if(a==='quit-game'){try{localStorage.removeItem(STORE)}catch{}s=null;modal=null;render();return}
@@ -519,24 +502,30 @@ document.addEventListener('click',e=>{
  if(a==='exit'){showModal('quit');return}
  if(a==='identity-confirm'){modal=null;render();return}
  if(a==='supply-ledger'){e.stopPropagation();showModal(Number(el.dataset.player));return}
- if(a==='reserve'){const p=Number(el.dataset.player);const pl=s.players[p];const handStr=pl.hand.length?pl.hand.map(c=>face(c)+(SUITS[c.suit]||'★')).join('、'):'—';toast(t('toast.reserve_info',{name:pl.name,hand:handStr,n:pl.reserve.length}));return}
- if(a==='focus'){const f=s.fields.find(f=>f.id===id);if(focus===id){focus=null;if(mapDrag&&!mapDrag.moved)focus=null}else{focus=id;selection.clear()}render();return}
+ if(a==='reserve'){const p=Number(el.dataset.player),pl=s.players[p],handStr=p===viewer()&&pl.hand.length?pl.hand.map(c=>face(c)+(SUITS[c.suit]||'★')).join('、'):'—';toast(t('toast.reserve_info',{name:pl.name,hand:handStr,n:pl.reserve.length}));return}
+ if(a==='focus'){if(focus===id){focus=null}else{focus=id;selection.clear()}if(targeting&&!canStrategy(s,viewer(),targeting,focus)){const strategy=targeting;targeting=null;perform({type:'strategy',id:strategy,field:focus})}else render();return}
  if(a==='hand-sort'){handSort=id;render();return}
  if(a==='occupy'){occupy(focus,[...selection].map(([cid,open])=>({...s.players[viewer()].hand.find(c=>c.id===cid),open})));return}
- if(a==='reorganize'){occupy(focus,[...selection].map(([cid,open])=>({...s.players[viewer()].hand.find(c=>c.id===cid),open})));return}
- if(a==='attack'){if(!focus)return;const f=s.fields.find(x=>x.id===focus),limit=battleLineLimit(s,viewer()),chosen=[...selection].map(([cid,open])=>({...s.players[viewer()].hand.find(c=>c.id===cid),open}));if(!chosen.length||chosen.length>limit||!chosen.some(c=>c.open)){toast(t('toast.attack_need',{n:limit}));return}if(compare(chosen.filter(c=>c.open),opened(s,f.owner))<=0&&!f.garrison.length){toast(t('toast.attack_too_weak'));return}const res=act(s,viewer(),{type:'deploy',field:focus,deploy:chosen});if(res.error){toast(res.error);return}selection.clear();focus=null;render();return}
- if(a==='siege'){if(!focus)return;const f=s.fields.find(x=>x.id===focus);if(s.players[viewer()].supply<3){toast(t('toast.siege_need'));return}if(f.garrison.length<=3){toast(t('toast.siege_need_garrison'));return}const res=act(s,viewer(),{type:'siege',field:focus});if(res.error){toast(res.error);return}toast(t('toast.siege_ok',{label:fieldName(s.opt.map,f)}));newCards.clear();eventQueueToLog();render();return}
+ if(a==='reorganize'){occupy(focus,[...selection].map(([cid,open])=>({...s.players[viewer()].hand.find(c=>c.id===cid),open})),'reorganize');return}
+ if(a==='attack'){if(focus)perform({type:'attack',field:focus});return}
+ if(a==='siege'){if(focus)perform({type:'siege',field:focus});return}
  if(a==='supply'){supplyToHand();return}
  if(a==='open-market'){showModal('market');return}
  if(a==='open-log'){showModal('log');return}
  if(a==='choose-strategy'){if(s.phase==='draft'){perform({type:'draft',id});return}runStrategy(id);return}
  if(a==='use-strategy'){if(isAI())return;runStrategy(id);return}
- if(a==='buy-strategy'){const index=Number(el.dataset.index||s.strategyMarket.indexOf(id));const res=act(s,viewer(),{type:'buy-strategy',id,index});if(res.error){toast(res.error);render();return}toast(t('toast.strategy_bought',{name:strategyText(id).name}));newCards.clear();eventQueueToLog();render();return}
+ if(a==='buy-strategy'){modal=null;resume();perform({type:'buy_strategy',id});return}
  if(a==='cancel-target'){targeting=null;render();return}
  if(a==='medic-toggle'){const set=modal.chosen;if(set.has(id))set.delete(id);else if(set.size<2)set.add(id);else toast(t('toast.medic_max'));render();return}
  if(a==='medic-confirm'){medicConfirm(id);return}
  if(a==='rotation-toggle'){const set=modal.picked;if(set.has(id))set.delete(id);else if(set.size<2)set.add(id);else toast(t('toast.rotation_max'));render();return}
  if(a==='rotation-confirm'){rotationConfirm(id);return}
+ if(modal&&modal.rotation==='garrison'){
+  const n=Number(id);
+  if(a==='rotate-out'){const out=new Set(modal.outIds||[]);out.has(n)?out.delete(n):out.add(n);modal.outIds=[...out];render();return}
+  if(a==='rotate-in'){modal.stances=modal.stances||{};if(!(n in modal.stances))modal.stances[n]=true;else if(modal.stances[n])modal.stances[n]=false;else delete modal.stances[n];render();return}
+  if(a==='rotate-submit'){const action={type:'rotate_garrison',field:modal.field,outIds:[...(modal.outIds||[])],cards:Object.entries(modal.stances||{}).map(([cardId,open])=>({id:Number(cardId),open}))};modal=null;resume();perform(action);return}
+ }
  if(a==='card'){
   if(!s||s.active!==viewer()||isAI())return;
   const cid=id,phase=s.phase,p=viewer(),f=s.fields.find(f=>f.id===focus);
@@ -569,22 +558,18 @@ document.addEventListener('click',e=>{
  if(a==='deploy'){
   const phase=s.phase,p=viewer(),chosen=[...selection].map(([cid,open])=>({...s.players[p].hand.find(c=>c.id===cid),open}));
   if(phase==='defend'||phase==='attack'){
-   const res=act(s,p,{type:'deploy',lines:{[p]:chosen}});
-   if(res.error){toast(res.error);render();return}
-   selection.clear();newCards.clear();eventQueueToLog();render();return;
+   perform({type:'deploy',cards:chosen});return;
   }
   return;
  }
  if(a==='reveal'){
-  const res=act(s,viewer(),{type:'reveal',ids:[...reveals]});
-  if(res.error){toast(res.error);render();return}
-  reveals.clear();selection.clear();newCards.clear();eventQueueToLog();render();return;
+  perform({type:'reveal',ids:[...reveals]});return;
  }
- if(a==='fold'){const res=act(s,viewer(),{type:'fold'});if(res.error){toast(res.error);render();return}selection.clear();reveals.clear();newCards.clear();eventQueueToLog();render();return}
- if(a==='continue'){const res=act(s,viewer(),{type:'continue'});if(res.error){toast(res.error);render();return}selection.clear();reveals.clear();newCards.clear();eventQueueToLog();render();return}
- if(a==='pass'){const res=act(s,viewer(),{type:'pass'});if(res.error){toast(res.error);render();return}selection.clear();newCards.clear();eventQueueToLog();render();return}
- if(a==='event-continue'){eventQueueToLog();modal=null;render();return}
- if(a==='open-rotation'){if(!focus)return;const f=s.fields.find(x=>x.id===focus);if(f.garrison.length<1||s.players[viewer()].supply<1){toast(t('toast.rotate_need'));return}const res=act(s,viewer(),{type:'rapid-redeploy',field:focus});if(res.error){toast(res.error);return}toast(t('toast.rotate_ok',{label:fieldName(s.opt.map,f)}));newCards.clear();eventQueueToLog();render();return}
+ if(a==='fold'){perform({type:'fold'});return}
+ if(a==='continue'){perform({type:'continue'});return}
+ if(a==='pass'){perform({type:'pass'});return}
+ if(a==='event-continue'){modal=null;advanceEvent();return}
+ if(a==='open-rotation'){if(focus)showModal({rotation:'garrison',field:focus,outIds:[],stances:{}});return}
  if(a==='handover-confirm'){gate=false;focus=null;selection.clear();reveals.clear();pause();resume();render();return}
 });
 document.addEventListener('change',e=>{

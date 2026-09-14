@@ -1,6 +1,7 @@
 
 import {MAPS,STRATEGIES,SUITS,defaults,strategyById} from './data.js';
-import {t,strategyText,mapFactions} from './i18n/index.js';
+import {t,strategyText,mapFactions,fieldLabel} from './i18n/index.js';
+const fieldName=(s,f)=>fieldLabel(s.opt.map,f.id);
 export function random(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/4294967296}
 export function shuffle(s,arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(random(s)*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
 export function makeDeck(count=1){
@@ -104,13 +105,13 @@ export function createGame(options={}){
  const opt={...defaults,...options};opt.seed=Number(opt.seed)>>>0;
  const map=MAPS.find(m=>m.id===opt.map)||MAPS[0];
  const text=(value,fallback)=>String(value||'').trim().slice(0,18)||fallback;
- const local=opt.mode==='local',aiName=opt.difficulty==='easy'?'新兵 AI':'老兵 AI';
- const names=[text(opt.playerNames?.[0],local?'玩家1':'玩家'),text(opt.playerNames?.[1],local?'玩家2':aiName)];
+ const local=opt.mode==='local',aiName=opt.difficulty==='easy'?t('menu.ai_rookie'):t('menu.ai_name');
+ const names=[text(opt.playerNames?.[0],local?t('menu.player_local0'):t('menu.player_single')),text(opt.playerNames?.[1],local?t('menu.player_local1'):aiName)];
  const logos=[text(opt.playerLogos?.[0],'⟐').slice(0,2),text(opt.playerLogos?.[1],'✣').slice(0,2)];
  const mapFac=mapFactions(map.id);
  // opt.factions stores side indices (0/1); old saves may have localized names.
- const factionName=v=>Number.isInteger(v)?(mapFac[v]||mapFac[0]):(mapFac.includes(v)?v:mapFac[0]);
- const factions=[factionName(opt.factions?.[0]),factionName(opt.factions?.[1])];
+ const factionName=(v,p)=>Number.isInteger(v)?(mapFac[v]||mapFac[p]):String(v||'').trim()||mapFac[p];
+ const factions=[factionName(opt.factions?.[0],0),factionName(opt.factions?.[1],1)];
  const sides=factions.map((name,p)=>{const side=mapFac.indexOf(name);return side<0?p:side});
  if(sides[0]===sides[1])sides[1]=1-sides[0];
  opt.playerNames=names;opt.playerLogos=logos;opt.factions=sides;
@@ -201,14 +202,14 @@ export function income(s){
  for(const f of s.fields.filter(f=>f.owner===who)){
   const base=f.type==='oil'?2:1,open=f.garrison.filter(c=>c.open).length,blocked=f.blockedUntil>=s.round;
   let amount=blocked?0:open>=3?-base:open===2?0:base;
-  let label=f.label+t(blocked?'engine.ledger.blocked':open>=3?'engine.ledger.upkeep':open===2?'engine.ledger.idle':'engine.ledger.output');
+  let label=fieldName(s,f)+t(blocked?'engine.ledger.blocked':open>=3?'engine.ledger.upkeep':open===2?'engine.ledger.idle':'engine.ledger.output');
   const cut=!blocked&&!connected.has(f.id);
-  if(cut&&amount>0){amount=0;label+=t('engine.ledger.cut');log(s,t('engine.log.supply_cut',{field:f.label}))}
+  if(cut&&amount>0){amount=0;label+=t('engine.ledger.cut');log(s,t('engine.log.supply_cut',{field:fieldName(s,f)}))}
   else if(cut&&amount<0){
    const candidates=f.garrison.filter(c=>c.open);
    if(candidates.length){const lost=candidates[Math.floor(random(s)*candidates.length)];
     f.garrison=f.garrison.filter(c=>c.id!==lost.id);p.reserve.push(clean(lost));
-    label+=t('engine.ledger.cut_bleed');log(s,t('engine.log.supply_bleed',{field:f.label,card:face(lost)}))}
+    label+=t('engine.ledger.cut_bleed');log(s,t('engine.log.supply_bleed',{field:fieldName(s,f),card:face(lost)}))}
   }
   report.entries.push({label,amount});operationalNet+=amount;
  }
@@ -229,7 +230,7 @@ function startBattle(s,attacker,defender,field,siege=false){
  const garrison=field?structuredClone(s.fields.find(x=>x.id===field).garrison):[];
  const suppressed=siege&&garrison.length>3?[garrison.splice(3+Math.floor(random(s)*(garrison.length-3)),1)[0]]:[];
  const lines=[[],[]];
- if(field){const f=s.fields.find(x=>x.id===field);for(const c of garrison)if(c.open)s.knowledge[attacker][c.id]=true;f.garrison=[];lines[defender]=garrison;log(s,t('engine.log.invasion',{field:f.label,name:s.players[attacker].name}))}
+ if(field){const f=s.fields.find(x=>x.id===field);for(const c of garrison)if(c.open)s.knowledge[attacker][c.id]=true;f.garrison=[];lines[defender]=garrison;log(s,t('engine.log.invasion',{field:fieldName(s,f),name:s.players[attacker].name}))}
  const landing=field&&seaLanding(s,attacker,s.fields.find(x=>x.id===field));
  s.skirmish++;s.battle={attacker,defender,field,garrison:[...garrison,...suppressed],suppressed,lines,strategyUsed:[false,false],seaLanding:landing};s.phase=field?'attack':'defend';s.active=field?attacker:defender;s.strategyUsed=false;log(s,t(field?'engine.log.clash_attack':'engine.log.clash_defend',{n:s.skirmish,name:s.players[field?attacker:defender].name}));
  if(landing)log(s,t('engine.log.sea_landing'));
@@ -260,8 +261,8 @@ function settle(s,winner){
  s.battle=null;s.active=b.attacker;
  if(b.field){
  const f=s.fields.find(x=>x.id===b.field);
- if(winner===b.attacker)log(s,t('engine.log.capture_field',{name:s.players[winner].name,field:f.label}));
- else log(s,t('engine.log.field_hold',{field:f.label}));
+ if(winner===b.attacker)log(s,t('engine.log.capture_field',{name:s.players[winner].name,field:fieldName(s,f)}));
+ else log(s,t('engine.log.field_hold',{field:fieldName(s,f)}));
  if(winner===b.attacker&&f.capital){finish(s,winner,t('engine.reason.capital'));return}
  }
  if(s.opt.rules==='campaign'){
@@ -401,7 +402,7 @@ function apply(s,p,a){
  const selected=new Set(prepared.line.map(c=>c.id));
  s.players[p].hand=s.players[p].hand.filter(c=>!selected.has(c.id));
  returnGarrisonCards(s,p,f.garrison);f.garrison=prepared.line;
- s.actionSpent=true;log(s,t('engine.log.reorganize',{name:s.players[p].name,field:f.label}));
+ s.actionSpent=true;log(s,t('engine.log.reorganize',{name:s.players[p].name,field:fieldName(s,f)}));
  return null;
  }
  if(a.type==='rotate_garrison'){
@@ -419,8 +420,8 @@ function apply(s,p,a){
   if(!f.capital&&!line.some(c=>c.open))return t('engine.error.rotate_open');
   s.players[p].hand=s.players[p].hand.filter(c=>!added.has(c.id));
   returnGarrisonCards(s,p,outgoing);f.garrison=line;
-  supplyFlow(s,p,t('engine.ledger.rotate',{field:f.label}),-cost);s.rapidRedeployUsed=true;
-  log(s,t('engine.log.rotate_garrison',{name:s.players[p].name,cost,field:f.label}));return null;
+  supplyFlow(s,p,t('engine.ledger.rotate',{field:fieldName(s,f)}),-cost);s.rapidRedeployUsed=true;
+  log(s,t('engine.log.rotate_garrison',{name:s.players[p].name,cost,field:fieldName(s,f)}));return null;
  }
  if(f.owner===p)return t('engine.error.target_enemy_or_neutral');
  if(!reachable(s,p,f))return t('engine.error.not_adjacent');
@@ -429,14 +430,14 @@ function apply(s,p,a){
  const specs=Array.isArray(a.cards)?a.cards:a.card!==undefined?[{id:a.card,open:true}]:[];
  const prepared=garrisonFromHand(s,p,specs,f);if(prepared.error)return prepared.error;
  const selected=new Set(prepared.line.map(c=>c.id));s.players[p].hand=s.players[p].hand.filter(c=>!selected.has(c.id));f.owner=p;f.garrison=prepared.line;
- log(s,t('engine.log.occupy',{name:s.players[p].name,field:f.label}));s.actionSpent=true;return null;
+ log(s,t('engine.log.occupy',{name:s.players[p].name,field:fieldName(s,f)}));s.actionSpent=true;return null;
  }
  if(['attack','siege'].includes(a.type)){
   if(f.owner===null)return t('engine.error.attack_neutral');
   if(a.type==='siege'){
    if(f.garrison.length<=3)return t('engine.error.siege_none');
    if(s.players[p].supply<3)return t('engine.error.siege_cost');
-   supplyFlow(s,p,t('engine.ledger.siege',{field:f.label}),-3);
+   supplyFlow(s,p,t('engine.ledger.siege',{field:fieldName(s,f)}),-3);
   }
   startBattle(s,p,1-p,f.id,a.type==='siege');return null
  }

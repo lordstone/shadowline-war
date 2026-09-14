@@ -230,3 +230,4 @@ html:has(.game-layout){height:100dvh;overflow:hidden}
 .lang-switch button{background:none;border:0;color:var(--muted);font-size:12px;padding:4px 6px;letter-spacing:1px}
 .lang-switch button.active{color:var(--gold);font-weight:700}
 .lang-switch span{color:#3d525b;font-size:10px}
+#scene{z-index:0;pointer-events:none}#app{position:relative;z-index:1}

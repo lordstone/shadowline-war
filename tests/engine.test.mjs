@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,terrainLimit,battleLineLimit,resolvedDeckCount,leading,orderForDisplay,supplyConnected,income} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
+import {mapFactions} from '../src/i18n/index.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
 function next(s,a,p=s.active){const r=act(s,p,a);assert.equal(r.ok,true,r.error);return r.state}
@@ -69,12 +70,12 @@ test('all maps have symmetric, connected topology and two capitals',()=>{
  for(const m of MAPS){const seen=new Set([m.fields[0].id]);while(true){const n=seen.size;for(const f of m.fields)if(seen.has(f.id))for(const id of f.links){assert.ok(m.fields.find(g=>g.id===id)?.links.includes(f.id),m.id+': '+f.id+' ↔ '+id);seen.add(id)}if(seen.size===n)break}assert.equal(seen.size,m.fields.length,m.id);assert.equal(m.fields.filter(f=>f.capital).length,2,m.id)}
  assert.deepEqual(MAPS.slice(-5).map(m=>m.fields.length),[14,11,12,10,13]);
  assert.ok(MAPS.slice(-5).every(m=>m.fields.some(f=>f.type==='port')&&m.fields.some(f=>f.type==='mountain'||f.type==='oil')));
- assert.ok(MAPS.every(m=>m.factions.length===2&&new Set(m.factions).size===2));
+ assert.ok(MAPS.every(m=>mapFactions(m.id).length===2&&new Set(mapFactions(m.id)).size===2));
 });
 test('player identities default cleanly and retain custom names, logos and factions',()=>{
- const ai=createGame({rules:'classic',strategies:false,difficulty:'normal'});assert.equal(ai.players[0].name,'玩家');assert.equal(ai.players[1].name,'老兵 AI');
+ const ai=createGame({rules:'classic',strategies:false,difficulty:'normal'});assert.equal(ai.players[0].name,'指挥官');assert.equal(ai.players[1].name,'AI 指挥官');
  const local=createGame({rules:'classic',strategies:false,mode:'local',playerNames:['','小林'],playerLogos:['⚓','▲'],factions:['海峡联合舰队','波斯湾卫队']});
- assert.deepEqual(local.players.map(p=>[p.name,p.logo,p.faction]),[['玩家1','⚓','海峡联合舰队'],['小林','▲','波斯湾卫队']]);
+ assert.deepEqual(local.players.map(p=>[p.name,p.logo,p.faction]),[['玩家一','⚓','海峡联合舰队'],['小林','▲','波斯湾卫队']]);
 });
 test('choosing the opposite faction swaps player themes and capital ownership',()=>{
  const s=createGame({map:'china_civil_war',rules:'campaign',strategies:false,factions:['解放军','国民政府军'],playerLogos:['★','☀'],seed:19});

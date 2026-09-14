@@ -162,7 +162,7 @@ export async function launchFromMenuCheck(browser,url='http://127.0.0.1:4173/'){
  await page.reload();
  // Menu renders with the launch button.
  await page.locator('.command-menu').waitFor();
- const launchBtn=page.locator('[data-action="launch"]');
+ const launchBtn=page.locator('[data-action="start"]');
  assert.equal(await launchBtn.count(),1);
  await launchBtn.click();
  // Must enter draft phase: draft screen visible, game-shell phase=draft,
@@ -205,7 +205,7 @@ export async function headerVisibilityCheck(browser,url='http://127.0.0.1:4173/'
  const menuHeader=await isVisible('header.topbar');
  assert.ok(menuHeader.visible,'menu header not visible: '+JSON.stringify(menuHeader));
  // Click launch -> draft page: header and draft content must be visible.
- await page.locator('[data-action="launch"]').click();
+ await page.locator('[data-action="start"]').click();
  await page.locator('.draft-screen').waitFor({timeout:5000});
  const draftHeader=await isVisible('header.topbar');
  assert.ok(draftHeader.visible,'draft header not visible: '+JSON.stringify(draftHeader));
