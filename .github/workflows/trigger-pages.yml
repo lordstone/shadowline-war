@@ -8,6 +8,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  actions: write
+
 jobs:
   trigger:
     runs-on: ubuntu-latest
