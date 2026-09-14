@@ -214,6 +214,12 @@ function supplyLedgerView(p){
  const pl=s.players[p],report=s.supplyLedger?.[p],entries=report?.entries||[];
  return '<div class="eyebrow">LOGISTICS / 补给流水</div><h2>'+esc(pl.name)+' · '+pl.supply+' 补给</h2><p>'+(report?'第 '+report.round+' 回合，期初 '+report.opening+' 点。':'旧存档尚无本回合明细；下一回合开始后自动记录。')+'</p><div class="supply-ledger">'+(entries.map(e=>'<div><span>'+esc(e.label)+'</span><b class="'+(e.amount<0?'negative':'positive')+'">'+(e.amount>0?'+':'')+e.amount+'</b></div>').join('')||'<div><span>暂无进项或出项</span><b>0</b></div>')+(report?'<div class="ledger-total"><span>本回合净变化</span><b class="'+(report.net<0?'negative':'positive')+'">'+(report.net>0?'+':'')+report.net+'</b></div>':'')+'</div>'+(report?.discardedId!=null?'<p class="ledger-warning">据点净产出为负，本回合已公开弃置一张暗牌。</p>':'')+btn('关闭','close','primary');
 }
+function medsPickView(config){
+ const p=viewer(),pl=s.players[p],sel=new Set(config.selected||[]);
+ const cards=[...pl.reserve].sort((a,b)=>b.rank-a.rank||a.suit-b.suit||a.id-b.id);
+ const valid=sel.size>0&&sel.size<=2;
+ return '<div class="eyebrow">FIELD MEDIC / 医疗分队</div><h2>选择回收的公开牌</h2><p>从你的公开牌堆自选最多 2 张牌回到暗牌手牌。已选 '+sel.size+' / 2 张。</p><div class="rotation-cards meds-cards">'+cards.map(c=>card(c,{small:true,interactive:true,selected:sel.has(c.id),action:'meds-pick'})).join('')+'</div><div class="modal-actions">'+btn('取消','close','secondary')+btn('确认回收 →','meds-confirm','primary',!valid)+'</div>';
+}
 function rotationView(config){
  const f=s.fields.find(f=>f.id===config.field),p=viewer(),out=new Set(config.outIds||[]),stances=config.stances||{};
  const incoming=Object.keys(stances).map(Number),cost=out.size,kept=f.garrison.filter(c=>!out.has(c.id)),newCardsForPost=incoming.map(id=>({...s.players[p].hand.find(c=>c.id===id),open:!!stances[id]}));
@@ -234,6 +240,7 @@ function overlay(){
  else if(modal==='market')content='<div class="eyebrow">SUPPLY EXCHANGE / 补给交易所</div><h2>战术商店</h2><p>市场公开可见。购买策略牌不消耗地图行动；买到的策略牌在你的下一个地图回合解锁。</p>'+strategyMarketView()+btn('关闭商店','close','secondary');
  else if(typeof modal==='object'&&modal.kind==='supply')content=supplyLedgerView(modal.player);
  else if(typeof modal==='object'&&modal.kind==='rotation')content=rotationView(modal);
+ else if(typeof modal==='object'&&modal.kind==='meds-pick')content=medsPickView(modal);
  else if(typeof modal==='object'&&modal.kind==='reserve'){const p=s.players[modal.player],sort=modal.sort||'rank',cards=[...p.reserve].sort(sort==='suit'?(a,b)=>a.suit-b.suit||a.rank-b.rank||a.id-b.id:(a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id);content='<div class="reserve-heading"><div><h2>'+p.name+' · 公开牌堆</h2><p>这些牌双方均可查看。</p></div><span class="hand-sort-toggle" role="group" aria-label="公开牌排序"><button class="'+(sort==='rank'?'active':'')+'" data-action="reserve-sort" data-id="rank" aria-pressed="'+(sort==='rank')+'">点数</button><button class="'+(sort==='suit'?'active':'')+'" data-action="reserve-sort" data-id="suit" aria-pressed="'+(sort==='suit')+'">花色</button></span></div><div class="reserve-cards">'+(cards.map(c=>card(c,{small:true})).join('')||'<p>尚未获得公开牌。</p>')+'</div>'+garrisonRoster(modal.player)+btn('关闭','close','primary')}
  else if(modal==='exit')content='<h2>离开当前战局？</h2><p>本机存档会保留，可从主菜单继续。</p><div class="modal-actions">'+btn('返回战局','close','primary')+btn('保存并退出','exit','secondary')+'</div>';
  else content='<div class="eyebrow">TACTICAL PAUSE</div><h2>战场已暂停</h2><p>行动计时与电脑对手均已暂停。</p><div class="pause-actions">'+btn('继续战斗 →','close','primary')+btn('查看规则','rules','secondary')+btn('保存并返回主菜单','exit','secondary')+btn('投降','resign','text-button')+'</div>';
@@ -401,6 +408,11 @@ app.addEventListener('click',e=>{
   if(a==='rotate-in'){modal.stances=modal.stances||{};if(!(n in modal.stances))modal.stances[n]=true;else if(modal.stances[n])modal.stances[n]=false;else delete modal.stances[n];render();return}
   if(a==='rotate-submit'){const action={type:'rotate_garrison',field:modal.field,outIds:[...(modal.outIds||[])],cards:Object.entries(modal.stances||{}).map(([id,open])=>({id:Number(id),open}))};modal=null;resume();perform(action);return}
  }
+ if(modal&&typeof modal==='object'&&modal.kind==='meds-pick'){
+  const n=Number(id);
+  if(a==='meds-pick'){const sel=new Set(modal.selected||[]);if(sel.has(n))sel.delete(n);else{if(sel.size>=2){toast('最多选择 2 张牌');return}sel.add(n)}modal.selected=[...sel];render();return}
+  if(a==='meds-confirm'){const cards=[...(modal.selected||[])];modal=null;resume();perform({type:'strategy',id:'meds_team',cards});return}
+ }
  if(a==='reserve'){showModal({kind:'reserve',player:Number(el.dataset.player),sort:'rank'});return}
  if(a==='reserve-sort'&&modal?.kind==='reserve'){modal.sort=id==='suit'?'suit':'rank';render();return}
  if(a==='supply-ledger'){showModal({kind:'supply',player:Number(el.dataset.player)});return}
@@ -420,7 +432,7 @@ app.addEventListener('click',e=>{
  }
  if(a==='reveal-card'){const n=Number(id);if(reveals.has(n))reveals.delete(n);else if(reveals.size<2)reveals.add(n);else{toast('一次最多翻 2 张');return}render();return}
  if(a==='choose-strategy')perform({type:'draft',id});
- if(a==='use-strategy'){const reason=canStrategy(s,viewer(),id,focus);if(reason){if(s.phase==='campaign'&&['isr','revolution','economic_sanctions'].includes(id)&&s.fields.some(f=>!canStrategy(s,viewer(),id,f.id))){targeting=id;toast('请选择地图目标：'+strategyById(id).name);render()}else toast(reason)}else{targeting=null;perform({type:'strategy',id,field:focus})}}
+ if(a==='use-strategy'){const reason=canStrategy(s,viewer(),id,focus);if(reason){if(s.phase==='campaign'&&['isr','revolution','economic_sanctions'].includes(id)&&s.fields.some(f=>!canStrategy(s,viewer(),id,f.id))){targeting=id;toast('请选择地图目标：'+strategyById(id).name);render()}else toast(reason)}else if(id==='meds_team'){targeting=null;modal={kind:'meds-pick',selected:[]};render()}else{targeting=null;perform({type:'strategy',id,field:focus})}}
  if(a==='deploy')perform({type:'deploy',cards:[...selection].map(([id,open])=>({id,open}))});
  if(a==='reveal')perform({type:'reveal',ids:[...reveals]});
  if(['occupy','reorganize'].includes(a))perform({type:a,field:focus,cards:[...selection].map(([id,open])=>({id,open}))});
