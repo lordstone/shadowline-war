@@ -11,9 +11,6 @@ const modules={
  'shadow/scene':'src/battlefield.js',
  'shadow/events':'src/events.js',
  'shadow/geography':'src/map-geography.js',
- 'shadow/i18n':'src/i18n/index.js',
- 'shadow/i18n-zh':'src/i18n/zh.js',
- 'shadow/i18n-en':'src/i18n/en.js',
  'shadow/app':'src/app.js'
 };
 const replacements={
@@ -23,12 +20,7 @@ const replacements={
  './engine.js':'shadow/engine',
  './events.js':'shadow/events',
  './battlefield.js':'shadow/scene',
- './map-geography.js':'shadow/geography',
- './i18n/index.js':'shadow/i18n',
- './i18n/zh.js':'shadow/i18n-zh',
- './i18n/en.js':'shadow/i18n-en',
- './zh.js':'shadow/i18n-zh',
- './en.js':'shadow/i18n-en'
+ './map-geography.js':'shadow/geography'
 };
 const tutorialImages={};
 for(const name of ['01-map.png','02-occupy.png','03-battle.png','04-supply.png','05-draw.png','05-market.png','06-strategy.png','07-victory.png'])tutorialImages[name]='data:image/png;base64,'+(await fs.readFile(path.join(root,'assets/tutorial',name))).toString('base64');
