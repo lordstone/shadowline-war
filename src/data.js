@@ -12,7 +12,7 @@ export const STRATEGIES=[
  {id:'revolution',name:'起义烽火',icon:'✦',phase:'campaign',count:1,price:6,desc:'以一张新生成的公开 A 占领选中的中立据点，消耗主要行动。'},
  {id:'blitzkrieg',name:'闪电战',icon:'ϟ',phase:'battle',count:1,price:7,desc:'立即让当前未被压制的一方赢得交锋。'},
  {id:'international_support',name:'国际援助',icon:'▣',phase:'campaign',count:2,price:4,desc:'立即获得 6 点补给。'},
- {id:'airborne_raid',name:'纵深空袭',icon:'⤴',phase:'campaign',count:1,price:5,desc:'本回合可以占领或进攻任意选中据点，忽略相邻限制。'},
+ {id:'airborne_raid',name:'纵深空袭',icon:'⤴',phase:'campaign',count:1,price:5,desc:'本回合可以占领或进攻 2 格范围内的选中据点，忽略相邻限制。'},
  {id:'economic_sanctions',name:'经济封锁',icon:'⊘',phase:'campaign',count:2,price:4,desc:'封锁选中敌方据点的补给产出 3 个完整回合。'}
 ];
 const f=(id,label,type,x,y,links,owner=null,capital=false,fortified=false)=>({id,label,type,x,y,links,owner,capital,fortified,garrison:[],blockedUntil:0});
