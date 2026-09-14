@@ -3,7 +3,7 @@
 export default {
   // ---- app shell ----
   'app.title': 'SHADOWLINE',
-  'app.subtitle': '暗线战争',
+  'app.subtitle': 'SHADOWLINE',
 
   // ---- language toggle ----
   'lang.switch.label': 'Language',
