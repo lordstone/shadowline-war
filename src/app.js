@@ -1,6 +1,6 @@
 import {MAPS,STRATEGIES,defaults,strategyById,SUITS} from './data.js';
 import {t,setLang,getLang,onLangChange,strategyText,mapText,mapFactions,fieldLabel} from './i18n/index.js';
-import {createGame,act,face,handName,power,compare,opened,leading,reachable,garrisonLimit,seaLanding,isSeaLink,supplyConnected,battleLineLimit,canStrategy,canBuyStrategy,aiAction,timeoutAction,validate,upgradeState,resolvedDeckCount,orderForDisplay} from './engine.js';
+import {createGame,act,face,handName,power,compare,opened,leading,reachable,garrisonLimit,seaLanding,isSeaLink,supplyConnected,battleLineLimit,canStrategy,canBuyStrategy,buyStrategyErrorText,aiAction,timeoutAction,validate,upgradeState,resolvedDeckCount,orderForDisplay} from './engine.js';
 import {Battlefield} from './battlefield.js';
 import {actionEvents} from './events.js';
 import {GEO_BACKDROPS} from './map-geography.js';
@@ -15,7 +15,7 @@ let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map(),fittedMap=n
 const STORE='shadowline-war-v1';
 const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆',hormuz:'≋',china_civil_war:'山'}[id]||'◇');
 const LOGOS=['⟐','✣','♜','⚓','▲','✦','◈','☄'];
-const factionLogo=(map,faction)=>{const i=mapFactions(map.id).indexOf(faction);return map.factionLogos?.[i]||LOGOS[Math.max(0,i)]};
+const factionLogo=(map,faction)=>{const i=Number.isInteger(faction)?faction:mapFactions(map.id).indexOf(faction);return map.factionLogos?.[i]||LOGOS[Math.max(0,i)]};
 const sideOf=p=>s?.players[p]?.side??p;
 const themedFields=fields=>fields.map(f=>({...f,owner:f.owner===null?null:sideOf(f.owner)}));
 const fieldIcon=f=>f.capital?'♜':f.fortified?'▰':f.type==='oil'?'▥':f.type==='port'?'⚓':f.type==='mountain'?'▲':f.type==='forest'?'♣':f.type==='swamp'?'≈':'◆';
@@ -74,8 +74,8 @@ function menu(){
  optionSelect('timer',t('menu.opt.timer_label'),[[0,t('menu.opt.timer_0')],[30,t('menu.opt.timer_30')],[60,t('menu.opt.timer_60')],[120,t('menu.opt.timer_120')]],options.timer)+
  optionSelect('first',t('menu.opt.first_label'),[[0,t('menu.opt.first_0')],[1,t('menu.opt.first_1')]],options.first)+
  (map.historical?optionSelect('deployment',t('menu.opt.deployment_label'),[['standard',t('menu.opt.deployment_standard')],['historical',t('menu.opt.deployment_historical',{label:t('map.'+map.id+'.historical.label')})]],options.deployment||'standard'):'')+
- optionSelect('faction0',t('menu.opt.faction0_label'),mapFactions(map.id).map(x=>[x,x]),options.factions?.[0]||mapFactions(map.id)[0])+
- optionSelect('faction1',options.mode==='local'?t('menu.opt.faction1_local'):t('menu.opt.faction1_ai'),mapFactions(map.id).map(x=>[x,x]),options.factions?.[1]||mapFactions(map.id)[1])+
+ optionSelect('faction0',t('menu.opt.faction0_label'),mapFactions(map.id).map((x,i)=>[i,x]),options.factions?.[0]??0)+
+ optionSelect('faction1',options.mode==='local'?t('menu.opt.faction1_local'):t('menu.opt.faction1_ai'),mapFactions(map.id).map((x,i)=>[i,x]),options.factions?.[1]??1)+
  optionSelect('strategies',t('menu.opt.strategies_label'),[[true,t('menu.opt.strategies_on')],[false,t('menu.opt.strategies_off')]],options.strategies)+
  optionSelect('deckCount',t('menu.opt.deck_label'),[['auto',t('menu.opt.deck_auto')],[1,t('menu.opt.deck_1')],[2,t('menu.opt.deck_2')]],options.deckCount||'auto')+
  optionSelect('maxRounds',t('menu.opt.rounds_label'),[[40,'40'],[80,'80'],[120,'120']],options.maxRounds)+
@@ -176,7 +176,7 @@ function handTray(){
 function strategyMarketView(){
  if(s.phase!=='campaign'||!s.opt.strategies)return '';
  const p=viewer();
- return '<section class="strategy-market expanded"><div class="market-heading"><div><span class="eyebrow">'+t('game.market.eyebrow')+'</span><h3>'+(s.marketBought?t('game.market.bought'):t('game.market.can_buy'))+'</h3></div><small>'+t('game.market.status',{supply:s.players[p].supply,n:s.players[p].strategies.length})+'</small></div><div class="market-list">'+s.strategyMarket.map((id,index)=>{const c=strategyById(id),st=strategyText(id),reason=canBuyStrategy(s,p,id),label=!reason?t('game.market.buy',{price:c.price}):reason.startsWith('需要 ')?t('game.market.need',{price:c.price}):reason.includes('同名')?t('game.market.owned'):reason.includes('持有三张')?t('game.market.full'):reason.includes('只能购买一张')?t('game.market.bought_one'):t('game.market.unavailable');return '<article class="market-card"><span class="market-icon">'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div>'+btn(label,'buy-strategy','market-buy',!!reason,'data-id="'+id+'" data-index="'+index+'" title="'+esc(reason||t('game.market.buy_title',{price:c.price}))+'"')+'</article>'}).join('')+'</div></section>';
+ return '<section class="strategy-market expanded"><div class="market-heading"><div><span class="eyebrow">'+t('game.market.eyebrow')+'</span><h3>'+(s.marketBought?t('game.market.bought'):t('game.market.can_buy'))+'</h3></div><small>'+t('game.market.status',{supply:s.players[p].supply,n:s.players[p].strategies.length})+'</small></div><div class="market-list">'+s.strategyMarket.map((id,index)=>{const c=strategyById(id),st=strategyText(id),reason=canBuyStrategy(s,p,id),label=!reason?t('game.market.buy',{price:c.price}):reason==='need_supply'?t('game.market.need',{price:c.price}):reason==='duplicate_strategy'?t('game.market.owned'):reason==='strategies_full'?t('game.market.full'):reason==='market_bought'?t('game.market.bought_one'):t('game.market.unavailable');return '<article class="market-card"><span class="market-icon">'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div>'+btn(label,'buy-strategy','market-buy',!!reason,'data-id="'+id+'" data-index="'+index+'" title="'+esc(reason?buyStrategyErrorText(reason,id):t('game.market.buy_title',{price:c.price}))+'"')+'</article>'}).join('')+'</div></section>';
 }
 function strategyShopButton(){
  if(s.phase!=='campaign'||!s.opt.strategies)return '';
@@ -377,7 +377,10 @@ function tickClock(){
 }
 function launchGame(){
  const map=MAPS.find(m=>m.id===options.map),mf=mapFactions(map.id);
- options.factions=[options.factions?.[0]||mf[0],options.factions?.[1]||mf[1]];
+ // options.factions stores side indices (0/1); normalize in case of stale names.
+ const fi=v=>v===0||v===1?v:0;
+ options.factions=[fi(options.factions?.[0]),fi(options.factions?.[1]??1)];
+ if(options.factions[0]===options.factions[1])options.factions[1]=1-options.factions[0];
  options.playerNames=[options.playerNames?.[0]||(options.mode==='local'?t('menu.player_local0'):t('menu.player_single')),options.playerNames?.[1]||t('menu.player_local1')];
  options.playerLogos=[options.playerLogos?.[0]||factionLogo(map,options.factions[0])||LOGOS[0],options.playerLogos?.[1]||factionLogo(map,options.factions[1])||LOGOS[1]];
  gate=options.mode==='local';focus=null;selection.clear();reveals.clear();newCards.clear();
@@ -465,7 +468,7 @@ document.addEventListener('click',e=>{
  sound();
  if(a==='lang-zh'||a==='lang-en'){setLang(a==='lang-zh'?'zh':'en');toast(t('toast.lang_switched'));return}
  if(a==='mode-ai'||a==='mode-local'){options.mode=a==='mode-ai'?'ai':'local';advancedOpen=true;render();return}
- if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id),mf=mapFactions(map.id);options.factions=[mf[0],mf[1]];options.playerLogos=[factionLogo(map,mf[0]),factionLogo(map,mf[1])];options.deployment=map.historical?'historical':'standard';options.deckCount='auto';render();return}
+ if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id);options.factions=[0,1];options.playerLogos=[factionLogo(map,0),factionLogo(map,1)];options.deployment=map.historical?'historical':'standard';options.deckCount='auto';render();return}
  if(a==='start'){launchGame();return}
  if(a==='load'){const value=saved();if(value){options=value.opt;gate=false;s=value;focus=null;selection.clear();reveals.clear();toast(t('toast.loaded'))}pause();render();return}
  if(a==='sound'){muted=!muted;render();return}
@@ -559,7 +562,7 @@ document.addEventListener('change',e=>{
  if(name.startsWith('playerName')){options.playerNames=options.playerNames||[];options.playerNames[Number(name.slice(10))]=value;return}
  options[name]=input.type==='checkbox'?input.checked:(name==='seed'?Math.max(0,Math.min(4294967295,Number(value)||0)):(name==='strategies'?value==='true':value));
  if(name==='deckCount')options.deckCount=value==='auto'?'auto':Number(value);
- if(name==='faction0'||name==='faction1'){const p=Number(name.slice(-1)),map=MAPS.find(m=>m.id===options.map);options.factions=[...(options.factions||mapFactions(map.id))];options.factions[p]=value;options.factions[1-p]=mapFactions(map.id).find(x=>x!==value);options.playerLogos=[...(options.playerLogos||LOGOS.slice(0,2))];options.playerLogos[p]=factionLogo(map,options.factions[p]);options.playerLogos[1-p]=factionLogo(map,options.factions[1-p]);advancedOpen=true;render();return}
+ if(name==='faction0'||name==='faction1'){const p=Number(name.slice(-1)),map=MAPS.find(m=>m.id===options.map),idx=Number(value);options.factions=[...(options.factions||[0,1])];options.factions[p]=idx;options.factions[1-p]=1-idx;options.playerLogos=[...(options.playerLogos||LOGOS.slice(0,2))];options.playerLogos[p]=factionLogo(map,options.factions[p]);options.playerLogos[1-p]=factionLogo(map,options.factions[1-p]);advancedOpen=true;render();return}
  if(name==='map')return;
  advancedOpen=true;render();
 });

@@ -108,10 +108,12 @@ export function createGame(options={}){
  const names=[text(opt.playerNames?.[0],local?'玩家1':'玩家'),text(opt.playerNames?.[1],local?'玩家2':aiName)];
  const logos=[text(opt.playerLogos?.[0],'⟐').slice(0,2),text(opt.playerLogos?.[1],'✣').slice(0,2)];
  const mapFac=mapFactions(map.id);
- const factions=[text(opt.factions?.[0],mapFac[0]),text(opt.factions?.[1],mapFac[1])];
+ // opt.factions stores side indices (0/1); old saves may have localized names.
+ const factionName=v=>Number.isInteger(v)?(mapFac[v]||mapFac[0]):(mapFac.includes(v)?v:mapFac[0]);
+ const factions=[factionName(opt.factions?.[0]),factionName(opt.factions?.[1])];
  const sides=factions.map((name,p)=>{const side=mapFac.indexOf(name);return side<0?p:side});
  if(sides[0]===sides[1])sides[1]=1-sides[0];
- opt.playerNames=names;opt.playerLogos=logos;opt.factions=factions;
+ opt.playerNames=names;opt.playerLogos=logos;opt.factions=sides;
  const s={version:1,opt,rng:opt.seed,phase:'draft',active:opt.first===1?1:0,round:1,skirmish:0,generated:0,
  players:[{name:names[0],logo:logos[0],faction:factions[0],side:sides[0],hand:[],reserve:[],strategies:[],supply:2,wins:0},{name:names[1],logo:logos[1],faction:factions[1],side:sides[1],hand:[],reserve:[],strategies:[],supply:2,wins:0}],
  deck:[],fields:structuredClone(map.fields).map(f=>({...f,owner:f.owner===null?null:sides.indexOf(f.owner)})),
@@ -142,10 +144,14 @@ function fillMarket(s){
 function refreshMarket(s){s.strategyDiscard.push(...s.strategyMarket.splice(0));fillMarket(s);log(s,t('engine.log.market_refresh'))}
 export function upgradeState(s){
  const map=MAPS.find(m=>m.id===s.opt.map)||MAPS[0];
- const renamedFactions={'苍海舰队':'海湾舰队','赤潮军团':'群岛守备军'};
+ // Faction rename migration (ring map): old Chinese names -> current language's names.
+ // Uses mapFactions() so it works regardless of the save's language.
+ const ringFactions=mapFactions('ring');
+ const renamedFactions={'苍海舰队':ringFactions[0],'赤潮军团':ringFactions[1]};
  for(const p of s.players)if(renamedFactions[p.faction])p.faction=renamedFactions[p.faction];
  if(Array.isArray(s.opt.factions))s.opt.factions=s.opt.factions.map(name=>renamedFactions[name]||name);
- for(let p=0;p<2;p++)if(!Number.isInteger(s.players[p].side))s.players[p].side=Math.max(0,map.factions.indexOf(s.players[p].faction));
+ const mapFac=mapFactions(map.id);
+ for(let p=0;p<2;p++)if(!Number.isInteger(s.players[p].side))s.players[p].side=Math.max(0,mapFac.indexOf(s.players[p].faction));
  if(!s.opt.deckCount)s.opt.deckCount='auto';
  if(!s.opt.deployment)s.opt.deployment='standard';
  if(!s.baseDeckSize)s.baseDeckSize=54;
@@ -308,17 +314,24 @@ function strategyError(s,p,id,fieldId,cards){
 }
 export function canStrategy(s,p,id,fieldId,cards){return p===s.active&&s.phase!=='over'?strategyError(s,p,id,fieldId,cards):t('engine.error.not_your_turn')}
 export function canBuyStrategy(s,p,id){
- if(s.phase!=='campaign'||p!==s.active)return t('engine.error.buy_phase');
- if(!s.opt.strategies)return t('engine.error.strategies_off');
- const c=strategyById(id);if(!c||!s.strategyMarket.includes(id))return t('engine.error.not_in_market');
- if(s.marketBought)return t('engine.error.market_bought');
- if(s.players[p].strategies.length>=3)return t('engine.error.strategies_full');
- if(s.players[p].strategies.includes(id))return t('engine.error.duplicate_strategy');
- if(s.players[p].supply<c.price)return t('engine.error.need_supply',{price:c.price});
+ if(s.phase!=='campaign'||p!==s.active)return 'buy_phase';
+ if(!s.opt.strategies)return 'strategies_off';
+ const c=strategyById(id);if(!c||!s.strategyMarket.includes(id))return 'not_in_market';
+ if(s.marketBought)return 'market_bought';
+ if(s.players[p].strategies.length>=3)return 'strategies_full';
+ if(s.players[p].strategies.includes(id))return 'duplicate_strategy';
+ if(s.players[p].supply<c.price)return 'need_supply';
  return null;
 }
+// Localized text for a canBuyStrategy error code. Keeps UI logic on codes,
+// not on translated strings (which break under i18n).
+export function buyStrategyErrorText(code,id){
+ const c=id?strategyById(id):null;
+ const params=c?{price:c.price}:{};
+ return t('engine.error.'+code,params);
+}
 function buyStrategy(s,p,id){
- const error=canBuyStrategy(s,p,id);if(error)return error;
+ const code=canBuyStrategy(s,p,id);if(code)return buyStrategyErrorText(code,id);
  const c=strategyById(id),i=s.strategyMarket.indexOf(id);supplyFlow(s,p,t('engine.ledger.buy',{card:strategyText(id).name}),-c.price);s.players[p].strategies.push(id);s.strategyLocked[p].push(id);s.strategyMarket.splice(i,1);s.marketBought=true;fillMarket(s);log(s,t('engine.log.buy_strategy',{name:s.players[p].name,price:c.price,card:strategyText(id).name}));return null;
 }
 function garrisonFromHand(s,p,specs,field){
