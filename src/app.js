@@ -178,13 +178,14 @@ function strategyShopButton(){
  const p=viewer(),summary=s.marketBought?'本回合已采购':'可查看 '+s.strategyMarket.length+' 张市场策略';
  return '<button class="strategy-shop-button" data-action="open-market" aria-label="'+esc('打开战术商店：'+summary+'，当前 '+s.players[p].supply+' 点补给')+'" title="'+esc(summary+' · '+s.players[p].supply+' 补给')+'"><span class="shop-coin">$</span><i>'+s.strategyMarket.length+'</i></button>';
 }
+function battleLogList(limit=s.log.length){return '<ol class="battle-log">'+s.log.slice(0,limit).map(l=>'<li><span>'+String(l.round).padStart(2,'0')+'</span><p>'+esc(l.text)+'</p></li>').join('')+'</ol>'}
 function strategyDock(){
  const p=viewer(),cards=s.players[p].strategies;if(!cards.length)return '<div class="empty-tactics">暂无策略卡</div>';
  return '<div class="tactic-dock">'+cards.map(id=>{const c=strategyById(id),reason=canStrategy(s,p,id,focus);return '<button class="strategy-token '+(reason?'unavailable':'ready')+'" data-action="use-strategy" data-id="'+id+'" '+(isAI()?'disabled':'')+' aria-label="'+esc(c.name+'：'+c.desc+'；'+(reason||'现在可以使用'))+'"><span>'+c.icon+'</span><small>'+c.name+'</small><span class="strategy-tooltip"><b>'+c.name+'</b><em>'+(c.phase==='battle'?'交锋战术':'战役指令')+'</em><p>'+c.desc+'</p><strong>'+(reason||'现在可以使用')+'</strong></span></button>'}).join('')+'</div>';
 }
 function sidePanel(){
- const p=viewer();return '<aside class="intel-panel"><div class="supply-box"><span class="eyebrow">公共牌库</span><b>'+s.deck.length+'<small> / '+s.baseDeckSize+'</small></b><div class="supply-meter"><span style="width:'+s.deck.length/s.baseDeckSize*100+'%"></span></div><p>'+(s.opt.rules==='campaign'?'战役交锋不自动补牌<br>使用补给或策略获得新暗牌':'经典交锋后补暗牌至 12 张<br>公共牌库耗尽后，暗牌耗尽者败')+'</p></div><div class="tactics-heading"><h3>战术指令</h3><span class="tactics-tools"><span>'+s.players[p].strategies.length+'</span>'+strategyShopButton()+'</span></div>'+
- strategyDock()+'<div class="log-heading"><h3>战场记录</h3><span>LIVE</span></div><ol class="battle-log">'+s.log.slice(0,6).map(l=>'<li><span>'+String(l.round).padStart(2,'0')+'</span><p>'+esc(l.text)+'</p></li>').join('')+'</ol></aside>';
+ const p=viewer();return '<aside class="intel-panel"><div class="supply-box"><span class="eyebrow">公共牌库</span><b>'+s.deck.length+'<small> / '+s.baseDeckSize+'</small></b><div class="supply-meter"><span style="width:'+s.deck.length/s.baseDeckSize*100+'%"></span></div><p>'+(s.opt.rules==='campaign'?'战役交锋不自动补牌<br>使用补给或策略获得新暗牌':'经典交锋后补暗牌至 12 张<br>公共牌库耗尽后，暗牌耗尽者败')+'</p></div><div class="tactics-heading"><h3>战术指令</h3><span class="tactics-tools"><button class="compact-log-button" data-action="open-log" aria-label="查看战场记录" title="查看战场记录">记录</button><span>'+s.players[p].strategies.length+'</span>'+strategyShopButton()+'</span></div>'+
+ strategyDock()+'<div class="log-heading"><h3>战场记录</h3><span>LIVE</span></div>'+battleLogList(6)+'</aside>';
 }
 function game(){
  return header()+'<div class="armies">'+playerPanel(0)+'<span class="army-vs">VS</span>'+playerPanel(1)+'</div>'+
@@ -239,6 +240,7 @@ function overlay(){
  else if(typeof modal==='object'&&modal.kind==='tutorial')content=tutorialView(modal.step);
  else if(modal==='market')content='<div class="eyebrow">SUPPLY EXCHANGE / 补给交易所</div><h2>战术商店</h2><p>市场公开可见。购买策略牌不消耗地图行动；买到的策略牌在你的下一个地图回合解锁。</p>'+strategyMarketView()+btn('关闭商店','close','secondary');
  else if(typeof modal==='object'&&modal.kind==='supply')content=supplyLedgerView(modal.player);
+ else if(modal==='battle-log')content='<div class="eyebrow">LIVE OPERATIONS / 战场记录</div><h2>战局日志</h2><div class="log-modal-list">'+battleLogList()+'</div>'+btn('关闭','close','primary');
  else if(typeof modal==='object'&&modal.kind==='rotation')content=rotationView(modal);
  else if(typeof modal==='object'&&modal.kind==='meds-pick')content=medsPickView(modal);
  else if(typeof modal==='object'&&modal.kind==='reserve'){const p=s.players[modal.player],sort=modal.sort||'rank',cards=[...p.reserve].sort(sort==='suit'?(a,b)=>a.suit-b.suit||a.rank-b.rank||a.id-b.id:(a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id);content='<div class="reserve-heading"><div><h2>'+p.name+' · 公开牌堆</h2><p>这些牌双方均可查看。</p></div><span class="hand-sort-toggle" role="group" aria-label="公开牌排序"><button class="'+(sort==='rank'?'active':'')+'" data-action="reserve-sort" data-id="rank" aria-pressed="'+(sort==='rank')+'">点数</button><button class="'+(sort==='suit'?'active':'')+'" data-action="reserve-sort" data-id="suit" aria-pressed="'+(sort==='suit')+'">花色</button></span></div><div class="reserve-cards">'+(cards.map(c=>card(c,{small:true})).join('')||'<p>尚未获得公开牌。</p>')+'</div>'+garrisonRoster(modal.player)+btn('关闭','close','primary')}
@@ -416,6 +418,7 @@ app.addEventListener('click',e=>{
  if(a==='reserve'){showModal({kind:'reserve',player:Number(el.dataset.player),sort:'rank'});return}
  if(a==='reserve-sort'&&modal?.kind==='reserve'){modal.sort=id==='suit'?'suit':'rank';render();return}
  if(a==='supply-ledger'){showModal({kind:'supply',player:Number(el.dataset.player)});return}
+ if(a==='open-log'){showModal('battle-log');return}
  if(a==='open-market'){showModal('market');return}
  if(a==='buy-strategy'){modal=null;resume();perform({type:'buy_strategy',id});return}
  if(a==='resign'){events=[];eventEnd=null;eventRemaining=null;modal=null;perform({type:'resign'});return}

@@ -224,3 +224,5 @@ html:has(.game-layout){height:100dvh;overflow:hidden}
 }
 .pass-action{border-color:#d8bb8299;color:var(--gold);background:#d8bb8212;font-weight:650;letter-spacing:.8px}
 .pass-action:hover:not(:disabled){border-color:var(--gold);color:#ead1a2;background:#d8bb8226;box-shadow:0 0 16px #d8bb8233}
+.compact-log-button{display:none;border:1px solid #4d6871;background:#17252d;color:#b9c9c9;padding:5px 8px;font-size:9px;letter-spacing:.5px;border-radius:2px}.log-modal-list{margin:16px 0 22px;padding:0 12px;border:1px solid var(--line);background:#0c171d}.log-modal-list .battle-log{display:block!important;max-height:min(55vh,480px)!important;overflow:auto!important}.log-modal-list .battle-log li{padding:11px 4px}.log-modal-list .battle-log p{font-size:11px;color:#c3d0ce}
+@media(max-width:800px){#app:has(.game-layout) .compact-log-button{display:inline-block}}
