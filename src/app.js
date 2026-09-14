@@ -286,8 +286,8 @@ function render(){
  app.innerHTML='<div class="game-shell" data-phase="'+s.phase+'">'+(s.phase==='over'?result():game())+overlay()+'</div><div id="toast" class="toast" role="status"></div>';
  mountVisual();
  requestAnimationFrame(()=>{if(!s)return;document.querySelectorAll('.strategy-token .strategy-tooltip').forEach(el=>{const r=el.getBoundingClientRect();el.style.transform=r.left<160?'translateX(calc(-100% - 18px))':''})});
- if(s.phase==='draft'&&isAI()&&s.active===1)queueAI(()=>aiAction(s,1));
- if(s.phase==='campaign'&&s.active===1&&isAI())queueAI(()=>aiAction(s,1));
+ if(s.phase==='draft'&&isAI()&&s.active===1)queueAI(()=>perform(aiAction(s,1)));
+ if(s.phase==='campaign'&&s.active===1&&isAI())queueAI(()=>perform(aiAction(s,1)));
  if(s.phase==='over')clockKey='';
  if(deadline!==null&&!modal)tickClock();
  if(clockKey!==key)tickClock();
@@ -364,6 +364,19 @@ function queueAI(fn){
  clearTimeout(aiTask);pause();
  const delay=events.length?Math.max(300,(eventRemaining??(s.opt.eventSeconds||3)*1000)+120):600;
  aiTask=setTimeout(()=>{pause();fn();},delay);
+}
+function perform(action){
+ if(!s||gate||modal||events.length||s.phase==='over')return;
+ const before=s,oldActor=s.active;
+ try{const res=act(s,s.active,action);if(!res.ok){toast(res.error);return}
+ const perspective=viewer();if(oldActor===perspective)newCards.clear();
+ const incoming=actionEvents(before,res.state,action,perspective);for(const e of incoming)for(const id of e.newIds||[])newCards.add(id);
+ pause();events=incoming;eventRemaining=null;eventEnd=events.length?Date.now()+(s.opt.eventSeconds||3)*1000:null;
+ s=res.state;targeting=null;selection.clear();reveals.clear();sound(s.phase==='over'?'win':'click');
+ if(s.opt.mode==='local'&&s.active!==oldActor&&s.phase!=='over'){gate=true;deadline=null;clockKey=''}
+ if(s.phase!==before.phase||s.turn!==before.turn)focus=null;
+ save();if(!events.length)resume();render();
+ }catch(e){console.error(e);toast('行动未提交，战局保持不变：'+e.message)}
 }
 function tickClock(){
  clearInterval(tickClock.job);
@@ -494,7 +507,7 @@ document.addEventListener('click',e=>{
  if(a==='supply'){supplyToHand();return}
  if(a==='open-market'){showModal('market');return}
  if(a==='open-log'){showModal('log');return}
- if(a==='choose-strategy'){runStrategy(id);return}
+ if(a==='choose-strategy'){if(s.phase==='draft'){perform({type:'draft',id});return}runStrategy(id);return}
  if(a==='use-strategy'){if(isAI())return;runStrategy(id);return}
  if(a==='buy-strategy'){const index=Number(el.dataset.index||s.strategyMarket.indexOf(id));const res=act(s,viewer(),{type:'buy-strategy',id,index});if(res.error){toast(res.error);render();return}toast(t('toast.strategy_bought',{name:strategyText(id).name}));newCards.clear();eventQueueToLog();render();return}
  if(a==='cancel-target'){targeting=null;render();return}
