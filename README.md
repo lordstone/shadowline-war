@@ -1,9 +1,9 @@
 # 暗线战争 · Shadowline War
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.17.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.17.2-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.17.1**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.17.2**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -54,7 +54,7 @@
 
 `node tests/engine.test.mjs` 或 `npm test`。
 
-已通过 53 组规则与事件测试：
+已通过 54 组规则与事件测试：
 - 全部24,804种三张牌组合的分类数量；
 - 非法部署、严格比较、平手、防守翻牌、撤退、收牌和临时晋升清除；
 - 13种策略的前置条件和效果，地图邻接、固定驻军、驻军明暗限制、整编、快速换防、首都胜利和牌数守恒；
@@ -77,7 +77,8 @@
 - `tests/engine.test.mjs`：规则与完整对局测试。
 - `tests/events.test.mjs`：事件快报与隐藏信息测试。
 - `tests/browser.test.mjs`：桌面、手机和平板的浏览器交互与布局回归。
-- `docs/`：后续功能设计文档；在线大厅目前只处于规划阶段。
+- `docs/STRATEGY-CARDS.md`：全部策略牌的图标、价格、效果和使用条件。
+- `docs/ONLINE-MULTIPLAYER-PLAN.md`：在线大厅与双人联机的后续设计方案。
 
 Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证保留于 vendor/THREE-LICENSE.txt。无遥测，无远程资源，无外部字体。存档属于本机浏览器的数据；更换端口或浏览器会使用独立存档。
 
@@ -88,6 +89,10 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.17.2 完整策略牌手册
+
+游戏内规则窗口逐张列出全部 13 张策略的图标、价格、阶段、效果和准确使用条件。仓库新增独立策略牌手册，说明市场限制、解锁时机、目标选择和容易混淆的侦察差异。
 
 ## 1.17.1 公开牌排序
 
