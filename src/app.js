@@ -239,8 +239,25 @@ function positionNodes(){
  for(const {f,el,x,y} of items){const visible={x:x/stage.clientWidth*100,y:y/stage.clientHeight*100};projected[f.id]=visible;el.style.left=visible.x+'%';el.style.top=visible.y+'%'}
  for(const line of stage.querySelectorAll('.topology-lines line')){const a=projected[line.dataset.a],b=projected[line.dataset.b];if(a&&b){line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y)}}
 }
+function clampMapViewport(){
+ const stage=document.querySelector('.map-stage');
+ if(!stage||!s?.fields?.length)return;
+ const W=stage.clientWidth,H=stage.clientHeight;if(!W||!H)return;
+ const sc=mapViewport.scale;
+ let minX=50,maxX=50,minY=50,maxY=50;
+ for(const f of s.fields){const p=scene.project?.(f)||{x:f.x,y:f.y};
+  if(p.x<minX)minX=p.x;if(p.x>maxX)maxX=p.x;if(p.y<minY)minY=p.y;if(p.y>maxY)maxY=p.y;}
+ const mX=Math.min(120,W*.18),mY=Math.min(120,H*.18);
+ let loX=-mX-W/2-(minX-50)/100*W*sc,hiX=W+mX-W/2-(maxX-50)/100*W*sc;
+ if(loX>hiX){const t=loX;loX=hiX;hiX=t}
+ mapViewport.x=Math.max(loX,Math.min(hiX,mapViewport.x));
+ let loY=-mY-H/2-(minY-50)/100*H*sc,hiY=H+mY-H/2-(maxY-50)/100*H*sc;
+ if(loY>hiY){const t=loY;loY=hiY;hiY=t}
+ mapViewport.y=Math.max(loY,Math.min(hiY,mapViewport.y));
+}
 function updateMapCamera(){
  const camera=document.querySelector('.map-camera');if(!camera)return;
+ clampMapViewport();
  camera.style.setProperty('--map-x',mapViewport.x+'px');camera.style.setProperty('--map-y',mapViewport.y+'px');camera.style.setProperty('--map-scale',mapViewport.scale);
  positionNodes();
 }
