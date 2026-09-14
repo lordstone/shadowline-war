@@ -17,6 +17,13 @@
 
 其他平台：安装 Node.js 20+，在本目录运行 `node server.mjs`，打开 http://127.0.0.1:4173 。关闭终端即停止服务。端口被占用时可设置环境变量 PORT。
 
+### 在线版本
+
+- **正式版**（`release` 分支）：[https://lordstone.github.io/shadowline-war/](https://lordstone.github.io/shadowline-war/) —— 稳定版本，推荐玩家使用。
+- **预览版**（`main` 分支）：[https://lordstone.github.io/shadowline-war/preview/](https://lordstone.github.io/shadowline-war/preview/) —— 最新开发版，用于测试未发布的新功能，可能不稳定。
+
+推送到 `release` 或 `main` 分支会自动触发 GitHub Actions 重新部署对应版本。
+
 ## 游戏内容
 
 - 八张战场：双都对峙、裂谷防线、灰烬环岛、东线纵深、半岛拉锯、法德西线、霍尔木兹海峡和山河决战。
@@ -92,6 +99,7 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
 
+
 ## 1.20.3 修复 AI 卡死（hotfix）
 
 修复 v1.20.0 i18n 重构误删 `perform()` 导致的严重 bug：`act()` 返回新 state 而不原地修改，缺少 `perform()` 做 `s=res.state` 状态提交后，玩家和 AI 的所有行动都被丢弃，游戏卡在"AI 正在选择策略…"。恢复 `perform()`（含状态提交、事件、保存、render），AI draft/campaign 改为 `perform(aiAction(...))`，draft 阶段选策略改为 `perform({type:'draft',id})`。浏览器完整对局 e2e 验证通过。
@@ -108,6 +116,10 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 ## 1.20.0 英文国际化（fixes #62）
 
 新增完整英文版本。Setup 界面右上角顶栏加入"中｜EN"语言切换按钮，可随时切换中英文；所有界面文字、策略牌、地图、事件日志均提供中英双语。语言包（`src/i18n/zh.js` / `en.js`）与业务逻辑解耦，业务代码仅通过 `t()` 接口取词；语言选择持久化到本地存储。
+
+## 1.19.2 文档：说明正式版/预览版双 URL
+
+README 新增"在线版本"说明：正式版（`release` 分支）与预览版（`main` 分支）的两个 GitHub Pages 地址，以及分支推送自动部署的机制。
 
 ## 1.19.1 手机与平板可弹窗查看完整战场记录
 

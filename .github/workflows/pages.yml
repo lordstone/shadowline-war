@@ -1,0 +1,56 @@
+# 注意：此文件在 release 和 main 分支各有一份，内容必须保持一致。
+# 修改时请同步更新两个分支，否则推送到另一分支时部署行为会不一致。
+name: Deploy Pages (release + preview)
+
+on:
+  push:
+    branches: [release, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release (production)
+        uses: actions/checkout@v4
+        with:
+          ref: release
+          path: prod
+      - name: Checkout main (preview)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: preview
+      - name: Assemble site
+        run: |
+          mkdir -p _site/preview
+          # Production site (release branch) at /
+          cp -r prod/. _site/
+          rm -rf _site/.git _site/.github
+          # Preview site (main branch) at /preview/
+          cp -r preview/. _site/preview/
+          rm -rf _site/preview/.git _site/preview/.github
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
