@@ -77,7 +77,8 @@
 - `tests/engine.test.mjs`：规则与完整对局测试。
 - `tests/events.test.mjs`：事件快报与隐藏信息测试。
 - `tests/browser.test.mjs`：桌面、手机和平板的浏览器交互与布局回归。
-- `docs/`：后续功能设计文档；在线大厅目前只处于规划阶段。
+- `docs/STRATEGY-CARDS.md`：全部策略牌的图标、价格、效果和使用条件。
+- `docs/ONLINE-MULTIPLAYER-PLAN.md`：在线大厅与双人联机的后续设计方案。
 
 Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证保留于 vendor/THREE-LICENSE.txt。无遥测，无远程资源，无外部字体。存档属于本机浏览器的数据；更换端口或浏览器会使用独立存档。
 

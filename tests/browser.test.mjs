@@ -13,6 +13,7 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
   if(s.opt.mode==='local')await click('ready');
  }
  async function drain(){for(let n=0;n<20&&await page.locator('.event-screen').count();n++)await click('next-event')}
+ await page.goto(url);await click('rules');assert.equal(await page.locator('[data-strategy-manual]').count(),STRATEGIES.length);assert.match(await page.locator('[data-strategy-manual="blitzkrieg"]').innerText(),/ϟ.*闪电战.*7 补给.*己方当前必须已经占优/s);await click('close');checks.push('field manual lists every strategy icon, cost, effect and exact use condition');
  let s=createGame({strategies:false,mode:'ai',timer:30,eventSeconds:3,seed:119});s.active=1;s.raid=true;
  await load(s);await page.locator('.event-invasion').waitFor();
  assert.match(await page.locator('.event-map-node.hit').innerText(),/西境指挥部/);
