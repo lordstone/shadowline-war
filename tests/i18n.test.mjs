@@ -69,6 +69,48 @@ for (const [k, v] of Object.entries(zh)) {
 }
 if (!placeholderTested) console.log('(no placeholder keys found, skipping interpolation test)');
 
+// 10. English pack must not contain CJK characters (catches copy-paste errors like swapped subtitles)
+// Exception: 'lang.zh' intentionally shows '中' so users can switch back to Chinese.
+const cjkRe = /[\u4e00-\u9fff]/;
+for (const [k, v] of Object.entries(en)) {
+  if (k === 'lang.zh') continue;
+  ok(!cjkRe.test(v), `en pack contains CJK: ${k}`);
+}
+
+// 11. canBuyStrategy returns error codes (not localized strings) so UI can switch on codes
+// This is a regression test for the i18n bug where app.js matched on Chinese strings.
+import {canBuyStrategy, buyStrategyErrorText, createGame} from '../src/engine.js';
+import {defaults} from '../src/data.js';
+setLang('en');
+const testGame = createGame({...defaults, map: 'duel', mode: 'ai'});
+// Force a known error: try to buy when it's not the campaign phase
+testGame.phase = 'draft';
+const code = canBuyStrategy(testGame, 0, 'conscription');
+ok(typeof code === 'string' && !cjkRe.test(code), `canBuyStrategy returns code, not localized text: ${code}`);
+ok(code === 'buy_phase', `canBuyStrategy code is 'buy_phase': ${code}`);
+// The text function should return localized English
+const errText = buyStrategyErrorText(code, 'conscription');
+ok(typeof errText === 'string' && errText.length > 0, 'buyStrategyErrorText returns text');
+ok(!cjkRe.test(errText), `buyStrategyErrorText returns English: ${errText.slice(0, 40)}`);
+// In Chinese mode, the same code should give Chinese text
+setLang('zh');
+const errTextZh = buyStrategyErrorText(code, 'conscription');
+ok(cjkRe.test(errTextZh), `buyStrategyErrorText returns Chinese in zh mode`);
+
+// 12. Faction indices survive language switch (options.factions stores 0/1, not localized names)
+import {mapFactions} from '../src/i18n/index.js';
+setLang('zh');
+const zhFactions = mapFactions('duel');
+setLang('en');
+const enFactions = mapFactions('duel');
+// Simulate: user picks faction 0 in Chinese, switches to English
+// The stored index 0 should still resolve to the correct faction in English
+ok(enFactions[0] !== zhFactions[0], 'faction names differ by language');
+ok(typeof enFactions[0] === 'string' && enFactions[0].length > 0, 'en faction name exists');
+// createGame should accept indices
+const gameWithIdx = createGame({...defaults, map: 'duel', mode: 'ai', factions: [0, 1]});
+ok(gameWithIdx.players[0].faction === enFactions[0], 'createGame maps index to localized faction name');
+
 // Restore default
 setLang('zh');
 
