@@ -249,7 +249,19 @@ function resolveCounter(s){
  log(s,'轮到'+s.players[suppressed].name+'翻开暗牌反击或撤退。');
  }
 }
-export function reachable(s,p,f){return s.raid||s.fields.some(x=>x.owner===p&&x.links.includes(f.id))}
+const RAID_RANGE=2;
+function raidReachable(s,p,f){
+ const seen=new Set(),queue=[];
+ for(const x of s.fields)if(x.owner===p){seen.add(x.id);queue.push([x.id,0])}
+ while(queue.length){
+  const [id,d]=queue.shift();
+  if(id===f.id)return true;
+  if(d>=RAID_RANGE)continue;
+  for(const nb of s.fields.find(x=>x.id===id).links)if(!seen.has(nb)){seen.add(nb);queue.push([nb,d+1])}
+ }
+ return false;
+}
+export function reachable(s,p,f){return s.raid?raidReachable(s,p,f):s.fields.some(x=>x.owner===p&&x.links.includes(f.id))}
 function target(s,id){return s.fields.find(x=>x.id===id)}
 function strategyError(s,p,id,fieldId){
  const c=strategyById(id);if(!c||!s.players[p].strategies.includes(id))return '没有这张策略卡。';
