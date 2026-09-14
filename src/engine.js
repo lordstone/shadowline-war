@@ -25,7 +25,7 @@ function exactPower(cards){
  return [1,r[0]||0,r[1]||0,r[2]||0];
 }
 function comparePower(x,y){for(let i=0;i<4;i++)if(x[i]!==y[i])return Math.sign(x[i]-y[i]);return 0}
-const evaluationCache=new Map();
+const evaluationCache=new Map(),EVALUATION_CACHE_LIMIT=32768;
 function compareEvaluation(a,b){
  const strength=comparePower(a.value,b.value);if(strength)return strength;
  if(a.wilds!==b.wilds)return Math.sign(b.wilds-a.wilds); // Natural formation wins an otherwise exact tie.
@@ -47,6 +47,7 @@ function exactEvaluation(cards){
   };
   search(0);
  }
+ if(evaluationCache.size>=EVALUATION_CACHE_LIMIT)evaluationCache.delete(evaluationCache.keys().next().value);
  evaluationCache.set(key,best);return best;
 }
 function evaluation(cards){

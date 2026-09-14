@@ -239,16 +239,20 @@ test('timeout actions are valid at every phase, rounds bounded, save resumes exa
  assert.equal(s.phase,'over');assert.ok(n<100);
 });
 test('seed matrix: complete AI matches, all maps, modes and strategy settings',()=>{
- let matches=0,actions=0;
- for(const rules of ['classic','campaign'])for(const map of MAPS.map(m=>m.id))for(const strategies of [false,true])for(const difficulty of ['easy','normal'])for(let seed=1;seed<=6;seed++){
- let s=createGame({seed:seed*7919,map,rules,strategies,difficulty,maxRounds:40}),n=0;
- while(s.phase!=='over'&&n++<700){
- const a=aiAction(s,s.active,difficulty),r=act(s,s.active,a);
- assert.equal(r.ok,true,JSON.stringify({seed,map,rules,phase:s.phase,a,error:r.error}));s=r.state;validate(s);
+ let matches=0,actions=0;const started=Date.now();
+ for(const rules of ['classic','campaign'])for(const map of MAPS.map(m=>m.id)){
+  const groupStarted=Date.now(),before=matches;
+  for(const strategies of [false,true])for(const difficulty of ['easy','normal'])for(let seed=1;seed<=6;seed++){
+   let s=createGame({seed:seed*7919,map,rules,strategies,difficulty,maxRounds:40}),n=0;
+   while(s.phase!=='over'&&n++<700){
+    const a=aiAction(s,s.active,difficulty),r=act(s,s.active,a);
+    assert.equal(r.ok,true,JSON.stringify({seed,map,rules,phase:s.phase,a,error:r.error}));s=r.state;validate(s);
+   }
+   assert.equal(s.phase,'over',JSON.stringify({seed,map,rules,n}));matches++;actions+=n;
+  }
+  console.log('MATRIX PROGRESS:',JSON.stringify({rules,map,matches:matches-before,total:matches,elapsedMs:Date.now()-groupStarted}));
  }
- assert.equal(s.phase,'over',JSON.stringify({seed,map,rules,n}));matches++;actions+=n;
- }
- console.log('SIMULATION REPORT:',JSON.stringify({matches,actions}));
+ console.log('SIMULATION REPORT:',JSON.stringify({matches,actions,elapsedMs:Date.now()-started}));
 });
 
 
