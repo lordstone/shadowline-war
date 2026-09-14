@@ -2,7 +2,7 @@
 export const SUITS=['♠','♥','♣','♦'];
 export const STRATEGIES=[
  {id:'conscription',name:'征召令',icon:'✚',phase:'campaign',count:3,price:3,desc:'从公共牌库补充 2 张暗牌，不占用本回合普通补牌次数。',use:'地图阶段使用；公共牌库至少还有牌。'},
- {id:'meds_team',name:'医疗分队',icon:'✥',phase:'campaign',count:2,price:3,desc:'从自己的公开牌堆回收点数最高的 1 张到暗牌手牌。',use:'地图阶段使用；自己的公开牌堆不能为空。'},
+ {id:'meds_team',name:'医疗分队',icon:'✥',phase:'campaign',count:2,price:3,desc:'从自己的公开牌堆自选最多 2 张牌回到暗牌手牌。',use:'地图阶段使用；自己的公开牌堆不能为空。'},
  {id:'spy',name:'潜伏密探',icon:'◈',phase:'battle',count:2,price:3,desc:'秘密查看敌方 1 张未翻开的战线牌；不将它翻开。',use:'战术窗口或反击阶段使用；敌方战线须有暗牌。'},
  {id:'isr',name:'全域侦察',icon:'◎',phase:'campaign',count:2,price:4,desc:'永久揭示选中敌方据点的 1 张驻军牌。',use:'地图阶段使用；随后选择一个仍有暗牌驻军的敌方据点。'},
  {id:'paratrooper',name:'空降增援',icon:'↧',phase:'battle',count:2,price:5,desc:'从公共牌库增加 1 张明牌到己方战线；战线仍受地形容量限制。',use:'战术窗口或反击阶段使用；战线未满、牌库未空且不是跨海进攻。'},
