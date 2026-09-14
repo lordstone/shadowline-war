@@ -39,6 +39,13 @@ test('current winner compares only revealed kickers before a counterreveal',()=>
  s.battle={attacker:1,defender:0,lines:[[{...s.players[0].hand[0],open:true},{...s.players[0].hand[1],open:true}],[{...s.players[1].hand[0],open:true},{...s.players[1].hand[1],open:true}]],suppressed:[]};
  assert.equal(compare(opened(s,1),opened(s,0)),1);assert.equal(leading(s),1);
 });
+test('screenshot regression: a boosted nine ties J then its second nine wins the open high-card comparison',()=>{
+ const attacker=[{...c(9,1),boost:2},c(9,0)],defender=[c(2,2),c(5,0),c(11,2)];
+ const defenderOpen=defender.filter((_,index)=>index===2);
+ assert.deepEqual(power(attacker),[1,11,9,0]);
+ assert.deepEqual(power(defenderOpen),[1,11,0,0]);
+ assert.equal(compare(attacker,defenderOpen),1);
+});
 test('jokers maximize legal combinations with natural and big-joker tie breaks',()=>{
  assert.deepEqual(power([c(3,0),c(3,1),c(14,4)]),[6,3,0,0]);
  assert.deepEqual(power([c(10,0),c(11,0),c(14,4)]),[5,12,0,0]);
