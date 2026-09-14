@@ -366,7 +366,7 @@ app.addEventListener('click',e=>{
  if(a==='load'){const loaded=saved();if(!loaded){toast('没有有效存档');return}s=loaded;gate=s.opt.mode==='local';clockKey='';focus=null;selection.clear();render();return}
  if(!s){
   if(a.startsWith('mode-'))options.mode=a.slice(5);
-  if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id);options.factions=[map.factions[0],map.factions[1]];options.playerLogos=[factionLogo(map,map.factions[0]),factionLogo(map,map.factions[1])];if(!map.historical)options.deployment='standard'}
+  if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id);options.factions=[map.factions[0],map.factions[1]];options.playerLogos=[factionLogo(map,map.factions[0]),factionLogo(map,map.factions[1])];options.deployment=map.historical?'historical':'standard'}
  render();return
  }
  if(modal&&typeof modal==='object'&&modal.kind==='rotation'){
