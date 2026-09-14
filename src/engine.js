@@ -282,7 +282,7 @@ function raidReachable(s,p,f){
 }
 export function reachable(s,p,f){return s.raid?raidReachable(s,p,f):s.fields.some(x=>x.owner===p&&x.links.includes(f.id))}
 function target(s,id){return s.fields.find(x=>x.id===id)}
-function strategyError(s,p,id,fieldId){
+function strategyError(s,p,id,fieldId,cards){
  const c=strategyById(id);if(!c||!s.players[p].strategies.includes(id))return '没有这张策略卡。';
  if(s.strategyLocked[p].includes(id))return '新购策略将在你的下一个地图回合解锁。';
  const campaign=s.phase==='campaign';
@@ -292,7 +292,7 @@ function strategyError(s,p,id,fieldId){
  if(['revolution','airborne_raid'].includes(id)&&s.actionSpent)return '本回合主要行动已经完成。';
  const enemy=1-p,f=target(s,fieldId),line=s.battle?.lines[p]||[],other=s.battle?.lines[enemy]||[];
  if(['conscription','paratrooper'].includes(id)&&!s.deck.length)return '公共牌库已空。';
- if(id==='meds_team'&&!s.players[p].reserve.length)return '没有可回收的公开牌。';
+ if(id==='meds_team'){if(!s.players[p].reserve.length)return '没有可回收的公开牌。';if(cards){if(!Array.isArray(cards)||!cards.length||cards.length>2)return '请选择 1–2 张公开牌。';const ids=new Set(s.players[p].reserve.map(c=>c.id));if(new Set(cards).size!==cards.length||!cards.every(id=>ids.has(id)))return '只能选择自己的公开牌堆中的牌。';}}
  if(id==='isr'&&(!f||f.owner!==enemy||!f.garrison.some(c=>!c.open)))return '请先选择有暗牌驻军的敌方据点。';
  if(['spy','scouting'].includes(id)&&!other.some(c=>!c.open))return '敌方战线没有暗牌。';
  if(id==='paratrooper'&&line.length>=battleLineLimit(s,p))return '战线已满，受当前地形容量限制。';
@@ -303,7 +303,7 @@ function strategyError(s,p,id,fieldId){
  if(id==='economic_sanctions'&&(!f||f.owner!==enemy))return '请先选择敌方据点。';
  return null;
 }
-export function canStrategy(s,p,id,fieldId){return p===s.active&&s.phase!=='over'?strategyError(s,p,id,fieldId):'尚未轮到你行动。'}
+export function canStrategy(s,p,id,fieldId,cards){return p===s.active&&s.phase!=='over'?strategyError(s,p,id,fieldId,cards):'尚未轮到你行动。'}
 export function canBuyStrategy(s,p,id){
  if(s.phase!=='campaign'||p!==s.active)return '只能在自己的地图行动阶段购买。';
  if(!s.opt.strategies)return '本局未开启策略牌。';
@@ -331,8 +331,8 @@ function returnGarrisonCards(s,p,cards){
  s.players[p].reserve.push(...cards.filter(c=>c.open).map(clean));
  s.players[p].hand.push(...cards.filter(c=>!c.open).map(clean));
 }
-function strategy(s,p,id,fieldId){
- const error=strategyError(s,p,id,fieldId);if(error)return error;
+function strategy(s,p,id,fieldId,cards){
+ const error=strategyError(s,p,id,fieldId,cards);if(error)return error;
  const pl=s.players[p],enemy=1-p,f=target(s,fieldId),pick=a=>a[Math.floor(random(s)*a.length)];
  pl.strategies.splice(pl.strategies.indexOf(id),1);
  s.strategyDiscard.push(id);
@@ -340,7 +340,7 @@ function strategy(s,p,id,fieldId){
  log(s,pl.name+'使用「'+strategyById(id).name+'」。');
  switch(id){
  case 'conscription':for(let i=0;i<2&&s.deck.length;i++)pl.hand.push(clean(s.deck.pop()));break;
- case 'meds_team':{const best=pl.reserve.reduce((a,c,i)=>!a||c.rank>a.card.rank?{card:c,index:i}:a,null);pl.hand.push(clean(pl.reserve.splice(best.index,1)[0]));break}
+ case 'meds_team':{const picks=cards&&cards.length?cards.map(cid=>pl.reserve.find(c=>c.id===cid)).filter(Boolean):[...pl.reserve].sort((a,b)=>b.rank-a.rank||b.suit-a.suit).slice(0,2);for(const pc of picks){const i=pl.reserve.findIndex(c=>c.id===pc.id);if(i>=0)pl.hand.push(clean(pl.reserve.splice(i,1)[0]))}break}
  case 'spy':{const c=pick(s.battle.lines[enemy].filter(c=>!c.open));s.knowledge[p][c.id]=true;break}
  case 'isr':pick(f.garrison.filter(c=>!c.open)).open=true;break;
  case 'paratrooper':s.battle.lines[p].push({...clean(s.deck.pop()),open:true});if(s.phase==='counter')resolveCounter(s);break;
@@ -363,7 +363,7 @@ function apply(s,p,a){
  if(a.type!=='draft'||!s.draft[p].includes(a.id))return '请选择一张提供的策略卡。';
  const offer=s.draft[p],picked=offer.indexOf(a.id);s.players[p].strategies=[a.id];s.strategyDiscard.push(...offer.filter((_,i)=>i!==picked));s.draft[p]=[];s.drafted[p]=true;if(s.drafted.every(Boolean))begin(s);else s.active=1-p;return null;
  }
- if(a.type==='strategy')return strategy(s,p,a.id,a.field);
+ if(a.type==='strategy')return strategy(s,p,a.id,a.field,a.cards);
  if(s.phase==='campaign'){
  if(a.type==='buy_strategy')return buyStrategy(s,p,a.id);
  if(a.type==='supply'){

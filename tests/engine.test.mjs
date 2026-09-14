@@ -187,7 +187,23 @@ test('rank-up is temporary and scouting reveals',()=>{
 test('rebalanced logistics strategies provide predictable useful value',()=>{
  let s=createGame({strategies:false,seed:120});s.players[0].strategies=['conscription'];const hand=s.players[0].hand.length,deck=s.deck.length;s=next(s,{type:'strategy',id:'conscription'});assert.equal(s.players[0].hand.length,hand+2);assert.equal(s.deck.length,deck-2);
  let support=createGame({strategies:false,seed:121});support.players[0].strategies=['international_support'];support.players[0].supply=0;support=next(support,{type:'strategy',id:'international_support'});assert.equal(support.players[0].supply,6);
- let medical=createGame({strategies:false,seed:122});medical.players[0].strategies=['meds_team'];const exposed=medical.players[0].hand.splice(0,3).sort((a,b)=>a.rank-b.rank);medical.players[0].reserve.push(...exposed);medical=next(medical,{type:'strategy',id:'meds_team'});assert.ok(medical.players[0].hand.some(c=>c.id===exposed.at(-1).id));validate(s);validate(support);validate(medical);
+ let medical=createGame({strategies:false,seed:122});medical.players[0].strategies=['meds_team'];const exposed=medical.players[0].hand.splice(0,3).sort((a,b)=>a.rank-b.rank);medical.players[0].reserve.push(...exposed);medical=next(medical,{type:'strategy',id:'meds_team'});assert.ok(medical.players[0].hand.some(c=>c.id===exposed.at(-1).id));assert.ok(medical.players[0].hand.some(c=>c.id===exposed.at(-2).id));assert.equal(medical.players[0].reserve.length,1);validate(s);validate(support);validate(medical);
+});
+test('meds_team player-chosen cards are honored (up to 2)',()=>{
+ let g=createGame({strategies:false,seed:123});g.players[0].strategies=['meds_team'];
+ const picks=g.players[0].hand.splice(0,3);g.players[0].reserve.push(...picks);
+ const chosen=[picks[0].id,picks[1].id];
+ g=next(g,{type:'strategy',id:'meds_team',cards:chosen});
+ assert.ok(chosen.every(id=>g.players[0].hand.some(c=>c.id===id)));
+ assert.equal(g.players[0].reserve.length,1);
+ assert.ok(!g.players[0].hand.some(c=>c.id===picks[2].id)||g.players[0].reserve.some(c=>c.id===picks[2].id));
+ validate(g);
+ // invalid: too many cards
+ let g2=createGame({strategies:false,seed:124});g2.players[0].strategies=['meds_team'];
+ const p2=g2.players[0].hand.splice(0,3);g2.players[0].reserve.push(...p2);
+ const bad=act(g2,0,{type:'strategy',id:'meds_team',cards:p2.map(c=>c.id)});
+ assert.equal(bad.ok,false);
+ assert.ok(g2.players[0].strategies.includes('meds_team'));
 });
 test('all campaign strategy effects preserve cards and enforce target requirements',()=>{
  for(const id of STRATEGIES.filter(x=>x.phase==='campaign').map(x=>x.id)){

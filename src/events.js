@@ -64,7 +64,7 @@ export function actionEvents(before,after,action,perspective){
  if(fresh.length)add('cards',name(p)+'获得 '+fresh.length+' 张新牌',p===perspective?'这些新牌已加入手牌，并以「新」标记。':'对手获得暗牌，点数保持隐藏。',{owner:p,cards:fresh.map(c=>visible(c,p)),newIds:p===perspective?fresh.map(c=>c.id):[]});
  if(action.type==='strategy'&&action.id==='meds_team'&&actor===p){
  const returned=after.players[p].hand.filter(c=>before.players[p].reserve.some(d=>d.id===c.id));
- if(returned.length)add('cards','医疗分队回收牌','从公开牌堆回到暗牌手牌。',{owner:p,cards:returned.map(c=>visible(c,p)),newIds:p===perspective?returned.map(c=>c.id):[]});
+ if(returned.length)add('cards','医疗分队回收 '+returned.length+' 张牌','从公开牌堆回到暗牌手牌。',{owner:p,cards:returned.map(c=>visible(c,p)),newIds:p===perspective?returned.map(c=>c.id):[]});
  }
  }
  return events;
