@@ -316,16 +316,11 @@ test('siege spends supply, suppresses one reserve without revealing it, and rest
  assert.equal(capital.garrison.length,5);assert.deepEqual(new Set(capital.garrison.map(c=>c.id)),originalIds);validate(s);
 });
 
-test('reorganizing costs a map action; rapid redeployment costs supply and preserves it',()=>{
+test('reorganizing all defenders costs the map action and returns cards by visibility',()=>{
  let normal=createGame({strategies:false,seed:55}),cap=normal.fields.find(f=>f.owner===0),replacement=normal.players[0].hand.slice(0,2),oldIds=cap.garrison.map(c=>c.id);
  cap.garrison[0].open=true;
  normal=next(normal,{type:'reorganize',field:cap.id,cards:replacement.map((c,i)=>({id:c.id,open:i===0}))});assert.equal(normal.active,0);assert.equal(normal.actionSpent,true);
  assert.ok(normal.players[0].reserve.some(c=>c.id===oldIds[0]));assert.ok(oldIds.slice(1).every(id=>normal.players[0].hand.some(c=>c.id===id)));assert.ok(!normal.players[0].hand.some(c=>c.id===oldIds[0]));assert.deepEqual(normal.fields.find(f=>f.id===cap.id).garrison.map(c=>c.id),replacement.map(c=>c.id));
- let rapid=createGame({strategies:false,seed:56});cap=rapid.fields.find(f=>f.owner===0);rapid.players[0].supply=5;replacement=rapid.players[0].hand.slice(0,3);
- const revealed=cap.garrison[0].id;cap.garrison[0].open=true;
- rapid=next(rapid,{type:'rapid_redeploy',field:cap.id,cards:replacement.map(c=>({id:c.id,open:false}))});
- assert.equal(rapid.active,0);assert.equal(rapid.players[0].supply,2);assert.equal(rapid.rapidRedeployUsed,true);assert.ok(rapid.players[0].reserve.some(c=>c.id===revealed));assert.ok(!rapid.players[0].hand.some(c=>c.id===revealed));assert.ok(rapid.fields.find(f=>f.id===cap.id).garrison.every(c=>!c.open));
- assert.equal(act(rapid,0,{type:'rapid_redeploy',field:cap.id,cards:[{id:rapid.players[0].hand[0].id,open:false}]}).ok,false);validate(rapid);
 });
 
 test('partial rapid rotation costs one supply per card and preserves revealed information',()=>{
