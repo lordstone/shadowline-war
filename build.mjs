@@ -33,6 +33,11 @@ for(const [name,file] of Object.entries(modules)){
 }
 let html=await fs.readFile(path.join(root,'index.html'),'utf8');
 const css=await fs.readFile(path.join(root,'src/style.css'),'utf8');
+for(const size of [32,180]){
+ const icon='data:image/png;base64,'+(await fs.readFile(path.join(root,'assets/icons','shadowline-'+size+'.png'))).toString('base64');
+ html=html.replace('./assets/icons/shadowline-'+size+'.png',icon);
+}
+html=html.replace(/<link rel="manifest"[^>]*>/,'');
 html=html.replace(/<link rel="stylesheet" href="\.\/src\/style\.css(?:\?v=[^"]+)?">/,'<style>'+css+'</style>');
 html=html.replace(/<script type="module" src="\.\/src\/app\.js(?:\?v=[^"]+)?"><\/script>/,'<script type="importmap">'+JSON.stringify({imports})+'</script><script type="module">import "shadow/app";</script>');
 await fs.writeFile(path.join(root,'暗线战争.html'),html);
