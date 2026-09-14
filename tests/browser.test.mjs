@@ -176,3 +176,44 @@ export async function launchFromMenuCheck(browser,url='http://127.0.0.1:4173/'){
  await page.close();
  return 'clicking 开始作战 from the menu enters draft phase without crashing';
 }
+
+export async function headerVisibilityCheck(browser,url='http://127.0.0.1:4173/'){
+ // Regression test for v1.20.2: header and draft content must be VISUALLY
+ // visible, not just in the DOM. The #scene 3D background (position:absolute;
+ // inset:0) was covering the header, making it invisible despite correct DOM.
+ const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ const isVisible=selector=>page.evaluate(sel=>{
+  const el=document.querySelector(sel);
+  if(!el)return {visible:false,reason:'not in DOM'};
+  const r=el.getBoundingClientRect();
+  if(r.width===0||r.height===0)return {visible:false,reason:'zero size'};
+  if(r.bottom<0||r.top>innerHeight||r.right<0||r.left>innerWidth)
+   return {visible:false,reason:'outside viewport'};
+  // Check the center point is not covered by another element.
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  const top=document.elementFromPoint(cx,cy);
+  const covered=top&&!el.contains(top)&&top!==el;
+  return {visible:!covered, reason:covered?'covered by '+top.tagName+'.'+top.className:'ok',
+   rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}};
+ },selector);
+ // Menu page: header must be visible.
+ await page.goto(url);
+ await page.evaluate(()=>localStorage.removeItem('shadowline-war-v1'));
+ await page.reload();
+ await page.locator('header.topbar').waitFor();
+ const menuHeader=await isVisible('header.topbar');
+ assert.ok(menuHeader.visible,'menu header not visible: '+JSON.stringify(menuHeader));
+ // Click launch -> draft page: header and draft content must be visible.
+ await page.locator('[data-action="launch"]').click();
+ await page.locator('.draft-screen').waitFor({timeout:5000});
+ const draftHeader=await isVisible('header.topbar');
+ assert.ok(draftHeader.visible,'draft header not visible: '+JSON.stringify(draftHeader));
+ const draftTitle=await isVisible('.draft-screen h1');
+ assert.ok(draftTitle.visible,'draft title not visible: '+JSON.stringify(draftTitle));
+ const draftThinking=await isVisible('.ai-thinking');
+ assert.ok(draftThinking.visible,'draft ai-thinking not visible: '+JSON.stringify(draftThinking));
+ assert.deepEqual(errors,[]);
+ await page.close();
+ return 'header and draft content are visually visible (not covered by 3D background) on menu and draft screens';
+}
