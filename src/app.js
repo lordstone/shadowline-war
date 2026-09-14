@@ -280,6 +280,28 @@ function overlay(){
  if(modal)html+=modalView();
  return html;
 }
+
+function updateCardSelectionUI(cid){
+ // Update the specific card's selected class and stance without full re-render,
+ // so CSS transitions animate. Falls back to render() if element not found.
+ const el=document.querySelector('.hand-card-shell .playing-card[data-id="'+cid+'"]');
+ if(!el){render();return}
+ const sel=selection.has(cid), stance=sel?selection.get(cid):null;
+ el.classList.toggle('selected',sel);
+ el.setAttribute('aria-pressed',sel);
+ let st=el.querySelector('.stance');
+ if(stance!==null){
+  const txt=stance?t('card.stance_open'):t('card.stance_concealed');
+  if(st){st.textContent=txt}else{el.insertAdjacentHTML('beforeend','<span class="stance">'+txt+'</span>')}
+ }else if(st){st.remove()}
+ // Update selection counter in hand-top
+ const counter=document.querySelector('.hand-top>div:last-child>span');
+ if(counter){
+  const s2=s, ph=s2?s2.phase:'';
+  counter.textContent=['defend','attack'].includes(ph)?t('game.hand.selected',{n:selection.size}):ph==='campaign'?t('game.hand.choose_garrison'):t('game.hand.safe');
+ }
+}
+
 function render(){
  const key=clockKey;
  if(!s){app.innerHTML=menu();clockKey='';mountVisual();return}
@@ -528,7 +550,7 @@ document.addEventListener('click',e=>{
     if(f.capital||open===0){selection.set(cid,true);if(f.capital)toast(t('toast.capital_must_open'))}
     else selection.set(cid,false);
    }
-   render();return;
+   updateCardSelectionUI(cid);return;
   }
   if(phase==='defend'||phase==='attack'){
    const limit=battleLineLimit(s,p),exists=selection.get(cid);
@@ -539,7 +561,7 @@ document.addEventListener('click',e=>{
     if(open===0){selection.set(cid,true);toast(t('toast.line_need_open'))}
     else selection.set(cid,false);
    }
-   render();return;
+   updateCardSelectionUI(cid);return;
   }
   return;
  }
