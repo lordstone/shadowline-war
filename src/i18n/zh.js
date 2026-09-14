@@ -444,6 +444,7 @@ export default {
   'menu.player_local1': '玩家二',
   'menu.player_single': '指挥官',
   'menu.ai_name': 'AI 指挥官',
+  'menu.ai_rookie': '新兵 AI',
 
   // ===== card =====
   'card.hidden': '暗牌',
@@ -673,6 +674,13 @@ export default {
   'modal.rotation.picked': '已选 {n} / 2 个据点',
   'modal.rotation.count': '{n} 张驻军',
   'modal.rotation.confirm': '确认轮换',
+  'modal.garrison_rotation.eyebrow': '驻军管理 / 快速轮换',
+  'modal.garrison_rotation.title': '{field} · 每张 1 补给',
+  'modal.garrison_rotation.desc': '等量选择撤下的驻军和派入的手牌。撤下的明牌进入公开牌堆，暗牌返回手牌；派入牌可选择明置或暗置。',
+  'modal.garrison_rotation.out': '撤下驻军 · {n} 张',
+  'modal.garrison_rotation.in': '派入手牌 · {n} 张',
+  'modal.garrison_rotation.cost': '预计消耗 {n} 点补给；轮换不消耗主要行动。',
+  'modal.garrison_rotation.confirm': '确认快速轮换',
   'modal.handover.eyebrow': '回合交接',
   'modal.handover.title': '玩家 {n}',
   'modal.handover.desc': '轮到 {name} 行动，请确认交接。',

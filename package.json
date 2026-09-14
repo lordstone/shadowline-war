@@ -1,11 +1,11 @@
 {
   "name": "shadowline-war",
-  "version": "1.20.5",
+  "version": "1.20.6",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node tests/engine.test.mjs && node tests/events.test.mjs",
+    "test": "node tests/engine.test.mjs && node tests/events.test.mjs && node --test tests/i18n.test.mjs",
     "build": "node build.mjs",
     "test:bundle": "node --experimental-vm-modules tests/bundle.test.mjs"
   }

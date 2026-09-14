@@ -439,6 +439,7 @@ export default {
   'menu.player_local1': 'Player 2',
   'menu.player_single': 'Commander',
   'menu.ai_name': 'AI Commander',
+  'menu.ai_rookie': 'Rookie AI',
 
   // ===== card =====
   'card.hidden': 'Face down',
@@ -668,6 +669,13 @@ export default {
   'modal.rotation.picked': '{n} / 2 fields picked',
   'modal.rotation.count': '{n} garrison',
   'modal.rotation.confirm': 'Confirm rotation',
+  'modal.garrison_rotation.eyebrow': 'GARRISON / QUICK ROTATION',
+  'modal.garrison_rotation.title': '{field} · 1 supply per card',
+  'modal.garrison_rotation.desc': 'Select equal numbers of garrison cards to withdraw and hand cards to deploy. Face-up withdrawals enter the public pile; concealed cards return to hand.',
+  'modal.garrison_rotation.out': 'Withdraw · {n} cards',
+  'modal.garrison_rotation.in': 'Deploy · {n} cards',
+  'modal.garrison_rotation.cost': 'Estimated cost: {n} supply. Rotation does not spend the main action.',
+  'modal.garrison_rotation.confirm': 'Confirm quick rotation',
   'modal.handover.eyebrow': 'Turn handover',
   'modal.handover.title': 'Player {n}',
   'modal.handover.desc': 'It\'s {name}\'s turn — please confirm the handover.',

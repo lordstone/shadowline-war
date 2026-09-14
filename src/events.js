@@ -1,24 +1,25 @@
 import {strategyById} from './data.js';
-import {t,strategyText} from './i18n/index.js';
+import {t,strategyText,fieldLabel} from './i18n/index.js';
 export function actionEvents(before,after,action,perspective){
  const events=[],actor=before.active,name=p=>after.players[p].name;
  const field=id=>after.fields.find(f=>f.id===id)||before.fields.find(f=>f.id===id);
+ const label=f=>fieldLabel(after.opt.map,f.id);
  const visible=(c,p,publicCard=false)=>p===perspective||publicCard||c.open?{...c}:{hidden:true};
  const add=(kind,title,detail,extra={})=>{if(extra.map)extra.map=extra.map.map(({id,label,type,x,y,links,owner,capital,fortified})=>({id,label,type,x,y,links,owner,capital,fortified}));events.push({kind,title,detail,...extra})};
  if(['attack','siege'].includes(action.type)){
  const f=field(action.field),stationed=before.fields.find(x=>x.id===f.id).garrison;
  const siege=action.type==='siege';
- add('invasion',t('event.title.'+(siege?'siege':'attack'),{name:name(actor)}),t('event.detail.'+(siege?'siege':'attack'),{label:f.label}),{field:f.id,map:after.fields,owner:actor});
- if(stationed.length)add('garrison',t('event.title.garrison.defend'),t('event.detail.garrison.defend',{label:f.label,original:stationed.length,committed:after.battle.lines[1-actor].length}),{field:f.id,cards:after.battle.lines[1-actor].map(c=>visible(c,1-actor)),owner:1-actor});
+ add('invasion',t('event.title.'+(siege?'siege':'attack'),{name:name(actor)}),t('event.detail.'+(siege?'siege':'attack'),{label:label(f)}),{field:f.id,map:after.fields,owner:actor});
+ if(stationed.length)add('garrison',t('event.title.garrison.defend'),t('event.detail.garrison.defend',{label:label(f),original:stationed.length,committed:after.battle.lines[1-actor].length}),{field:f.id,cards:after.battle.lines[1-actor].map(c=>visible(c,1-actor)),owner:1-actor});
  }
  if(action.type==='occupy'){
- const f=field(action.field);add('occupation',t('event.title.occupy',{name:name(actor),label:f.label}),t('event.detail.occupy'),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
+ const f=field(action.field);add('occupation',t('event.title.occupy',{name:name(actor),label:label(f)}),t('event.detail.occupy'),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
  }
  if(action.type==='reorganize'){
- const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison,open=old.filter(c=>c.open).length,hidden=old.length-open;add('garrison',t('event.title.reorganize',{name:name(actor)}),t('event.detail.reorganize',{label:f.label,total:f.garrison.length,open,hidden}),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
+ const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison,open=old.filter(c=>c.open).length,hidden=old.length-open;add('garrison',t('event.title.reorganize',{name:name(actor)}),t('event.detail.reorganize',{label:label(f),total:f.garrison.length,open,hidden}),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
  }
  if(action.type==='rotate_garrison'){
- const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison.filter(c=>action.outIds.includes(c.id)),open=old.filter(c=>c.open).length,hidden=old.length-open;add('garrison',t('event.title.rotate_garrison',{name:name(actor)}),t('event.detail.rotate_garrison',{label:f.label,n:old.length,open,hidden}),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
+ const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison.filter(c=>action.outIds.includes(c.id)),open=old.filter(c=>c.open).length,hidden=old.length-open;add('garrison',t('event.title.rotate_garrison',{name:name(actor)}),t('event.detail.rotate_garrison',{label:label(f),n:old.length,open,hidden}),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
  }
  if(action.type==='strategy'){
  const strategy=strategyById(action.id),st=strategyText(action.id);
@@ -30,7 +31,7 @@ export function actionEvents(before,after,action,perspective){
  }
  if(action.type==='buy_strategy'){
  const strategy=strategyById(action.id);
- add('purchase',t('event.title.buy_strategy',{name:name(actor),strategy:strategy.name}),t('event.detail.buy_strategy',{price:strategy.price}),{owner:actor,strategy});
+ add('purchase',t('event.title.buy_strategy',{name:name(actor),strategy:strategyText(strategy.id).name}),t('event.detail.buy_strategy',{price:strategy.price}),{owner:actor,strategy});
  }
  if(action.type==='deploy'){
  const line=after.battle?.lines[actor]||[];
@@ -44,11 +45,11 @@ export function actionEvents(before,after,action,perspective){
  if(ended){
  const winner=after.players.findIndex((p,i)=>p.wins>before.players[i].wins);
  add('result',winner<0?t('event.title.result.ceasefire'):t('event.title.result.winner',{name:name(winner)}),
- (before.battle.field?t('event.detail.result.prefix',{label:field(before.battle.field).label}):'')+(before.battle.field?(winner===before.battle.defender?t('event.detail.result.defend'):winner===before.battle.attacker?t('event.detail.result.attack'):t('event.detail.result.ceasefire_field')):(winner<0?t('event.detail.result.ceasefire_plain'):t('event.detail.result.winner_plain'))),
+ (before.battle.field?t('event.detail.result.prefix',{label:label(field(before.battle.field))}):'')+(before.battle.field?(winner===before.battle.defender?t('event.detail.result.defend'):winner===before.battle.attacker?t('event.detail.result.attack'):t('event.detail.result.ceasefire_field')):(winner<0?t('event.detail.result.ceasefire_plain'):t('event.detail.result.winner_plain'))),
  {field:before.battle.field,owner:winner,map:after.fields,cards:winner<0?[]:after.players[winner].reserve.filter(c=>!before.players[winner].reserve.some(d=>d.id===c.id)).map(c=>visible(c,winner,true))});
  if(before.battle.field){
  const f=field(before.battle.field);
- add('garrison',t('event.title.garrison.update',{label:f.label}),f.garrison.length?t('event.detail.garrison.update.stationed'):t('event.detail.garrison.update.empty'),{field:f.id,owner:f.owner,cards:f.garrison.map(c=>visible(c,f.owner))});
+ add('garrison',t('event.title.garrison.update',{label:label(f)}),f.garrison.length?t('event.detail.garrison.update.stationed'):t('event.detail.garrison.update.empty'),{field:f.id,owner:f.owner,cards:f.garrison.map(c=>visible(c,f.owner))});
  }
  }
  for(let p=0;p<2;p++){
