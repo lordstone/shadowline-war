@@ -123,10 +123,21 @@ function line(p){
  return '<div class="battle-line '+(own?'own-line':'enemy-line')+'"><div class="line-label"><span>'+(p===b.defender?'防守方 · 平手即胜':'进攻方 · 必须压过')+'</span><b>'+s.players[p].name+'</b><small>'+handName(cards.filter(c=>c.open))+' / '+power(cards.filter(c=>c.open)).join(' · ')+'</small></div><div class="line-cards">'+
  Array.from({length:b.field?battleLineLimit(s,p):3},(_,i)=>{const c=cards[i];if(!c)return '<div class="card-slot"><span>0'+(i+1)+'</span></div>';const known=own||c.open||s.knowledge[v][c.id],revealable=own&&!c.open&&!c.preview&&s.phase==='counter'&&!isAI();return card(c,{hidden:!known,selected:reveals.has(c.id),stance:c.open,interactive:revealable,revealable,action:'reveal-card',peek:!own&&!c.open&&known})}).join('')+'</div></div>';
 }
+const rankLabel=rank=>rank===15?'大王':rank===14?'小王':({1:'A',11:'J',12:'Q',13:'K'}[rank]||String(rank||'无'));
+function comparisonDetail(a,b,leader){
+ const av=power(a),bv=power(b),an=handName(a),bn=handName(b),winner=leader===0?av:bv,loser=leader===0?bv:av;
+ if(av[0]!==bv[0])return (leader===0?an:bn)+'压过'+(leader===0?bn:an);
+ const difference=winner.findIndex((value,index)=>index>0&&value!==loser[index]);
+ if(difference<0)return '牌力完全相同，防守方占优';
+ if(av[0]===2)return difference===1?'对子 '+rankLabel(winner[1])+' 胜对子 '+rankLabel(loser[1]):'对子同点，单牌 '+rankLabel(winner[2])+' 胜 '+rankLabel(loser[2]);
+ if([4,5,6].includes(av[0]))return an+'最高点 '+rankLabel(winner[1])+' 胜 '+rankLabel(loser[1]);
+ return difference===1?'最高明牌 '+rankLabel(winner[1])+' 胜 '+rankLabel(loser[1]):'最高牌同为 '+rankLabel(winner[1])+'，第 '+difference+' 张 '+rankLabel(winner[difference])+' 胜 '+rankLabel(loser[difference]);
+}
 function battleView(){
  const b=s.battle,p=viewer(),active=s.active===p&&!isAI();
  const comparing=['counter','tactics'].includes(s.phase),lead=comparing?leading(s):null;
- const leadText=comparing?(lead===p?'己方明牌占优':'对方明牌占优 · 暗牌尚未计入'):'VS';
+ const leadDetail=comparing?comparisonDetail(opened(s,p),opened(s,1-p),lead===p?0:1):'';
+ const leadText=comparing?'<strong>'+(lead===p?'己方明牌占优':'对方明牌占优')+'</strong><small>'+leadDetail+' · 暗牌尚未计入</small>':'<strong>VS</strong>';
  const chosen=[...selection].map(([id,open])=>({...s.players[p].hand.find(c=>c.id===id),open}));
  const mountain=b.field&&s.fields.find(f=>f.id===b.field)?.type==='mountain',sea=b.seaLanding;
  const valid=chosen.length>0&&chosen.length<=battleLineLimit(s,p)&&chosen.some(c=>c.open)&&(s.phase!=='attack'||(compare(chosen.filter(c=>c.open),opened(s,b.defender))>0&&(!mountain||chosen.filter(c=>c.open).length>=2)&&(!sea||power(chosen.filter(c=>c.open))[0]>=power(opened(s,b.defender))[0])&&(!sea||power(chosen)[0]!==6)));
