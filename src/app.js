@@ -285,7 +285,7 @@ function eventView(){
  const paths=map.flatMap(f=>f.links.filter(id=>f.id.localeCompare(id)<0).map(id=>{const to=map.find(t=>t.id===id);return to?'<line x1="'+f.x+'" y1="'+f.y+'" x2="'+to.x+'" y2="'+to.y+'"/>':''})).join('');
  const diagram=e.field&&map.length?'<div class="event-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+paths+'</svg>'+map.map(f=>'<div class="event-map-node '+(f.id===e.field?'hit':'')+' owner-'+(f.owner===null?'null':sideOf(f.owner))+'" style="left:'+f.x+'%;top:'+f.y+'%"><i>'+fieldIcon(f)+'</i><b>'+f.label+'</b></div>').join('')+'</div>':'';
  return '<section class="event-screen event-'+e.kind+'" role="status" aria-live="polite"><div class="event-panel"><div class="eyebrow">战场快报 / '+e.kind.toUpperCase()+'</div><h1>'+esc(e.title)+'</h1><p>'+esc(e.detail)+'</p>'+diagram+
- (e.strategy?'<div class="event-strategy"><span>'+e.strategy.icon+'</span><div><b>'+e.strategy.name+'</b><small>'+e.strategy.desc+'</small></div><strong>'+e.strategy.price+' 补给</strong></div>':'')+
+ (e.strategy?'<div class="event-strategy-card"><span>'+e.strategy.icon+'</span><div><b>'+e.strategy.name+'</b><small>'+e.strategy.desc+'</small></div><strong>'+e.strategy.price+' 补给</strong></div>':'')+
  ((e.cards||[]).length?'<div class="event-cards">'+e.cards.map(c=>card(c,{hidden:!!c.hidden,small:e.cards.length>6})).join('')+'</div>':'')+
  '<div class="event-progress" style="--duration:'+(s.opt.eventSeconds||3)+'s"><span style="animation-play-state:'+(modal?'paused':'running')+'"></span></div><div class="event-footer"><small>展示期间暂停 AI 和行动计时 · 剩余 '+events.length+' 条</small>'+btn('我看清了 · 继续 →','next-event','secondary')+'</div></div></section>';
 }

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import {createGame,act,aiAction,makeDeck,validate} from '../src/engine.js';
-import {MAPS} from '../src/data.js';
+import {MAPS,STRATEGIES} from '../src/data.js';
 export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],checks=[];
  page.on('pageerror',e=>errors.push(e.message));
@@ -31,10 +31,11 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  assert.equal(await page.locator('.hand-tray .new-card-badge').count(),2);checks.push('strengthened conscription draws two cards with face animations and persistent hand markers');
  s=createGame({strategies:false,mode:'ai'});s.players[0].strategies=['isr'];await load(s);await page.locator('[data-action="use-strategy"][data-id="isr"]').click();
  assert.equal(await page.locator('.targeting-note').count(),1);
- const enemy=s.fields.find(f=>f.owner===1);await page.locator('[data-action="focus"][data-id="'+enemy.id+'"]').click();await drain();
+ const enemy=s.fields.find(f=>f.owner===1);await page.locator('[data-action="focus"][data-id="'+enemy.id+'"]').click();
+ await page.setViewportSize({width:390,height:600});const strategyEventLayout=await page.evaluate(()=>{const screen=document.querySelector('.event-screen'),panel=document.querySelector('.event-panel'),sr=screen.getBoundingClientRect(),pr=panel.getBoundingClientRect();return {screenDisplay:getComputedStyle(screen).display,screen:{left:sr.left,right:sr.right,top:sr.top,bottom:sr.bottom},panel:{left:pr.left,right:pr.right,top:pr.top,bottom:pr.bottom,width:pr.width},viewport:{width:innerWidth,height:innerHeight},page:{width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight}}});assert.equal(strategyEventLayout.screenDisplay,'flex');assert.ok(strategyEventLayout.panel.width>=350&&strategyEventLayout.panel.left>=0&&strategyEventLayout.panel.right<=strategyEventLayout.viewport.width&&strategyEventLayout.panel.top>=0&&strategyEventLayout.panel.bottom<=strategyEventLayout.viewport.height&&strategyEventLayout.page.width<=strategyEventLayout.viewport.width,JSON.stringify(strategyEventLayout));await page.setViewportSize({width:1440,height:1000});await drain();
  assert.ok((await state()).fields.find(f=>f.id===enemy.id).garrison.some(c=>c.open));
  await page.locator('[data-action="reserve"][data-player="0"]').click();assert.equal(await page.locator('.garrison-roster .playing-card:not(.back)').count(),3);await click('close');
- checks.push('strategy target selection and garrison roster');
+ checks.push('strategy target selection, stable mobile strategy event panel and garrison roster');
  s=createGame({strategies:false,mode:'local',eventSeconds:3});await load(s);
  const center=s.fields.find(f=>f.id==='center_town');const stationed=s.players[0].hand[0].id;
  await page.locator('[data-action="focus"][data-id="'+center.id+'"]').click();await page.locator('[data-action="card"][data-id="'+stationed+'"]').click();await click('occupy');
@@ -118,6 +119,20 @@ export async function counterplayCheck(browser,url='http://127.0.0.1:4173/'){
 
 export async function strategyMarketCheck(browser,url='http://127.0.0.1:4173/'){
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const loadState=async state=>{await page.goto(url);await page.evaluate(s=>localStorage.setItem('shadowline-war-v1',JSON.stringify(s)),state);await page.reload();await page.locator('[data-action="load"]').click()};
+ const strategyIds=STRATEGIES.map(card=>card.id);
+ for(const viewport of [{width:390,height:600},{width:834,height:1112},{width:1440,height:900}]){
+  await page.setViewportSize(viewport);
+  for(let offset=0;offset<strategyIds.length;offset+=3){
+   const group=strategyIds.slice(offset,offset+3),layoutState=createGame({strategies:false,mode:'ai',seed:2500+offset});layoutState.opt.strategies=true;layoutState.players[0].strategies=group;layoutState.strategyLocked=[[],[]];
+   await loadState(layoutState);
+   const tokens=page.locator('.tactic-dock>.strategy-token');assert.equal(await tokens.count(),group.length);
+   for(const id of group){await page.locator('[data-action="use-strategy"][data-id="'+id+'"]').hover();await page.waitForTimeout(180);const tipLayout=await page.evaluate(()=>{const tips=[...document.querySelectorAll('.strategy-tooltip')].filter(e=>Number(getComputedStyle(e).opacity)>.5),r=tips[0]?.getBoundingClientRect();return {count:tips.length,inside:!!r&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}});assert.deepEqual(tipLayout,{count:1,inside:true},id+' '+JSON.stringify({viewport,tipLayout}))}
+   layoutState.players[0].strategies=[];layoutState.players[0].supply=30;layoutState.strategyMarket=group;layoutState.strategyDeck=strategyIds.filter(id=>!group.includes(id));layoutState.marketBought=false;
+   await loadState(layoutState);await page.locator('[data-action="open-market"]').click();const marketLayout=await page.evaluate(()=>{const rect=e=>{const r=e.getBoundingClientRect();return {l:r.left,r:r.right,t:r.top,b:r.bottom}},overlap=(a,b)=>Math.max(0,Math.min(a.r,b.r)-Math.max(a.l,b.l))*Math.max(0,Math.min(a.b,b.b)-Math.max(a.t,b.t)),cards=[...document.querySelectorAll('.market-list>.market-card')].map(rect),modal=document.querySelector('.modal').getBoundingClientRect();return {count:cards.length,overlaps:cards.flatMap((a,i)=>cards.slice(i+1).map(b=>overlap(a,b))).filter(n=>n>1).length,inside:modal.left>=0&&modal.right<=innerWidth&&modal.top>=0&&modal.bottom<=innerHeight,pageWidth:document.documentElement.scrollWidth,viewportWidth:innerWidth}});assert.equal(marketLayout.count,3);assert.ok(!marketLayout.overlaps&&marketLayout.inside&&marketLayout.pageWidth<=marketLayout.viewportWidth,group.join(',')+' '+JSON.stringify({viewport,marketLayout}))
+  }
+ }
+ await page.setViewportSize({width:1440,height:900});
  let s=createGame({strategies:false,mode:'local',eventSeconds:1});s.opt.strategies=true;s.players[0].supply=7;s.strategyMarket=['conscription','spy','blitzkrieg'];s.strategyDeck=['rank_up'];s.strategyDiscard=[];s.strategyLocked=[[],[]];s.marketBought=false;const rotatingCapital=s.fields.find(f=>f.owner===0);rotatingCapital.garrison[0].open=true;const revealedId=rotatingCapital.garrison[0].id;
  await page.goto(url);await page.evaluate(s=>localStorage.setItem('shadowline-war-v1',JSON.stringify(s)),s);await page.reload();await page.locator('[data-action="load"]').click();await page.locator('[data-action="ready"]').click();
  await page.setViewportSize({width:977,height:792});const neutral=s.fields.find(f=>f.owner===null);await page.locator('[data-action="focus"][data-id="'+neutral.id+'"]').click();const guidedOccupy=page.locator('[data-action="occupy"]');assert.equal(await guidedOccupy.isEnabled(),true);assert.match(await guidedOccupy.getAttribute('title'),/请先从下方手牌选择驻军/);await guidedOccupy.click();assert.match(await page.locator('#toast').innerText(),/必须选择/);await page.locator('[data-action="card"]').first().click();
@@ -126,9 +141,9 @@ export async function strategyMarketCheck(browser,url='http://127.0.0.1:4173/'){
  await page.locator('[data-action="open-rotation"]').click();assert.match(await page.locator('.modal').innerText(),/撤下的明牌进入公开牌堆/);await page.locator('[data-action="rotate-out"][data-id="'+revealedId+'"]').click();await page.locator('[data-action="rotate-in"]').first().click();assert.equal(await page.locator('[data-action="rotate-submit"]').isEnabled(),true);await page.locator('[data-action="rotate-submit"]').click();assert.match(await page.locator('.event-garrison').innerText(),/1 张明牌进入公开牌堆/);await page.locator('[data-action="next-event"]').click();let rotated=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(rotated.players[0].supply,6);assert.ok(rotated.players[0].reserve.some(c=>c.id===revealedId));assert.equal(rotated.rapidRedeployUsed,true);
  assert.equal(await page.locator('.strategy-shop-trigger').count(),0);assert.equal(await page.locator('.strategy-shop-button').count(),1);assert.equal(await page.locator('.market-card').count(),0);assert.equal(await page.evaluate(()=>[document.documentElement.scrollWidth<=innerWidth,document.documentElement.scrollHeight<=innerHeight].join(',')),'true,true');
  await page.locator('[data-action="open-market"]').click();assert.equal(await page.locator('.market-card').count(),3);assert.match(await page.locator('[data-action="buy-strategy"][data-id="conscription"]').innerText(),/购买 · 3 补给/);assert.match(await page.locator('[data-action="buy-strategy"][data-id="blitzkrieg"]').innerText(),/补给不足 · 需 7/);await page.locator('[data-action="buy-strategy"][data-id="conscription"]').click();
- assert.equal(await page.locator('.event-purchase').count(),1);assert.match(await page.locator('.event-strategy').innerText(),/征召令/);
+ assert.equal(await page.locator('.event-purchase').count(),1);assert.match(await page.locator('.event-strategy-card').innerText(),/征召令/);
  let saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.players[0].supply,3);assert.ok(saved.strategyLocked[0].includes('conscription'));assert.equal(saved.strategyMarket.length,3);
  await page.locator('[data-action="next-event"]').click();await page.locator('[data-action="open-market"]').click();assert.equal(await page.locator('.market-buy').allTextContents().then(xs=>xs.every(x=>/本回合已购/.test(x))),true);await page.locator('[data-action="close"]').click();assert.match(await page.locator('.strategy-tooltip').textContent(),/下一个地图回合/);await page.locator('.strategy-token').hover();await page.waitForTimeout(220);assert.equal(await page.locator('.strategy-tooltip').isVisible(),true);
  await page.locator('[data-action="pass"]').click();while(await page.locator('.event-screen').count())await page.locator('[data-action="next-event"]').click();await page.locator('[data-action="ready"]').click();await page.locator('[data-action="pass"]').click();while(await page.locator('.event-screen').count())await page.locator('[data-action="next-event"]').click();await page.locator('[data-action="ready"]').click();
- saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.strategyLocked[0].length,0);assert.equal(saved.active,0);assert.deepEqual(errors,[]);await page.close();return 'visible target actions, partial garrison rotation with revealed cards preserved in reserve, and public market purchase states, refill and next-own-turn unlock';
+ saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.strategyLocked[0].length,0);assert.equal(saved.active,0);assert.deepEqual(errors,[]);await page.close();return 'all strategy cards fit their phone, tablet and desktop docks, tooltips and market rows; rotation and market state transitions remain valid';
 }
