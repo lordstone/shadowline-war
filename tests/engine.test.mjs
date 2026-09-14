@@ -1,7 +1,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,terrainLimit,battleLineLimit,resolvedDeckCount,leading,orderForDisplay} from '../src/engine.js';
+import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,terrainLimit,battleLineLimit,resolvedDeckCount,leading,orderForDisplay,supplyConnected,income} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
@@ -471,4 +471,57 @@ test('historical capital ownership matches the named factions',()=>{
  assert.ok(korea.fields.find(f=>f.id==='pyongyang').y<korea.fields.find(f=>f.id==='seoul').y&&korea.fields.find(f=>f.id==='seoul').y<korea.fields.find(f=>f.id==='busan').y);
  assert.ok(east.fields.find(f=>f.id==='berlin').x<east.fields.find(f=>f.id==='moscow').x);assert.ok(china.fields.find(f=>f.id==='yanan').x<china.fields.find(f=>f.id==='beiping').x&&china.fields.find(f=>f.id==='shenyang').y<china.fields.find(f=>f.id==='nanjing').y);
  assert.ok(hormuz.fields.find(f=>f.id==='bandar').y<hormuz.fields.find(f=>f.id==='oman_hq').y);
+});
+
+function cutScenario(seed){
+ // rift: P0 持有西部指挥部；P1 持有北部隘口/南部油田，切断纵深据点与首都的通路
+ const s=createGame({rules:'campaign',strategies:false,seed,map:'rift'});
+ for(const id of ['b','c']){const f=s.fields.find(f=>f.id===id);f.owner=1;f.garrison=[{...s.players[1].hand.pop(),open:true}];}
+ return s;
+}
+test('supply line cut: disconnected field with positive income contributes nothing',()=>{
+ const s=cutScenario(7),e=s.fields.find(f=>f.id==='e');
+ e.owner=0;e.garrison=[{...s.players[0].hand.pop(),open:true}];
+ assert.ok(supplyConnected(s,0).has('a'));
+ assert.ok(!supplyConnected(s,0).has('e'));
+ s.active=0;const before=s.players[0].supply;income(s);
+ const entry=s.supplyLedger[0].entries.find(e=>e.label.startsWith('北部油田'));
+ assert.equal(entry.amount,0);assert.match(entry.label,/补给线切断/);
+ assert.equal(s.supplyLedger[0].entries.find(e=>e.label.startsWith('西部指挥部')).amount,1);
+ assert.equal(s.players[0].supply,before+1);
+ assert.equal(e.garrison.length,1);
+ validate(s);
+});
+test('supply line cut: disconnected field with negative income loses one open card per round',()=>{
+ const s=cutScenario(11),d=s.fields.find(f=>f.id==='d');
+ d.owner=0;d.garrison=[];
+ for(let i=0;i<4;i++)d.garrison.push({...s.players[0].hand.pop(),open:true});
+ const ids=d.garrison.map(c=>c.id);
+ s.active=0;const before=s.players[0].supply,reserveBefore=s.players[0].reserve.length;
+ income(s);
+ let entry=s.supplyLedger[0].entries.find(e=>e.label.startsWith('峡谷中继'));
+ assert.equal(entry.amount,-1);assert.match(entry.label,/折损 1 张明牌/);
+ assert.equal(d.garrison.length,3);
+ const lost1=ids.find(id=>!d.garrison.some(c=>c.id===id));
+ assert.ok(s.players[0].reserve.some(c=>c.id===lost1));
+ assert.equal(s.players[0].supply,before);
+ income(s);
+ entry=s.supplyLedger[0].entries.find(e=>e.label.startsWith('峡谷中继'));
+ assert.equal(entry.amount,-1);assert.equal(d.garrison.length,2);
+ income(s);
+ entry=s.supplyLedger[0].entries.find(e=>e.label.startsWith('峡谷中继'));
+ assert.equal(entry.amount,0);assert.equal(d.garrison.length,2);
+ assert.equal(s.players[0].reserve.length,reserveBefore+2);
+ validate(s);
+});
+test('supply line cut: reconnecting the field restores its income',()=>{
+ const s=cutScenario(13),e=s.fields.find(f=>f.id==='e'),b=s.fields.find(f=>f.id==='b');
+ e.owner=0;e.garrison=[{...s.players[0].hand.pop(),open:true}];
+ s.active=0;income(s);
+ assert.equal(s.supplyLedger[0].entries.find(e=>e.label.startsWith('北部油田')).amount,0);
+ b.owner=0;
+ assert.ok(supplyConnected(s,0).has('e'));
+ income(s);
+ assert.equal(s.supplyLedger[0].entries.find(e=>e.label.startsWith('北部油田')).amount,2);
+ validate(s);
 });

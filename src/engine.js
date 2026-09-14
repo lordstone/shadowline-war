@@ -172,13 +172,31 @@ function finish(s,winner,reason){s.phase='over';s.winner=winner;s.reason=reason;
 function begin(s){s.active=s.opt.first===1?1:0;if(s.opt.rules==='classic')startBattle(s,1-s.active,s.active,null);else{fillMarket(s);s.phase='campaign';income(s)}}
 function ledger(s,p){return s.supplyLedger[p]||(s.supplyLedger[p]={round:s.round,opening:s.players[p].supply,entries:[],net:0,discardedId:null})}
 function supplyFlow(s,p,label,amount){const report=ledger(s,p),before=s.players[p].supply,after=Math.max(0,Math.min(30,before+amount)),actual=after-before;s.players[p].supply=after;report.entries.push({label,amount:actual});report.net+=actual;return actual}
-function income(s){
+export function supplyConnected(s,who){
+ const owned=new Set(s.fields.filter(f=>f.owner===who).map(f=>f.id)),seen=new Set();
+ const cap=s.fields.find(f=>f.owner===who&&f.capital);
+ if(!cap)return seen;
+ const stack=[cap.id];seen.add(cap.id);
+ while(stack.length){const id=stack.pop(),f=s.fields.find(x=>x.id===id);if(!f)continue;for(const nb of f.links)if(owned.has(nb)&&!seen.has(nb)){seen.add(nb);stack.push(nb)}}
+ return seen;
+}
+export function income(s){
  const who=s.active,p=s.players[who],opening=p.supply,report={round:s.round,opening,entries:[],net:0,discardedId:null};s.supplyLedger[who]=report;
  let operationalNet=0;
+ const connected=supplyConnected(s,who);
  for(const f of s.fields.filter(f=>f.owner===who)){
   const base=f.type==='oil'?2:1,open=f.garrison.filter(c=>c.open).length,blocked=f.blockedUntil>=s.round;
-  const amount=blocked?0:open>=3?-base:open===2?0:base;
-  report.entries.push({label:f.label+(blocked?' · 被封锁':open>=3?' · 三张以上明牌维护':open===2?' · 两张明牌停产':' · 据点产出'),amount});operationalNet+=amount;
+  let amount=blocked?0:open>=3?-base:open===2?0:base;
+  let label=f.label+(blocked?' · 被封锁':open>=3?' · 三张以上明牌维护':open===2?' · 两张明牌停产':' · 据点产出');
+  const cut=!blocked&&!connected.has(f.id);
+  if(cut&&amount>0){amount=0;label+=' · 补给线切断';log(s,f.label+'与首都的补给线被切断，产出未能送达。')}
+  else if(cut&&amount<0){
+   const candidates=f.garrison.filter(c=>c.open);
+   if(candidates.length){const lost=candidates[Math.floor(random(s)*candidates.length)];
+    f.garrison=f.garrison.filter(c=>c.id!==lost.id);p.reserve.push(clean(lost));
+    label+=' · 补给线切断，折损 1 张明牌';log(s,f.label+'补给线被切断，'+face(lost)+' 因断供损失。')}
+  }
+  report.entries.push({label,amount});operationalNet+=amount;
  }
  const raw=opening+operationalNet,persisted=Math.max(0,Math.min(30,raw));p.supply=persisted;report.net=persisted-opening;
  if(raw>30)report.entries.push({label:'仓储上限溢出',amount:30-raw});
