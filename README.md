@@ -3,9 +3,9 @@
 <p align="center"><img src="assets/icons/shadowline-192.png" width="128" height="128" alt="暗线战争游戏图标"></p>
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.18.2-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.18.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.18.2**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.18.3**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -91,6 +91,10 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.18.3 海船改为港口选中时的静态水路标记
+
+海船不再常驻航行：只有当选中港口据点时，才在该港口及其"只能经水路到达"的其他港口上显示静态船标记，用于清晰指示水路连接；focus 移开后标记消失。移除了 rAF 驱动的航行动画与相关 CSS。
 
 ## 1.18.2 目标栏"结束行动"按钮不再被裁剪 (fixes #52)
 
