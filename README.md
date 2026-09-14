@@ -2,8 +2,8 @@
 
 <p align="center"><img src="assets/icons/shadowline-192.png" width="128" height="128" alt="暗线战争游戏图标"></p>
 
-[![Deploy Pages (release)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml/badge.svg?branch=release)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
-[![Deploy Pages (preview)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
+[![deploy release](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=release&label=deploy%20release)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
+[![deploy preview](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20preview)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
 [![Preview version](https://img.shields.io/badge/preview-v1.19.3-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
