@@ -149,8 +149,13 @@ export function upgradeState(s){
  const ringFactions=mapFactions('ring');
  const renamedFactions={'苍海舰队':ringFactions[0],'赤潮军团':ringFactions[1]};
  for(const p of s.players)if(renamedFactions[p.faction])p.faction=renamedFactions[p.faction];
- if(Array.isArray(s.opt.factions))s.opt.factions=s.opt.factions.map(name=>renamedFactions[name]||name);
  const mapFac=mapFactions(map.id);
+ // Old saves store localized faction names; new code uses side indices (0/1).
+ if(Array.isArray(s.opt.factions))s.opt.factions=s.opt.factions.map(name=>{
+   const renamed=renamedFactions[name]||name;
+   const idx=mapFac.indexOf(renamed);
+   return idx>=0?idx:0;
+ });
  for(let p=0;p<2;p++)if(!Number.isInteger(s.players[p].side))s.players[p].side=Math.max(0,mapFac.indexOf(s.players[p].faction));
  if(!s.opt.deckCount)s.opt.deckCount='auto';
  if(!s.opt.deployment)s.opt.deployment='standard';

@@ -395,11 +395,8 @@ function launchGame(){
 function mountVisual(){
  const mount=document.querySelector('#visual-mount');
  if(!mount)return;
- const wasHero=document.querySelector('.command-menu')!==null;
- if(wasHero&&mount.dataset.heroLoaded)return;
- const hero=getLang()==='zh'?'./assets/hero-cn.svg':'./assets/hero-en.svg';
- mount.innerHTML='<img src="'+hero+'" alt="" aria-hidden="true">';
- if(wasHero)mount.dataset.heroLoaded='1';
+ // Hero SVG assets were removed; clear the mount to avoid 404s.
+ mount.innerHTML='';
 }
 function clampMapViewport(){
  const stage=document.querySelector('.map-stage');
