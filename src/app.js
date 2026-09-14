@@ -193,6 +193,7 @@ function sidePanel(){
  strategyDock()+'<div class="log-heading"><h3>'+t('game.side.log')+'</h3><span>LIVE</span></div>'+battleLogList(6)+'</aside>';
 }
 function game(){
+ if(s.phase==='draft')return header()+draft();
  return header()+'<div class="armies">'+playerPanel(0)+'<span class="army-vs">VS</span>'+playerPanel(1)+'</div>'+
  '<div class="game-layout"><div class="play-column">'+(s.phase==='campaign'?mapView():battleView())+handTray()+'</div>'+sidePanel()+'</div>';
 }
