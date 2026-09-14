@@ -5,9 +5,9 @@
 [![deploy release](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=release&label=deploy%20release)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![deploy preview](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20preview)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.19.3-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.20.4-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.1**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/preview/)
+[**▶ 正式版在线游玩 · v1.19.1**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.20.4**](https://lordstone.github.io/shadowline-war/preview/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -100,6 +100,28 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.20.4 AI 模式玩家二改名
+
+AI 模式下玩家二（AI）的名字从"Player 2"改为"AI Commander"（中文"AI 指挥官"），
+不再与双人模式的玩家二混淆。
+
+## 1.20.3 修复 AI 卡死（hotfix）
+
+修复 v1.20.0 i18n 重构误删 `perform()` 导致的严重 bug：`act()` 返回新 state 而不原地修改，缺少 `perform()` 做 `s=res.state` 状态提交后，玩家和 AI 的所有行动都被丢弃，游戏卡在"AI 正在选择策略…"。恢复 `perform()`（含状态提交、事件、保存、render），AI draft/campaign 改为 `perform(aiAction(...))`，draft 阶段选策略改为 `perform({type:'draft',id})`。浏览器完整对局 e2e 验证通过。
+
+## 1.20.2 修复 iOS 显示问题（hotfix）
+
+- 减小 AI 思考提示的 padding（100px → 40px），移动端不再把 draft 界面内容顶出屏幕。
+- 品牌图标 `<img>` 增加 onerror fallback，图片加载失败时自动隐藏，避免 iOS 布局错乱导致顶栏不可见。
+
+## 1.20.1 修复开局崩溃（hotfix）
+
+修复点击「开始作战」后报错无法进入游戏的严重 bug：`game()` 在 draft 阶段错误调用 `battleView()`（此时 `s.battle` 为 null 导致崩溃），现 draft 阶段正确渲染 `draft()` 选牌界面。另修复 `upgradeState()` 旧存档阵营名称未转为 side index 的问题，以及移除不存在的 hero SVG 引用（404）。
+
+## 1.20.0 英文国际化（fixes #62）
+
+新增完整英文版本。Setup 界面右上角顶栏加入"中｜EN"语言切换按钮，可随时切换中英文；所有界面文字、策略牌、地图、事件日志均提供中英双语。语言包（`src/i18n/zh.js` / `en.js`）与业务逻辑解耦，业务代码仅通过 `t()` 接口取词；语言选择持久化到本地存储。
 
 ## 1.19.3 文档：README badge 改为双分支部署状态
 
