@@ -382,7 +382,7 @@ function launchGame(){
  const fi=v=>v===0||v===1?v:0;
  options.factions=[fi(options.factions?.[0]),fi(options.factions?.[1]??1)];
  if(options.factions[0]===options.factions[1])options.factions[1]=1-options.factions[0];
- options.playerNames=[options.playerNames?.[0]||(options.mode==='local'?t('menu.player_local0'):t('menu.player_single')),options.playerNames?.[1]||t('menu.player_local1')];
+ options.playerNames=[options.playerNames?.[0]||(options.mode==='local'?t('menu.player_local0'):t('menu.player_single')),options.playerNames?.[1]||(options.mode==='ai'?t('menu.ai_name'):t('menu.player_local1'))];
  options.playerLogos=[options.playerLogos?.[0]||factionLogo(map,options.factions[0])||LOGOS[0],options.playerLogos?.[1]||factionLogo(map,options.factions[1])||LOGOS[1]];
  gate=options.mode==='local';focus=null;selection.clear();reveals.clear();newCards.clear();
  events=[];eventEnd=null;eventRemaining=null;deadline=null;remaining=null;aiTask=null;

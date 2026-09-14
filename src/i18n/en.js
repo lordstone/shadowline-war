@@ -438,6 +438,7 @@ export default {
   'menu.player_local0': 'Player 1',
   'menu.player_local1': 'Player 2',
   'menu.player_single': 'Commander',
+  'menu.ai_name': 'AI Commander',
 
   // ===== card =====
   'card.hidden': 'Face down',

@@ -443,6 +443,7 @@ export default {
   'menu.player_local0': '玩家一',
   'menu.player_local1': '玩家二',
   'menu.player_single': '指挥官',
+  'menu.ai_name': 'AI 指挥官',
 
   // ===== card =====
   'card.hidden': '暗牌',
