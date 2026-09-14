@@ -1,3 +1,5 @@
+# 注意：此文件在 release 和 main 分支各有一份，内容必须保持一致。
+# 修改时请同步更新两个分支，否则推送到另一分支时部署行为会不一致。
 name: Deploy Pages (release + preview)
 
 on:
