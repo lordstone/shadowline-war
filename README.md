@@ -17,6 +17,13 @@
 
 其他平台：安装 Node.js 20+，在本目录运行 `node server.mjs`，打开 http://127.0.0.1:4173 。关闭终端即停止服务。端口被占用时可设置环境变量 PORT。
 
+### 在线版本
+
+- **正式版**（`release` 分支）：[https://lordstone.github.io/shadowline-war/](https://lordstone.github.io/shadowline-war/) —— 稳定版本，推荐玩家使用。
+- **预览版**（`main` 分支）：[https://lordstone.github.io/shadowline-war/preview/](https://lordstone.github.io/shadowline-war/preview/) —— 最新开发版，用于测试未发布的新功能，可能不稳定。
+
+推送到 `release` 或 `main` 分支会自动触发 GitHub Actions 重新部署对应版本。
+
 ## 游戏内容
 
 - 八张战场：双都对峙、裂谷防线、灰烬环岛、东线纵深、半岛拉锯、法德西线、霍尔木兹海峡和山河决战。
