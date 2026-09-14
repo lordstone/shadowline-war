@@ -61,7 +61,7 @@ function menu(){
  const map=MAPS.find(m=>m.id===options.map);
  return header(true)+'<section class="command-menu"><div class="setup-panel"><div class="eyebrow"><span></span> 作战部署 / OPERATION SETUP</div><h1>明面交火。<br><em>暗线制胜。</em></h1><p class="intro">一组牌库，一场信息战争。<br>建立防线，隐藏底牌，夺取敌方首都。</p>'+
  '<div class="field-label">01 / 选择对战模式</div><div class="segmented">'+btn('<b>◈ 人机对战</b><small>与战术 AI 交锋</small>','mode-ai',options.mode==='ai'?'active':'')+btn('<b>⧉ 双人对战</b><small>同机轮流 · 手牌遮蔽</small>','mode-local',options.mode==='local'?'active':'')+'</div>'+
- '<div class="field-label">02 / 选择战场</div><div class="map-choices">'+MAPS.map(m=>'<button class="map-choice '+(m.id===options.map?'active':'')+'" data-action="map" data-id="'+m.id+'"><span class="map-symbol">'+mapSymbol(m.id)+'</span><span><b>'+m.name+'</b><small>'+m.subtitle+'</small></span><i>'+(m.id===options.map?'●':'○')+'</i></button>').join('')+'</div>'+
+ '<div class="field-label">02 / 选择战场</div><div class="map-choices">'+MAPS.map(m=>'<button class="map-choice '+(m.id===options.map?'active':'')+'" data-action="map" data-id="'+m.id+'"><span class="map-symbol">'+mapSymbol(m.id)+'</span><span><b>'+m.name+'</b><small>'+m.subtitle+'</small></span><i>'+(m.id===options.map?'●':'○')+'</i><em class="map-tag'+(m.historical?' hist':'')+'">'+(m.historical?'史实':'对战')+'</em></button>').join('')+'</div>'+
  '<details class="advanced" '+(advancedOpen?'open':'')+'><summary>高级选项 <span>＋</span></summary><div class="advanced-grid">'+
  optionSelect('rules','胜利规则',[['campaign','战役 · 夺取首都'],['classic','经典 · 暗牌耗尽']],options.rules)+
  optionSelect('difficulty','AI 风格',[['easy','新兵 · 节省兵力'],['normal','老兵 · 组合与伏兵']],options.difficulty)+
@@ -366,7 +366,7 @@ app.addEventListener('click',e=>{
  if(a==='load'){const loaded=saved();if(!loaded){toast('没有有效存档');return}s=loaded;gate=s.opt.mode==='local';clockKey='';focus=null;selection.clear();render();return}
  if(!s){
   if(a.startsWith('mode-'))options.mode=a.slice(5);
-  if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id);options.factions=[map.factions[0],map.factions[1]];options.playerLogos=[factionLogo(map,map.factions[0]),factionLogo(map,map.factions[1])];options.deployment=map.historical?'historical':'standard'}
+  if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id);options.factions=[map.factions[0],map.factions[1]];options.playerLogos=[factionLogo(map,map.factions[0]),factionLogo(map,map.factions[1])];if(!map.historical)options.deployment='standard'}
  render();return
  }
  if(modal&&typeof modal==='object'&&modal.kind==='rotation'){
