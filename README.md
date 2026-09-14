@@ -1,9 +1,9 @@
 # 暗线战争 · Shadowline War
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.16.9-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.16.10-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.16.9**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.16.10**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -89,9 +89,9 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
 
-## 1.16.9 历史地图默认使用史实开局
+## 1.16.10 选图界面显示"史实 / 对战"标签
 
-选择历史地图（半岛拉锯、法德西线、山河决战等）时，开局态势默认选中"史实"而不再是"标准"，和这类地图的定位一致；仍可手动切回标准。切换到非历史地图时保持默认标准不变。
+选择战场时每张地图右上角带类型标签：史实地图（东线纵深、半岛拉锯、法德西线、山河决战）显示金色"史实"，对战地图显示灰色"对战"，一眼区分。
 
 ## 1.16.7 放大后所有据点仍可拖回视野
 
