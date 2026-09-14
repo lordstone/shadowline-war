@@ -193,6 +193,7 @@ function sidePanel(){
  strategyDock()+'<div class="log-heading"><h3>'+t('game.side.log')+'</h3><span>LIVE</span></div>'+battleLogList(6)+'</aside>';
 }
 function game(){
+ if(s.phase==='draft')return header()+draft();
  return header()+'<div class="armies">'+playerPanel(0)+'<span class="army-vs">VS</span>'+playerPanel(1)+'</div>'+
  '<div class="game-layout"><div class="play-column">'+(s.phase==='campaign'?mapView():battleView())+handTray()+'</div>'+sidePanel()+'</div>';
 }
@@ -394,11 +395,8 @@ function launchGame(){
 function mountVisual(){
  const mount=document.querySelector('#visual-mount');
  if(!mount)return;
- const wasHero=document.querySelector('.command-menu')!==null;
- if(wasHero&&mount.dataset.heroLoaded)return;
- const hero=getLang()==='zh'?'./assets/hero-cn.svg':'./assets/hero-en.svg';
- mount.innerHTML='<img src="'+hero+'" alt="" aria-hidden="true">';
- if(wasHero)mount.dataset.heroLoaded='1';
+ // Hero SVG assets were removed; clear the mount to avoid 404s.
+ mount.innerHTML='';
 }
 function clampMapViewport(){
  const stage=document.querySelector('.map-stage');
