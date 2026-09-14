@@ -50,7 +50,7 @@ function strategyCard(id,action='choose-strategy',disabled=false){
 function header(menu=false){
  const identityName=(options.playerNames?.[0]|| (options.mode==='local'?'玩家1':'玩家')).trim();
  const identityLogo=options.playerLogos?.[0]||LOGOS[0];
- return '<header class="topbar"><a class="brand" href="#" data-action="'+(menu?'none':'pause')+'"><span class="brand-mark">⟐</span><span>暗线战争<small>SHADOWLINE / WAR ROOM</small></span></a>'+
+ return '<header class="topbar"><a class="brand" href="#" data-action="'+(menu?'none':'pause')+'"><img class="brand-mark" src="./assets/icons/shadowline-32.png" alt="暗线战争"><span>暗线战争<small>SHADOWLINE / WAR ROOM</small></span></a>'+
  (menu?'<span class="top-meta">TACTICAL CARD WARFARE <span class="live-dot"></span> 离线就绪</span>':'<div class="round-info"><span>'+(s.opt.rules==='campaign'?'战役':'经典交锋')+'</span><b>'+String(s.round).padStart(2,'0')+'</b><span>回合</span>'+(s.opt.rules==='campaign'&&s.phase!=='draft'?'<span class="action-point '+(s.actionSpent?'spent':'available')+'"><i></i><span class="action-label">主要行动</span><strong>'+(s.actionSpent?'0 / 1':'1 / 1')+'</strong></span>':'')+'<span id="clock" class="clock"></span></div>')+
  '<div class="top-actions">'+(menu?'<button class="identity-chip" data-action="edit-identity" aria-label="选择名字和徽记" title="选择名字和徽记"><span class="identity-emblem">'+identityLogo+'</span><b>'+esc(identityName)+'</b></button>':'')+btn(muted?'音效关闭':'音效开启','sound','text-button')+(menu?btn('教程','tutorial','text-button'):'')+btn('规则','rules','text-button')+(menu?'':btn('暂停','pause','icon-button'))+'</div></header>';
 }

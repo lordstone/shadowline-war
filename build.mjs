@@ -29,6 +29,7 @@ for(const [name,file] of Object.entries(modules)){
  let source=await fs.readFile(path.join(root,file),'utf8');
  for(const [from,to] of Object.entries(replacements))source=source.replaceAll("'"+from+"'","'"+to+"'").replaceAll('"'+from+'"','"'+to+'"');
  if(file==='src/app.js')for(const [image,data] of Object.entries(tutorialImages))source=source.replaceAll('./assets/tutorial/'+image,data);
+ if(file==='src/app.js')source=source.replaceAll('./assets/icons/shadowline-32.png','data:image/png;base64,'+(await fs.readFile(path.join(root,'assets/icons','shadowline-32.png'))).toString('base64'));
  imports[name]='data:text/javascript;base64,'+Buffer.from(source).toString('base64');
 }
 let html=await fs.readFile(path.join(root,'index.html'),'utf8');
