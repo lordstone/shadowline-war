@@ -3,9 +3,9 @@
 <p align="center"><img src="assets/icons/shadowline-192.png" width="128" height="128" alt="暗线战争游戏图标"></p>
 
 [![GitHub Pages deployment](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/lordstone/shadowline-war/actions/workflows/pages/pages-build-deployment)
-[![Current version](https://img.shields.io/badge/version-v1.18.4-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Current version](https://img.shields.io/badge/version-v1.19.0-d8bb82)](https://lordstone.github.io/shadowline-war/)
 
-[**▶ GitHub Pages 在线游玩 · 当前版本 v1.18.4**](https://lordstone.github.io/shadowline-war/)
+[**▶ GitHub Pages 在线游玩 · 当前版本 v1.19.0**](https://lordstone.github.io/shadowline-war/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -91,6 +91,10 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.19.0 医疗分队改为自选最多 2 张公开牌
+
+医疗分队效果从"自动回收点数最高的 1 张"改为"从自己的公开牌堆自选最多 2 张牌回到暗牌手牌"。使用时弹出选牌窗口，玩家从公开牌堆中挑选（最多选 2 张，不足 2 张时有多少选多少）。AI 未指定时默认拿点数最高的两张。费用保持 3 补给不变。
 
 ## 1.18.4 山河决战新增上海港—天津港海路
 
