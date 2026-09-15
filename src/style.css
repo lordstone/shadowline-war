@@ -48,6 +48,7 @@
 /* Public strategy market */
 .strategy-market{margin-top:14px;padding:18px;border:1px solid #354b55;background:#0d1a22}.market-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:13px}.market-heading h3{margin:5px 0 0;font-size:16px}.market-heading>small{color:#8fa7ae;font-size:10px}.market-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.market-card{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:82px;padding:11px;border:1px solid #344b55;background:linear-gradient(135deg,#172832,#101d25)}.market-icon{font-size:25px;color:var(--gold);text-align:center}.market-card b{display:block;font-size:13px}.market-card small{display:block;margin-top:4px;color:#91a8af;font-size:9px;line-height:1.45}.market-buy{padding:9px 10px;border:1px solid var(--gold);color:var(--gold);background:#28291f;white-space:nowrap}.market-buy:disabled{border-color:#40515a;color:#65777c;background:#152128}.event-strategy-card{display:grid;grid-template-columns:70px minmax(0,1fr) auto;align-items:center;gap:18px;margin:24px 0;padding:20px;border:1px solid #516d76;background:#0c1922}.event-strategy-card>span{font-size:48px;color:var(--gold);text-align:center}.event-strategy-card b{display:block;font-size:20px}.event-strategy-card small{display:block;margin-top:7px;color:#a9bcc1;line-height:1.6}.event-strategy-card strong{color:var(--gold);white-space:nowrap}
 @media(max-width:800px){.market-list{grid-template-columns:1fr}.market-card{min-height:70px}.market-heading{align-items:flex-start;flex-direction:column;gap:5px}}
+.modal .market-list{grid-template-columns:1fr}.modal .market-card{grid-template-columns:44px minmax(0,1fr) auto}.modal .market-card>div{min-width:0}.modal .market-card small{word-break:normal;overflow-wrap:anywhere}
 @media(max-width:520px){.strategy-market{padding:12px}.event-strategy-card{grid-template-columns:45px minmax(0,1fr)}.event-strategy-card>span{font-size:34px}.event-strategy-card strong{grid-column:2}}
 
 /* Single-screen game HUD, fanned hand, collapsible shop and icon tactics. */
@@ -173,6 +174,11 @@ html:has(.game-layout){height:100dvh;overflow:hidden}
  .game-shell:has(.game-layout) .dense-map .node-icon{font-size:10px}
  .game-shell:has(.game-layout) .dense-map .map-garrison{margin:1px 0 0}
  .game-shell:has(.game-layout) .dense-map .map-mini-card{width:12px;height:16px;font-size:5px}
+}
+@media(min-width:1201px){
+ .game-shell:has(.game-layout) .play-column{display:grid;grid-template-rows:minmax(0,1fr) 139px;height:100%;min-height:0;overflow:hidden}
+ .game-shell:has(.game-layout) .war-map{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100%;min-height:0;overflow:hidden}
+ .game-shell:has(.game-layout) .hand-tray{height:139px;min-height:139px;margin:0;overflow:hidden}
 }
 @media(max-width:520px) and (max-height:620px){
  .game-shell:has(.game-layout){grid-template-rows:44px 54px minmax(0,1fr)}
