@@ -316,7 +316,13 @@ function updateCardSelectionUI(cid){
  if(!el){render();return}
  const sel=selection.has(cid), stance=sel?selection.get(cid):null;
  el.classList.toggle('selected',sel);
+ el.classList.toggle('concealed',stance===false);
  el.setAttribute('aria-pressed',sel);
+ const c=s?.players[viewer()]?.hand.find(card=>card.id===cid);
+ if(c){
+  const label=face(c)+(SUITS[c.suit]||' ★');
+  el.setAttribute('aria-label',label+' · '+(stance===true?t('card.stance_open_selected'):stance===false?t('card.stance_concealed_selected'):t('card.stance_click')));
+ }
  let st=el.querySelector('.stance');
  if(stance!==null){
   const txt=stance?t('card.stance_open'):t('card.stance_concealed');

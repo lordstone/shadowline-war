@@ -255,3 +255,9 @@ html:has(.game-layout){height:100dvh;overflow:hidden}
 .lang-switch button.active{color:var(--gold);font-weight:700}
 .lang-switch span{color:#3d525b;font-size:10px}
 #scene{z-index:0;pointer-events:none}#app{position:relative;z-index:1}
+
+/* A face-down choice is a gameplay state, not a joker theme. Keep this rule
+   after the silver/gold joker skins so every selected card visibly darkens. */
+.playing-card.concealed,.playing-card.joker-silver.concealed,.playing-card.joker-gold.concealed{background:linear-gradient(135deg,#526766,#203a42 62%,#10262e);color:#d7ebe7;border-color:#79bdc1;box-shadow:inset 0 0 0 1px #b6efea24,inset 0 -24px 38px #06141a88,0 3px 9px #0007}
+.playing-card.concealed .card-suit{color:inherit;text-shadow:none}
+.playing-card.selected.concealed{box-shadow:inset 0 0 0 1px #b6efea38,inset 0 -24px 38px #06141aaa,0 0 18px #72d2d250}
