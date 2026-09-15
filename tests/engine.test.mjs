@@ -406,6 +406,7 @@ test('defender tie gives attacker with hidden cards a response instead of victor
  s=next(s,{type:'deploy',cards:ids(s.players[0].hand)});
  s=next(s,{type:'deploy',cards:s.players[1].hand.map((c,i)=>({id:c.id,open:i<2}))});
  s=next(s,{type:'reveal',ids:[s.battle.lines[0][1].id]});
+ assert.equal(compare(opened(s,0),opened(s,1)),0);assert.equal(leading(s),s.battle.defender);
  assert.equal(s.active,1);assert.equal(s.phase,'counter');assert.equal(s.players[0].wins,0);
  s=next(s,{type:'reveal',ids:[s.battle.lines[1][2].id]});assert.equal(s.players[1].wins,1);
 });

@@ -496,6 +496,8 @@ export default {
   'game.phase.attack': '进攻布阵',
   'game.phase.tactics': '战术准备',
   'game.phase.counter': '反击阶段',
+  'game.phase.counter_attacker': '进攻方反击',
+  'game.phase.counter_defender': '防守方反击',
   'game.phase.over': '对局结束',
 
   // ===== draft =====
@@ -570,6 +572,7 @@ export default {
   'game.battle.field_default': '遭遇战',
   'game.battle.own_lead': '我方领先',
   'game.battle.enemy_lead': '敌方领先',
+  'game.battle.tie_defender_lead': '平手 · 防守方占优',
   'game.battle.lead_note': '按明牌比较：{detail}',
   'game.battle.hint_tactics': '战术准备：查看双方态势，点击继续进入反击。',
   'game.battle.hint_defend': '选择最多 {n} 张牌防守（至少 1 张明牌）。',

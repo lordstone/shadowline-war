@@ -119,6 +119,26 @@ export async function counterplayCheck(browser,url='http://127.0.0.1:4173/'){
  return 'AI counterlead preserves human hidden-card button; human reveals and wins the same skirmish';
 }
 
+export async function defenderTieStatusCheck(browser,url='http://127.0.0.1:4173/'){
+ const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ let s=createGame({rules:'classic',strategies:false,mode:'local',eventSeconds:3,seed:83});
+ const deck=makeDeck(),take=spec=>spec.map(([rank,suit])=>deck.find(c=>c.rank===rank&&c.suit===suit));
+ s.players[0].hand=take([[1,0],[8,1]]);s.players[1].hand=take([[1,2],[8,3],[13,2]]);
+ const used=new Set(s.players.flatMap(p=>p.hand.map(c=>c.id)));s.deck=deck.filter(c=>!used.has(c.id));validate(s);
+ s=act(s,0,{type:'deploy',cards:s.players[0].hand.map((c,i)=>({id:c.id,open:i===0}))}).state;
+ s=act(s,1,{type:'deploy',cards:s.players[1].hand.map((c,i)=>({id:c.id,open:i<2}))}).state;
+ s=act(s,0,{type:'reveal',ids:[s.battle.lines[0].find(c=>c.rank===8).id]}).state;
+ assert.equal(s.active,s.battle.attacker);
+ await page.goto(url);await page.evaluate(state=>localStorage.setItem('shadowline-war-v1',JSON.stringify(state)),s);await page.reload();await page.locator('[data-action="load"]').click();await page.locator('[data-action="ready"]').click();
+ assert.match(await page.locator('.versus').innerText(),/平手 · 防守方占优/);
+ assert.match(await page.locator('.battle-badge').innerText(),/进攻方反击/);
+ assert.match(await page.locator('.versus').innerText(),/双方牌型完全相同/);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ assert.deepEqual(errors,[]);await page.close();
+ return 'an exact tie names the defender as leader and the attacker as the countering side';
+}
+
 export async function strategyMarketCheck(browser,url='http://127.0.0.1:4173/'){
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const loadState=async state=>{await page.goto(url);await page.evaluate(s=>localStorage.setItem('shadowline-war-v1',JSON.stringify(s)),state);await page.reload();await page.locator('[data-action="load"]').click()};

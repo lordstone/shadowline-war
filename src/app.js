@@ -100,7 +100,7 @@ function statusText(){
  if(s.phase==='defend')return t('game.phase.defend');
  if(s.phase==='attack')return t('game.phase.attack');
  if(s.phase==='tactics')return t('game.phase.tactics');
- if(s.phase==='counter')return t('game.phase.counter');
+ if(s.phase==='counter'&&s.battle)return t(s.active===s.battle.attacker?'game.phase.counter_attacker':'game.phase.counter_defender');
  return t('game.phase.over');
 }
 function draft(){
@@ -194,8 +194,9 @@ function deploymentValid(p=viewer()){
 function battleView(){
  const b=s.battle,p=viewer(),active=s.active===p&&!isAI();
  const comparing=['counter','tactics'].includes(s.phase),lead=comparing?leading(s):null;
+ const tied=comparing&&compare(opened(s,b.attacker),opened(s,b.defender))===0;
  const leadDetail=comparing?comparisonDetail(opened(s,p),opened(s,1-p),lead===p?0:1):'';
- const leadText=comparing?'<strong>'+(lead===p?t('game.battle.own_lead'):t('game.battle.enemy_lead'))+'</strong><small>'+t('game.battle.lead_note',{detail:leadDetail})+'</small>':'<strong>VS</strong>';
+ const leadText=comparing?'<strong>'+(tied?t('game.battle.tie_defender_lead'):lead===p?t('game.battle.own_lead'):t('game.battle.enemy_lead'))+'</strong><small>'+t('game.battle.lead_note',{detail:leadDetail})+'</small>':'<strong>VS</strong>';
  const mountain=b.field&&s.fields.find(f=>f.id===b.field)?.type==='mountain',sea=b.seaLanding;
  const valid=deploymentValid(p);
  const revealPreview=s.phase==='counter'&&reveals.size?handName(b.lines[p].filter(c=>c.open||reveals.has(c.id))):'';

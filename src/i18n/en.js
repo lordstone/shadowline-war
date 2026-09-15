@@ -491,6 +491,8 @@ export default {
   'game.phase.attack': 'Attack deployment',
   'game.phase.tactics': 'Tactics',
   'game.phase.counter': 'Counter',
+  'game.phase.counter_attacker': 'Attacker counterplay',
+  'game.phase.counter_defender': 'Defender counterplay',
   'game.phase.over': 'Game over',
 
   // ===== draft =====
@@ -565,6 +567,7 @@ export default {
   'game.battle.field_default': 'Encounter',
   'game.battle.own_lead': 'You lead',
   'game.battle.enemy_lead': 'Enemy leads',
+  'game.battle.tie_defender_lead': 'Tie · defender holds',
   'game.battle.lead_note': 'Comparing face-up cards: {detail}',
   'game.battle.hint_tactics': 'Tactics: review the situation, then continue to the counter phase.',
   'game.battle.hint_defend': 'Choose up to {n} cards to defend (at least 1 face-up).',
