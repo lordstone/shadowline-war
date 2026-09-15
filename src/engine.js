@@ -153,6 +153,7 @@ export function upgradeState(s){
  const mapFac=mapFactions(map.id);
  // Old saves store localized faction names; new code uses side indices (0/1).
  if(Array.isArray(s.opt.factions))s.opt.factions=s.opt.factions.map(name=>{
+   if(Number.isInteger(name)&&name>=0&&name<mapFac.length)return name;
    const renamed=renamedFactions[name]||name;
    const idx=mapFac.indexOf(renamed);
    return idx>=0?idx:0;
