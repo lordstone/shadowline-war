@@ -20,6 +20,11 @@ const sideOf=p=>s?.players[p]?.side??p;
 const themedFields=fields=>fields.map(f=>({...f,owner:f.owner===null?null:sideOf(f.owner)}));
 const fieldIcon=f=>f.capital?'♜':f.fortified?'▰':f.type==='oil'?'▥':f.type==='port'?'⚓':f.type==='mountain'?'▲':f.type==='forest'?'♣':f.type==='swamp'?'≈':'◆';
 const geoBackdrop=map=>GEO_BACKDROPS[map.id]?'<svg class="geo-backdrop" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+GEO_BACKDROPS[map.id]+'</svg>':'';
+function menuMapPreview(map){
+ const routes=map.fields.flatMap(a=>a.links.filter(id=>a.id.localeCompare(id)<0).map(id=>{const b=map.fields.find(f=>f.id===id);return b?'<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>':''})).join('');
+ const nodes=map.fields.map(f=>'<span class="menu-preview-node owner-'+(f.owner===null?'null':f.owner)+(f.capital?' capital':'')+'" style="left:'+f.x+'%;top:'+f.y+'%"><i>'+fieldIcon(f)+'</i><b>'+esc(fieldName(map.id,f))+'</b></span>').join('');
+ return '<div class="menu-preview-map" aria-hidden="true">'+geoBackdrop(map)+'<svg class="menu-preview-routes" viewBox="0 0 100 100" preserveAspectRatio="none">'+routes+'</svg><div class="menu-preview-nodes">'+nodes+'</div></div>';
+}
 const orderedCards=(cards,allKnown=false)=>allKnown?orderForDisplay(cards):[...orderForDisplay(cards.filter(c=>c.open)),...cards.filter(c=>!c.open)];
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const btn=(label,action,cls='',disabled=false,extra='')=>'<button class="'+cls+'" data-action="'+action+'" '+(disabled?'disabled ':'')+extra+'>'+label+'</button>';
@@ -83,7 +88,7 @@ function menu(){
  '<p class="option-note">'+t('menu.opt.deck_note',{deck:resolvedDeckCount(options,map.fields)===2?t('menu.opt.deck_two'):t('menu.opt.deck_one')})+'</p></div></details>'+
  btn(t('menu.start')+' <span>→</span>','start','primary launch')+(saved()?btn(t('menu.resume'),'load','resume-button'):'')+
  '<div class="menu-foot">'+t('menu.foot',{count:resolvedDeckCount(options,map.fields)===2?'106':'54'})+'</div></div>'+
- '<div class="menu-visual"><div class="map-heading"><span>'+t('menu.preview_label')+' / '+map.id.toUpperCase()+'</span><b>'+mapText(map.id).name+'</b></div><div class="scene-mount" id="visual-mount"></div>'+geoBackdrop(map)+'<div class="visual-corner tl"></div><div class="visual-corner br"></div><div class="map-caption"><span class="coordinates">SECTOR '+map.fields.length+' / '+(options.rules==='classic'?'SKIRMISH':'CAPITAL STRIKE')+'</span><p>'+mapText(map.id).desc+'</p></div><div class="side-word">SHADOWLINE</div></div></section>';
+ '<div class="menu-visual"><div class="map-heading"><span>'+t('menu.preview_label')+' / '+map.id.toUpperCase()+'</span><b>'+mapText(map.id).name+'</b></div>'+menuMapPreview(map)+'<div class="visual-corner tl"></div><div class="visual-corner br"></div><div class="map-caption"><span class="coordinates">SECTOR '+map.fields.length+' / '+(options.rules==='classic'?'SKIRMISH':'CAPITAL STRIKE')+'</span><p>'+mapText(map.id).desc+'</p></div><div class="side-word">SHADOWLINE</div></div></section>';
 }
 function playerPanel(p){
  const pl=s.players[p],report=s.supplyLedger?.[p],tip=report?t('game.panel.supply_tip',{round:report.round,entries:report.entries.map(e=>e.label+' '+(e.amount>0?'+':'')+e.amount).join(t('game.panel.supply_sep'))}):t('game.panel.supply_none');
