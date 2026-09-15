@@ -130,9 +130,8 @@ function layoutDenseMap(){
  const w=stage.clientWidth,h=stage.clientHeight;
  if(!w||!h)return;
  const nodes=[...stage.querySelectorAll('.map-node')].map(el=>({el,id:el.dataset.id,x:Number(el.dataset.mapX)/100*w,y:Number(el.dataset.mapY)/100*h,width:el.offsetWidth,height:el.offsetHeight}));
- const compact=innerWidth<=520,gap=compact?4:0;
- if(compact){
-  const sr=stage.getBoundingClientRect(),obstacles=[stage.closest('.war-map')?.querySelector('.map-title'),stage.querySelector('.map-controls'),stage.querySelector('.map-compass')].filter(Boolean).map(el=>{const r=el.getBoundingClientRect();return {l:r.left-sr.left,r:r.right-sr.left,t:r.top-sr.top,b:r.bottom-sr.top}});
+ const gap=innerWidth<=520?4:6;
+ const sr=stage.getBoundingClientRect(),obstacles=[stage.closest('.war-map')?.querySelector('.map-title'),stage.querySelector('.map-controls'),stage.querySelector('.map-compass')].filter(Boolean).map(el=>{const r=el.getBoundingClientRect();return {l:r.left-sr.left,r:r.right-sr.left,t:r.top-sr.top,b:r.bottom-sr.top}});
   for(let pass=0;pass<160;pass++){
    let moved=false;
    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
@@ -147,7 +146,6 @@ function layoutDenseMap(){
    for(const n of nodes){n.x=Math.min(w-n.width/2-gap,Math.max(n.width/2+gap,n.x));n.y=Math.min(h-n.height+5-gap,Math.max(5+gap,n.y))}
    if(!moved)break;
   }
- }
  const points=new Map(nodes.map(n=>{const p={x:n.x/w*100,y:n.y/h*100};n.el.style.left=p.x+'%';n.el.style.top=p.y+'%';return [n.id,p]}));
  const all=[...points.values()];
  stage.querySelectorAll('.map-route').forEach(route=>{const a=points.get(route.dataset.a),b=points.get(route.dataset.b);if(!a||!b)return;route.querySelectorAll('line').forEach(line=>{line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y)});route.querySelectorAll('path').forEach(path=>path.setAttribute('d',seaLaneD(a,b,all.filter(p=>p!==a&&p!==b))))});
