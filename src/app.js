@@ -124,15 +124,14 @@ function seaLaneD(a,b,others){
  const f=n=>n.toFixed(2);
  return 'M '+f(a.x)+' '+f(a.y)+' Q '+f(cx)+' '+f(cy)+' '+f(b.x)+' '+f(b.y);
 }
-function layoutDenseMap(){
- const stage=document.querySelector('.map-stage.dense-map');
+function layoutMapNodes(){
+ const stage=document.querySelector('.map-stage');
  if(!stage||!s)return;
  const w=stage.clientWidth,h=stage.clientHeight;
  if(!w||!h)return;
  const nodes=[...stage.querySelectorAll('.map-node')].map(el=>({el,id:el.dataset.id,x:Number(el.dataset.mapX)/100*w,y:Number(el.dataset.mapY)/100*h,width:el.offsetWidth,height:el.offsetHeight}));
- const compact=innerWidth<=520,gap=compact?4:0;
- if(compact){
-  const sr=stage.getBoundingClientRect(),obstacles=[stage.closest('.war-map')?.querySelector('.map-title'),stage.querySelector('.map-controls'),stage.querySelector('.map-compass')].filter(Boolean).map(el=>{const r=el.getBoundingClientRect();return {l:r.left-sr.left,r:r.right-sr.left,t:r.top-sr.top,b:r.bottom-sr.top}});
+ const gap=innerWidth<=520?4:6;
+ const sr=stage.getBoundingClientRect(),obstacles=[stage.closest('.war-map')?.querySelector('.map-title'),stage.querySelector('.map-controls'),stage.querySelector('.map-compass')].filter(Boolean).map(el=>{const r=el.getBoundingClientRect();return {l:r.left-sr.left,r:r.right-sr.left,t:r.top-sr.top,b:r.bottom-sr.top}});
   for(let pass=0;pass<160;pass++){
    let moved=false;
    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
@@ -147,7 +146,6 @@ function layoutDenseMap(){
    for(const n of nodes){n.x=Math.min(w-n.width/2-gap,Math.max(n.width/2+gap,n.x));n.y=Math.min(h-n.height+5-gap,Math.max(5+gap,n.y))}
    if(!moved)break;
   }
- }
  const points=new Map(nodes.map(n=>{const p={x:n.x/w*100,y:n.y/h*100};n.el.style.left=p.x+'%';n.el.style.top=p.y+'%';return [n.id,p]}));
  const all=[...points.values()];
  stage.querySelectorAll('.map-route').forEach(route=>{const a=points.get(route.dataset.a),b=points.get(route.dataset.b);if(!a||!b)return;route.querySelectorAll('line').forEach(line=>{line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y)});route.querySelectorAll('path').forEach(path=>path.setAttribute('d',seaLaneD(a,b,all.filter(p=>p!==a&&p!==b))))});
@@ -383,7 +381,7 @@ function render(){
  const content=events.length?header()+eventView(events[0])+(modal?modalView():''):gate&&!modal?header()+overlay():(s.phase==='over'?result():game())+overlay();
  app.innerHTML='<div class="game-shell" data-phase="'+s.phase+'">'+content+'</div>';
  mountVisual();
- requestAnimationFrame(()=>{layoutDenseMap();if(!s||innerWidth<=800)return;document.querySelectorAll('.strategy-token .strategy-tooltip').forEach(el=>{const r=el.getBoundingClientRect();el.style.transform=r.left<160?'translateX(calc(-100% - 18px))':''})});
+ requestAnimationFrame(()=>{layoutMapNodes();if(!s||innerWidth<=800)return;document.querySelectorAll('.strategy-token .strategy-tooltip').forEach(el=>{const r=el.getBoundingClientRect();el.style.transform=r.left<160?'translateX(calc(-100% - 18px))':''})});
  if(s.phase==='over'){clockKey='';deadline=null;remaining=null;return}
  const ready=!modal&&!gate&&!events.length,actionKey=s.active+':'+s.phase+':'+s.turn+':'+s.skirmish;
  if(ready&&s.phase!=='draft'&&clockKey!==actionKey){clockKey=actionKey;deadline=s.opt.timer?Date.now()+s.opt.timer*1000:null;remaining=null}
@@ -674,7 +672,7 @@ document.addEventListener('keydown',e=>{
  }
 });
 onLangChange(()=>{render()});
-window.addEventListener('resize',()=>requestAnimationFrame(layoutDenseMap));
+window.addEventListener('resize',()=>requestAnimationFrame(layoutMapNodes));
 window.addEventListener('error',()=>{toast(t('toast.error_reload'))});
 setInterval(()=>{
  if(events.length&&!modal&&eventEnd!==null&&Date.now()>=eventEnd)advanceEvent();
