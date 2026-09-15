@@ -11,7 +11,7 @@ let handSort='rank';
 let advancedOpen=false;
 let targeting=null;
 let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
-let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map(),fittedMap=null;
+let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map(),fittedMap=null,lastMapDragAt=0;
 const STORE='shadowline-war-v1';
 const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆',hormuz:'≋',china_civil_war:'山'}[id]||'◇');
 const LOGOS=['⟐','✣','♜','⚓','▲','✦','◈','☄'];
@@ -469,12 +469,14 @@ function fitMapViewport(){
  resetMapCamera();
 }
 document.addEventListener('pointerdown',e=>{
- if(e.target.closest('#visual-mount')||!e.target.closest('.map-stage'))return;
- if(e.target.closest('[data-map-control]')||e.target.closest('.map-node')||e.target.closest('.target-bar'))return;
+ if(!e.target.closest('.map-stage'))return;
+ if(e.target.closest('[data-map-control]')||e.target.closest('.target-bar'))return;
+ const stage=e.target.closest('.map-stage');
  const id=e.pointerId;
+ e.target.setPointerCapture?.(id);
  mapPointers.set(id,{x:e.clientX,y:e.clientY});
- if(mapPointers.size===1){mapDrag={x:e.clientX,y:e.clientY,vx:mapViewport.x,vy:mapViewport.y,moved:false}}
- else if(mapPointers.size===2){const [a,b]=[...mapPointers.values()];mapDrag={pinch:true,dist:Math.hypot(a.x-b.x,a.y-b.y),scale:mapViewport.scale}}
+ if(mapPointers.size===1){mapDrag={x:e.clientX,y:e.clientY,vx:mapViewport.x,vy:mapViewport.y,moved:false,stage}}
+ else if(mapPointers.size===2){const [a,b]=[...mapPointers.values()];mapDrag={pinch:true,dist:Math.hypot(a.x-b.x,a.y-b.y),scale:mapViewport.scale,moved:true,stage};stage.classList.add('dragging')}
 });
 document.addEventListener('pointermove',e=>{
  if(!mapPointers.has(e.pointerId))return;
@@ -485,16 +487,22 @@ document.addEventListener('pointermove',e=>{
   mapViewport.scale=Math.min(3.5,Math.max(0.6,mapDrag.scale*dist/mapDrag.dist));
  }else if(!mapDrag.pinch){
   const dx=e.clientX-mapDrag.x,dy=e.clientY-mapDrag.y;
-  if(Math.abs(dx)+Math.abs(dy)>6)mapDrag.moved=true;
+  if(Math.abs(dx)+Math.abs(dy)>6){mapDrag.moved=true;mapDrag.stage?.classList.add('dragging')}
   mapViewport.x=mapDrag.vx+dx;mapViewport.y=mapDrag.vy+dy;
  }
  clampMapViewport();updateMapCamera();
 });
-const endPointer=e=>{mapPointers.delete(e.pointerId);if(mapPointers.size<2&&mapDrag?.pinch)mapDrag=null;if(mapPointers.size===0)mapDrag=null};
+const endPointer=e=>{
+ if(mapDrag?.moved){lastMapDragAt=performance.now();mapDrag.stage?.classList.remove('dragging')}
+ mapPointers.delete(e.pointerId);
+ if(mapPointers.size<2&&mapDrag?.pinch)mapDrag=null;
+ if(mapPointers.size===0)mapDrag=null;
+};
 document.addEventListener('pointerup',endPointer);
 document.addEventListener('pointercancel',endPointer);
 document.addEventListener('wheel',e=>{const stage=e.target.closest('.map-stage');if(!stage)return;e.preventDefault();mapViewport.scale=Math.min(3.5,Math.max(0.6,mapViewport.scale*(e.deltaY<0?1.12:0.89)));clampMapViewport();updateMapCamera()},{passive:false});
 document.addEventListener('click',e=>{
+ if(e.target.closest('.map-stage')&&performance.now()-lastMapDragAt<250){e.preventDefault();e.stopPropagation();return}
  const route=e.target.closest('.route-pulse,.route-base');
  if(route){focus=null;render();return}
  const control=e.target.closest('[data-map-control]');
