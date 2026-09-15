@@ -152,14 +152,18 @@ function comparisonDetail(a,b,leader){
  if([4,5,6].includes(av[0]))return t('game.compare.high',{hand:an,w:rankLabel(winner[1]),l:rankLabel(loser[1])});
  return difference===1?t('game.compare.top_open',{w:rankLabel(winner[1]),l:rankLabel(loser[1])}):t('game.compare.nth',{n:difference,x:rankLabel(winner[difference]),y:rankLabel(loser[difference])});
 }
+function deploymentValid(p=viewer()){
+ const b=s.battle,chosen=[...selection].map(([id,open])=>{const c=s.players[p].hand.find(c=>c.id===id);return c?{...c,open}:null}).filter(Boolean);
+ const mountain=b.field&&s.fields.find(f=>f.id===b.field)?.type==='mountain',sea=b.seaLanding;
+ return chosen.length>0&&chosen.length<=battleLineLimit(s,p)&&chosen.some(c=>c.open)&&(s.phase!=='attack'||(compare(chosen.filter(c=>c.open),opened(s,b.defender))>0&&(!mountain||chosen.filter(c=>c.open).length>=2)&&(!sea||power(chosen.filter(c=>c.open))[0]>=power(opened(s,b.defender))[0])&&(!sea||power(chosen)[0]!==6)));
+}
 function battleView(){
  const b=s.battle,p=viewer(),active=s.active===p&&!isAI();
  const comparing=['counter','tactics'].includes(s.phase),lead=comparing?leading(s):null;
  const leadDetail=comparing?comparisonDetail(opened(s,p),opened(s,1-p),lead===p?0:1):'';
  const leadText=comparing?'<strong>'+(lead===p?t('game.battle.own_lead'):t('game.battle.enemy_lead'))+'</strong><small>'+t('game.battle.lead_note',{detail:leadDetail})+'</small>':'<strong>VS</strong>';
- const chosen=[...selection].map(([id,open])=>({...s.players[p].hand.find(c=>c.id===id),open}));
  const mountain=b.field&&s.fields.find(f=>f.id===b.field)?.type==='mountain',sea=b.seaLanding;
- const valid=chosen.length>0&&chosen.length<=battleLineLimit(s,p)&&chosen.some(c=>c.open)&&(s.phase!=='attack'||(compare(chosen.filter(c=>c.open),opened(s,b.defender))>0&&(!mountain||chosen.filter(c=>c.open).length>=2)&&(!sea||power(chosen.filter(c=>c.open))[0]>=power(opened(s,b.defender))[0])&&(!sea||power(chosen)[0]!==6)));
+ const valid=deploymentValid(p);
  const revealPreview=s.phase==='counter'&&reveals.size?handName(b.lines[p].filter(c=>c.open||reveals.has(c.id))):'';
  return '<section class="battle-area"><div class="battle-heading"><div><div class="eyebrow">'+t('game.battle.eyebrow')+' '+String(s.skirmish).padStart(2,'0')+' / SKIRMISH</div><h2>'+(b.field?fieldName(s.opt.map,s.fields.find(f=>f.id===b.field)):t('game.battle.field_default'))+'</h2></div><span class="battle-badge">'+statusText()+'</span></div>'+
  line(1-p)+'<div class="versus"><span></span><b>'+leadText+'</b><span></span></div>'+line(p)+
@@ -171,7 +175,7 @@ function handTray(){
  const p=viewer(),pl=s.players[p],interactive=!isAI()&&s.active===p&&['campaign','defend','attack'].includes(s.phase);
  const cards=[...pl.hand].sort(handSort==='suit'?(a,b)=>a.suit-b.suit||a.rank-b.rank||a.id-b.id:(a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id);
  const sort='<span class="hand-sort-toggle" role="group" aria-label="'+t('game.hand.sort_label')+'"><button class="'+(handSort==='rank'?'active':'')+'" data-action="hand-sort" data-id="rank" aria-pressed="'+(handSort==='rank')+'">'+t('game.hand.sort_rank')+'</button><button class="'+(handSort==='suit'?'active':'')+'" data-action="hand-sort" data-id="suit" aria-pressed="'+(handSort==='suit')+'">'+t('game.hand.sort_suit')+'</button></span>';
- return '<section class="hand-tray"><div class="hand-top"><div><span class="eyebrow">'+t('game.hand.eyebrow')+'</span><b>'+t('game.hand.count',{n:pl.hand.length})+'</b></div><div>'+sort+'<span>'+(['defend','attack'].includes(s.phase)?t('game.hand.selected',{n:selection.size}):s.phase==='campaign'?t('game.hand.choose_garrison'):t('game.hand.safe'))+'</span></div></div><div class="hand-scroll" style="--hand-count:'+cards.length+'">'+cards.map((c,i)=>'<div class="hand-card-shell" style="--rot:'+((i-(cards.length-1)/2)*1.15)+'deg;--lift:'+(-Math.abs(i-(cards.length-1)/2)*1.15)+'px;--z:'+i+'">'+card(c,{interactive,selected:selection.has(c.id),stance:selection.has(c.id)?selection.get(c.id):null})+'</div>').join('')+'</div></section>';
+ return '<section class="hand-tray"><div class="hand-top"><div><span class="eyebrow">'+t('game.hand.eyebrow')+'</span><b>'+t('game.hand.count',{n:pl.hand.length})+'</b></div><div>'+sort+'<span class="hand-selection-status">'+(['defend','attack'].includes(s.phase)?t('game.hand.selected',{n:selection.size}):s.phase==='campaign'?t('game.hand.choose_garrison'):t('game.hand.safe'))+'</span></div></div><div class="hand-scroll" style="--hand-count:'+cards.length+'">'+cards.map((c,i)=>'<div class="hand-card-shell" style="--rot:'+((i-(cards.length-1)/2)*1.15)+'deg;--lift:'+(-Math.abs(i-(cards.length-1)/2)*1.15)+'px;--z:'+i+'">'+card(c,{interactive,selected:selection.has(c.id),stance:selection.has(c.id)?selection.get(c.id):null})+'</div>').join('')+'</div></section>';
 }
 function strategyMarketView(){
  if(s.phase!=='campaign'||!s.opt.strategies)return '';
@@ -224,15 +228,15 @@ function eventView(ev){
  const diagram=field?'<div class="event-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+paths+'</svg>'+map.map(f=>'<div class="event-map-node '+(f.id===ev.field?'hit':'')+' owner-'+(f.owner===null?'null':sideOf(f.owner))+'" style="left:'+f.x+'%;top:'+f.y+'%"><i>'+fieldIcon(f)+'</i><b>'+fieldName(s.opt.map,f)+'</b></div>').join('')+'</div>':'';
  const strategy=ev.strategy?'<div class="event-strategy-card"><span>'+ev.strategy.icon+'</span><div><b>'+strategyText(ev.strategy.id).name+'</b><small>'+strategyText(ev.strategy.id).desc+'</small></div><strong>'+ev.strategy.price+' '+t('game.panel.supply')+'</strong></div>':'';
  const cards=(ev.cards||[]).length?'<div class="event-cards">'+ev.cards.map(c=>card(c,{hidden:!!c.hidden,small:ev.cards.length>6})).join('')+'</div>':'';
- return '<section class="event-screen event-'+ev.kind+'" role="status" aria-live="polite"><div class="event-panel"><div class="event-eyebrow"><span class="'+ev.kind+'">'+t('modal.event.tag_campaign')+'</span><b>'+esc(ev.title)+'</b></div><p class="event-summary">'+esc(ev.detail)+'</p>'+diagram+strategy+cards+'<div class="event-actions"><span>'+t('modal.event.hint')+'</span>'+btn(t('modal.event.continue'),'event-continue','primary')+'</div></div></section>';
+ return '<section class="event-screen event-'+ev.kind+'" role="status" aria-live="polite"><div class="event-panel"><div class="eyebrow">'+t('modal.event.report',{kind:ev.kind.toUpperCase()})+'</div><h1>'+esc(ev.title)+'</h1><p>'+esc(ev.detail)+'</p>'+diagram+strategy+cards+'<div class="event-progress" style="--duration:'+(s.opt.eventSeconds||3)+'s"><span style="animation-play-state:'+(modal?'paused':'running')+'"></span></div><div class="event-footer"><small>'+t('modal.event.footer',{n:events.length})+'</small>'+btn(t('modal.event.continue'),'event-continue','secondary')+'</div></div></section>';
 }
 function supplyLedgerView(){
- const p=modal,report=s.supplyLedger?.[p],entries=report?.entries||[];
- return '<div class="eyebrow">'+t('modal.ledger.eyebrow')+'</div><h2>'+t('modal.ledger.title',{name:s.players[p].name})+'</h2><p class="modal-desc">'+t('modal.ledger.desc',{round:report?.round??s.round})+'</p><div class="supply-list">'+(entries.length?entries.map(e=>'<div class="supply-row '+(e.amount>0?'gain':'loss')+'"><span>'+esc(e.label)+'</span><b>'+(e.amount>0?'+':'')+e.amount+'</b></div>').join(''):'<p class="modal-desc">'+t('modal.ledger.empty')+'</p>')+'</div><p class="modal-desc">'+t('modal.ledger.note')+'</p>'+btn(t('modal.ok'),'close','primary');
+ const p=modal.player,pl=s.players[p],report=s.supplyLedger?.[p],entries=report?.entries||[];
+ return '<div class="eyebrow">'+t('modal.ledger.eyebrow')+'</div><h2>'+t('modal.ledger.title',{name:pl.name,supply:pl.supply})+'</h2><p>'+t(report?'modal.ledger.desc':'modal.ledger.legacy',{round:report?.round??s.round,opening:report?.opening??pl.supply})+'</p><div class="supply-ledger">'+(entries.map(e=>'<div><span>'+esc(e.label)+'</span><b class="'+(e.amount<0?'negative':'positive')+'">'+(e.amount>0?'+':'')+e.amount+'</b></div>').join('')||'<div><span>'+t('modal.ledger.empty')+'</span><b>0</b></div>')+(report?'<div class="ledger-total"><span>'+t('modal.ledger.total')+'</span><b class="'+(report.net<0?'negative':'positive')+'">'+(report.net>0?'+':'')+report.net+'</b></div>':'')+'</div>'+(report?.discardedId!=null?'<p class="ledger-warning">'+t('modal.ledger.warning')+'</p>':'')+btn(t('modal.close'),'close','primary');
 }
 function medicView(strategyId){
- const p=viewer(),openPile=s.players[p].reserve;const chosen=modal.chosen;
- return '<div class="eyebrow">'+t('modal.medic.eyebrow')+'</div><h2>'+strategyText(strategyId).name+'</h2><p class="modal-desc">'+t('modal.medic.desc')+'</p><div class="choose-grid">'+openPile.map(c=>'<div class="choose-card '+(chosen.has(c.id)?'chosen':'')+'" data-action="medic-toggle" data-id="'+c.id+'" role="checkbox" aria-checked="'+chosen.has(c.id)+'" tabindex="0">'+card(c,{stance:c.open})+'<span class="choose-mark">'+(chosen.has(c.id)?'✓':'')+'</span></div>').join('')+'</div><div class="modal-actions">'+btn(t('modal.cancel'),'close','text-button')+btn(t('modal.medic.confirm',{n:chosen.size}),'medic-confirm','primary',chosen.size<1,'data-id="'+strategyId+'"')+'</div>';
+ const p=viewer(),openPile=[...s.players[p].reserve].sort((a,b)=>b.rank-a.rank||a.suit-b.suit||a.id-b.id),chosen=modal.chosen;
+ return '<div class="eyebrow">'+t('modal.medic.eyebrow')+'</div><h2>'+strategyText(strategyId).name+'</h2><p>'+t('modal.medic.desc',{n:chosen.size})+'</p><div class="rotation-cards meds-cards">'+openPile.map(c=>card(c,{small:true,interactive:true,selected:chosen.has(c.id),action:'medic-toggle'})).join('')+'</div><div class="modal-actions">'+btn(t('modal.cancel'),'close','secondary')+btn(t('modal.medic.confirm',{n:chosen.size}),'medic-confirm','primary',chosen.size<1,'data-id="'+strategyId+'"')+'</div>';
 }
 function rotationView(strategyId){
  const p=viewer(),picked=[...modal.picked.values()];
@@ -242,7 +246,8 @@ function rotationView(strategyId){
 function garrisonRotationView(config){
  const f=s.fields.find(x=>x.id===config.field),p=viewer(),out=new Set(config.outIds||[]),stances=config.stances||{},incoming=Object.keys(stances).map(Number),cost=out.size;
  const kept=f.garrison.filter(c=>!out.has(c.id)),added=incoming.map(id=>({...s.players[p].hand.find(c=>c.id===id),open:!!stances[id]})),valid=cost>0&&cost===incoming.length&&cost<=s.players[p].supply&&(f.capital||[...kept,...added].some(c=>c.open));
- return '<div class="eyebrow">'+t('modal.garrison_rotation.eyebrow')+'</div><h2>'+t('modal.garrison_rotation.title',{field:fieldName(s.opt.map,f)})+'</h2><p class="modal-desc">'+t('modal.garrison_rotation.desc')+'</p><div class="rotation-grid"><section><h3>'+t('modal.garrison_rotation.out',{n:out.size})+'</h3><div class="rotation-cards">'+f.garrison.map(c=>card(c,{small:true,interactive:true,selected:out.has(c.id),stance:c.open,action:'rotate-out'})).join('')+'</div></section><section><h3>'+t('modal.garrison_rotation.in',{n:incoming.length})+'</h3><div class="rotation-cards">'+s.players[p].hand.map(c=>card(c,{small:true,interactive:true,selected:incoming.includes(c.id),stance:incoming.includes(c.id)?!!stances[c.id]:null,action:'rotate-in'})).join('')+'</div></section></div><p class="modal-desc">'+t('modal.garrison_rotation.cost',{n:cost})+'</p><div class="modal-actions">'+btn(t('modal.cancel'),'close','secondary')+btn(t('modal.garrison_rotation.confirm'),'rotate-submit','primary',!valid)+'</div>';
+ const warning=cost!==incoming.length?t('modal.garrison_rotation.equal'):!f.capital&&![...kept,...added].some(c=>c.open)?t('modal.garrison_rotation.keep_open'):cost>s.players[p].supply?t('modal.garrison_rotation.insufficient'):'';
+ return '<div class="eyebrow">'+t('modal.garrison_rotation.eyebrow')+'</div><h2>'+t('modal.garrison_rotation.title',{field:fieldName(s.opt.map,f)})+'</h2><p>'+t('modal.garrison_rotation.desc')+'</p><div class="rotation-grid"><section><h3>'+t('modal.garrison_rotation.out',{n:out.size})+'</h3><div class="rotation-cards">'+f.garrison.map(c=>card(c,{small:true,interactive:true,selected:out.has(c.id),stance:c.open,action:'rotate-out'})).join('')+'</div></section><section><h3>'+t('modal.garrison_rotation.in',{n:incoming.length})+'</h3><div class="rotation-cards">'+s.players[p].hand.map(c=>card(c,{small:true,interactive:true,selected:incoming.includes(c.id),stance:incoming.includes(c.id)?!!stances[c.id]:null,action:'rotate-in'})).join('')+'</div></section></div><div class="rotation-summary"><b>'+t('modal.garrison_rotation.cost',{n:cost})+'</b><span>'+(warning||t('modal.garrison_rotation.ready'))+'</span></div><div class="modal-actions">'+btn(t('modal.cancel'),'close','secondary')+btn(t('modal.garrison_rotation.confirm'),'rotate-submit','primary',!valid)+'</div>';
 }
 function handoverView(){
  return '<div class="eyebrow">'+t('modal.handover.eyebrow')+'</div><h2>'+t('modal.handover.title',{n:s.active})+'</h2><p class="modal-desc">'+t('modal.handover.desc',{name:s.players[s.active].name})+'</p><div class="modal-actions">'+btn(t('modal.handover.confirm'),'handover-confirm','primary')+'</div>';
@@ -255,7 +260,16 @@ function marketView(){
  return '<div class="eyebrow">'+t('modal.market.eyebrow')+'</div><h2>'+t('modal.market.title')+'</h2><p class="modal-desc">'+t('modal.market.desc',{supply:s.players[p].supply})+'</p><div class="market-list">'+s.strategyMarket.map((id,index)=>{const c=strategyById(id),st=strategyText(id),reason=canBuyStrategy(s,p,id),label=!reason?t('game.market.buy',{price:c.price}):reason==='need_supply'?t('game.market.need',{price:c.price}):reason==='duplicate_strategy'?t('game.market.owned'):reason==='strategies_full'?t('game.market.full'):reason==='market_bought'?t('game.market.bought_one'):t('game.market.unavailable');return '<article class="market-card"><span class="market-icon">'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div>'+btn(label,'buy-strategy','market-buy',!!reason,'data-id="'+id+'" data-index="'+index+'"')+'</article>'}).join('')+'</div>'+btn(t('modal.close'),'close','primary');
 }
 function logView(){
- return '<div class="eyebrow">'+t('modal.log.eyebrow')+'</div><h2>'+t('modal.log.title')+'</h2><div class="full-log">'+battleLogList()+'</div>'+btn(t('modal.close'),'close','primary');
+ return '<div class="eyebrow">'+t('modal.log.eyebrow')+'</div><h2>'+t('modal.log.title')+'</h2><div class="log-modal-list">'+battleLogList()+'</div>'+btn(t('modal.close'),'close','primary');
+}
+function garrisonRoster(p){
+ const fields=s.fields.filter(f=>f.owner===p);
+ if(!fields.length)return '';
+ return '<h3>'+t('modal.reserve.garrison_title')+'</h3><div class="garrison-roster">'+fields.map(f=>{const stationed=s.battle?.field===f.id?s.battle.lines[p]:f.garrison;return '<div><b>'+fieldName(s.opt.map,f)+'</b><span>'+t('modal.reserve.garrison_count',{n:stationed.length})+'</span><div class="reserve-cards">'+stationed.map(c=>card(c,{small:true,hidden:p!==viewer()&&!c.open})).join('')+(s.battle?.field===f.id?'<p>'+t('modal.reserve.in_battle')+'</p>':!stationed.length?'<p>'+t('modal.reserve.garrison_empty')+'</p>':'')+'</div></div>'}).join('')+'</div>';
+}
+function reserveView(config){
+ const p=s.players[config.player],sort=config.sort||'rank',cards=[...p.reserve].sort(sort==='suit'?(a,b)=>a.suit-b.suit||a.rank-b.rank||a.id-b.id:(a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id);
+ return '<div class="reserve-heading"><div><h2>'+t('modal.reserve.title',{name:p.name})+'</h2><p>'+t('modal.reserve.desc')+'</p></div><span class="hand-sort-toggle" role="group" aria-label="'+t('modal.reserve.sort_label')+'"><button class="'+(sort==='rank'?'active':'')+'" data-action="reserve-sort" data-id="rank" aria-pressed="'+(sort==='rank')+'">'+t('modal.reserve.sort_rank')+'</button><button class="'+(sort==='suit'?'active':'')+'" data-action="reserve-sort" data-id="suit" aria-pressed="'+(sort==='suit')+'">'+t('modal.reserve.sort_suit')+'</button></span></div><div class="reserve-cards">'+(cards.map(c=>card(c,{small:true})).join('')||'<p>'+t('modal.reserve.empty')+'</p>')+'</div>'+garrisonRoster(config.player)+btn(t('modal.close'),'close','primary');
 }
 function quitConfirm(){
  return '<div class="eyebrow">'+t('modal.quit.eyebrow')+'</div><h2>'+t('modal.quit.title')+'</h2><p class="modal-desc">'+t('modal.quit.desc')+'</p><div class="modal-actions">'+btn(t('modal.cancel'),'close','text-button')+btn(t('modal.quit.confirm'),'quit-game','primary')+'</div>';
@@ -265,10 +279,11 @@ function pauseView(){
 }
 function modalView(kind=modal){
  let content='';
- if(typeof kind==='number')content=supplyLedgerView();
+ if(kind?.kind==='ledger')content=supplyLedgerView();
  else if(kind==='event'&&events.length)content=eventView(events[0]);
  else if(kind==='market')content=marketView();
  else if(kind==='log')content=logView();
+ else if(kind&&kind.kind==='reserve')content=reserveView(kind);
  else if(modal&&modal.rotation==='medic')content=medicView(modal.strategyId);
  else if(modal&&modal.rotation==='garrison')content=garrisonRotationView(modal);
  else if(modal&&modal.rotation==='rotation')content=rotationView(modal.strategyId);
@@ -284,7 +299,7 @@ function overlay(){
  let html='';
  if(events.length&&modal)html+='<div class="event-next"><span>'+t('game.overlay.next_event')+'</span></div>';
  else if(events.length)html+=eventView(events[0]);
- if(gate)html+='<div class="handoff"><div class="handoff-symbol">'+s.players[s.active].logo+'</div><div class="eyebrow">'+t('game.gate.eyebrow')+'</div><h1>'+t('game.gate.title',{n:s.active+1})+'</h1><p>'+t('game.gate.desc',{name:s.players[s.active].name})+'</p>'+btn(t('game.gate.confirm',{name:s.players[s.active].name}),'handover-confirm','primary')+'</div>';
+ if(gate)html+='<div class="handoff"><div class="handoff-symbol">'+s.players[s.active].logo+'</div><div class="eyebrow">'+t('game.gate.eyebrow')+'</div><h1>'+t('game.gate.title',{n:s.active+1})+'</h1><p>'+t('game.gate.desc',{name:s.players[s.active].name})+'</p>'+btn(t('game.gate.confirm',{name:s.players[s.active].name}),'ready','primary')+'</div>';
  if(modal)html+=modalView();
  return html;
 }
@@ -303,25 +318,32 @@ function updateCardSelectionUI(cid){
   if(st){st.textContent=txt}else{el.insertAdjacentHTML('beforeend','<span class="stance">'+txt+'</span>')}
  }else if(st){st.remove()}
  // Update selection counter in hand-top
- const counter=document.querySelector('.hand-top>div:last-child>span');
+ const counter=document.querySelector('.hand-selection-status');
  if(counter){
   const s2=s, ph=s2?s2.phase:'';
   counter.textContent=['defend','attack'].includes(ph)?t('game.hand.selected',{n:selection.size}):ph==='campaign'?t('game.hand.choose_garrison'):t('game.hand.safe');
  }
+ const deploy=document.querySelector('[data-action="deploy"]');
+ if(deploy)deploy.disabled=isAI()||s.active!==viewer()||!deploymentValid();
+ if(s.phase==='campaign'){
+  const f=s.fields.find(f=>f.id===focus),valid=selection.size>0&&selection.size<=garrisonLimit(f)&&(f?.capital||[...selection.values()].some(Boolean));
+  const primary=document.querySelector('[data-action="occupy"], [data-action="reorganize"]');
+  if(primary){primary.classList.toggle('needs-selection',!valid);primary.dataset.selectionReady=String(valid);primary.title=valid?t(primary.dataset.action==='occupy'?'game.action.occupy_title_ok':'game.action.reorganize_title_ok'):t(primary.dataset.action==='occupy'?'game.action.occupy_title_need':'game.action.reorganize_title_need')}
+ }
 }
 
 function render(){
- const key=clockKey;
  if(!s){app.innerHTML=menu()+overlay();clockKey='';mountVisual();return}
- const content=events.length&&!modal?header()+eventView(events[0]):gate&&!modal?header()+overlay():(s.phase==='over'?result():game())+overlay();
+ const content=events.length?header()+eventView(events[0])+(modal?modalView():''):gate&&!modal?header()+overlay():(s.phase==='over'?result():game())+overlay();
  app.innerHTML='<div class="game-shell" data-phase="'+s.phase+'">'+content+'</div>';
  mountVisual();
- requestAnimationFrame(()=>{if(!s)return;document.querySelectorAll('.strategy-token .strategy-tooltip').forEach(el=>{const r=el.getBoundingClientRect();el.style.transform=r.left<160?'translateX(calc(-100% - 18px))':''})});
- if(s.phase==='draft'&&isAI()&&s.active===1)queueAI(()=>perform(aiAction(s,1)));
- if(s.phase==='campaign'&&s.active===1&&isAI())queueAI(()=>perform(aiAction(s,1)));
- if(s.phase==='over')clockKey='';
- if(deadline!==null&&!modal)tickClock();
- if(clockKey!==key)tickClock();
+ requestAnimationFrame(()=>{if(!s||innerWidth<=800)return;document.querySelectorAll('.strategy-token .strategy-tooltip').forEach(el=>{const r=el.getBoundingClientRect();el.style.transform=r.left<160?'translateX(calc(-100% - 18px))':''})});
+ if(s.phase==='over'){clockKey='';deadline=null;remaining=null;return}
+ const ready=!modal&&!gate&&!events.length,actionKey=s.active+':'+s.phase+':'+s.turn+':'+s.skirmish;
+ if(ready&&s.phase!=='draft'&&clockKey!==actionKey){clockKey=actionKey;deadline=s.opt.timer?Date.now()+s.opt.timer*1000:null;remaining=null}
+ if(ready&&deadline!==null)tickClock();
+ else if(!ready)clearInterval(tickClock.job);
+ if(ready&&isAI())queueAI(()=>perform(aiAction(s,1)));
 }
 function startRotationPicker(strategyId){showModal({rotation:'rotation',strategyId,picked:new Set()})}
 function startMedicPicker(strategyId){showModal({rotation:'medic',strategyId,chosen:new Set()})}
@@ -381,7 +403,7 @@ function perform(action){
  if(s.opt.mode==='local'&&s.active!==oldActor&&s.phase!=='over'){gate=true;deadline=null;clockKey=''}
  if(s.phase!==before.phase||s.turn!==before.turn)focus=null;
  save();if(!events.length)resume();render();
- }catch(e){console.error(e);toast('行动未提交，战局保持不变：'+e.message)}
+ }catch(e){console.error(e);toast(t('toast.action_failed',{message:e.message}))}
 }
 function tickClock(){
  clearInterval(tickClock.job);
@@ -488,11 +510,11 @@ document.addEventListener('click',e=>{
  if(a==='start'){launchGame();return}
  if(a==='load'){const value=saved();if(value){options=value.opt;gate=value.opt.mode==='local';s=value;focus=null;selection.clear();reveals.clear();toast(t('toast.loaded'))}pause();render();return}
  if(a==='sound'){muted=!muted;render();return}
- if(a==='tutorial'){modal={tutorial:'tutorial',step:0};render();return}
+ if(a==='tutorial'){showModal({tutorial:'tutorial',step:0});return}
  if(a==='rules'){modal='rules';render();return}
  if(a==='pause'){showModal('pause');return}
  if(a==='edit-identity'){showModal('identity');return}
- if(a==='tutorial-step'){modal.step=Number(id);render();return}
+ if(a==='tutorial-step'){const step=Number(id);if(step>=tutorialSteps().length){modal=null;resume()}else modal.step=step;render();return}
  if(a==='close'){modal=null;resume();render();return}
  if(a==='mask'&&e.target.classList.contains('modal-overlay')&&modal!=='event'&&(!modal||!modal.rotation)){modal=null;render();return}
  if(a==='quit'){showModal('quit');return}
@@ -501,8 +523,9 @@ document.addEventListener('click',e=>{
  if(a==='rematch'){options.seed=Math.floor(Math.random()*4294967296);launchGame();return}
  if(a==='exit'){showModal('quit');return}
  if(a==='identity-confirm'){modal=null;render();return}
- if(a==='supply-ledger'){e.stopPropagation();showModal(Number(el.dataset.player));return}
- if(a==='reserve'){const p=Number(el.dataset.player),pl=s.players[p],handStr=p===viewer()&&pl.hand.length?pl.hand.map(c=>face(c)+(SUITS[c.suit]||'★')).join('、'):'—';toast(t('toast.reserve_info',{name:pl.name,hand:handStr,n:pl.reserve.length}));return}
+ if(a==='supply-ledger'){e.stopPropagation();showModal({kind:'ledger',player:Number(el.dataset.player)});return}
+ if(a==='reserve'){showModal({kind:'reserve',player:Number(el.dataset.player),sort:'rank'});return}
+ if(a==='reserve-sort'&&modal?.kind==='reserve'){modal.sort=id==='suit'?'suit':'rank';render();return}
  if(a==='focus'){if(focus===id){focus=null}else{focus=id;selection.clear()}if(targeting&&!canStrategy(s,viewer(),targeting,focus)){const strategy=targeting;targeting=null;perform({type:'strategy',id:strategy,field:focus})}else render();return}
  if(a==='hand-sort'){handSort=id;render();return}
  if(a==='occupy'){occupy(focus,[...selection].map(([cid,open])=>({...s.players[viewer()].hand.find(c=>c.id===cid),open})));return}
@@ -516,7 +539,7 @@ document.addEventListener('click',e=>{
  if(a==='use-strategy'){if(isAI())return;runStrategy(id);return}
  if(a==='buy-strategy'){modal=null;resume();perform({type:'buy_strategy',id});return}
  if(a==='cancel-target'){targeting=null;render();return}
- if(a==='medic-toggle'){const set=modal.chosen;if(set.has(id))set.delete(id);else if(set.size<2)set.add(id);else toast(t('toast.medic_max'));render();return}
+ if(a==='medic-toggle'){const cid=Number(id),set=modal.chosen;if(set.has(cid))set.delete(cid);else if(set.size<2)set.add(cid);else toast(t('toast.medic_max'));render();return}
  if(a==='medic-confirm'){medicConfirm(id);return}
  if(a==='rotation-toggle'){const set=modal.picked;if(set.has(id))set.delete(id);else if(set.size<2)set.add(id);else toast(t('toast.rotation_max'));render();return}
  if(a==='rotation-confirm'){rotationConfirm(id);return}
@@ -528,33 +551,29 @@ document.addEventListener('click',e=>{
  }
  if(a==='card'){
   if(!s||s.active!==viewer()||isAI())return;
-  const cid=id,phase=s.phase,p=viewer(),f=s.fields.find(f=>f.id===focus);
+  const cid=Number(id),phase=s.phase,p=viewer(),f=s.fields.find(f=>f.id===focus);
   if(phase==='campaign'){
-   if(!f||f.owner!==p){toast(t('toast.select_field_first'));return}
-   const limit=garrisonLimit(f),exists=selection.get(cid);
-   if(exists!==undefined){selection.delete(cid)}
-   else{
+   if(!f||f.owner===1-p){toast(t('toast.select_field_first'));return}
+   const limit=garrisonLimit(f);
+   if(!selection.has(cid)){
     if(selection.size>=limit){toast(t('toast.garrison_full',{n:limit}));return}
-    const open=[...selection.values()].filter(Boolean).length;
-    if(f.capital||open===0){selection.set(cid,true);if(f.capital)toast(t('toast.capital_must_open'))}
-    else selection.set(cid,false);
-   }
+    selection.set(cid,true);
+   }else if(selection.get(cid))selection.set(cid,false);
+   else selection.delete(cid);
    updateCardSelectionUI(cid);return;
   }
   if(phase==='defend'||phase==='attack'){
-   const limit=battleLineLimit(s,p),exists=selection.get(cid);
-   if(exists!==undefined){selection.delete(cid)}
-   else{
+   const limit=battleLineLimit(s,p);
+   if(!selection.has(cid)){
     if(selection.size>=limit){toast(t('toast.attack_need',{n:limit}));return}
-    const open=[...selection.values()].filter(Boolean).length;
-    if(open===0){selection.set(cid,true);toast(t('toast.line_need_open'))}
-    else selection.set(cid,false);
-   }
+    selection.set(cid,true);
+   }else if(selection.get(cid))selection.set(cid,false);
+   else selection.delete(cid);
    updateCardSelectionUI(cid);return;
   }
   return;
  }
- if(a==='reveal-card'){if(s.phase!=='counter')return;const cid=id;if(reveals.has(cid)){reveals.delete(cid)}else{if(reveals.size>=2){toast(t('toast.reveal_max'));return}const c=s.battle.lines[s.active].find(c=>c.id===cid);if(c&&!c.open)reveals.add(cid)}render();return}
+ if(a==='reveal-card'){if(s.phase!=='counter')return;const cid=Number(id);if(reveals.has(cid)){reveals.delete(cid)}else{if(reveals.size>=2){toast(t('toast.reveal_max'));return}const c=s.battle.lines[s.active].find(c=>c.id===cid);if(c&&!c.open)reveals.add(cid)}render();return}
  if(a==='deploy'){
   const phase=s.phase,p=viewer(),chosen=[...selection].map(([cid,open])=>({...s.players[p].hand.find(c=>c.id===cid),open}));
   if(phase==='defend'||phase==='attack'){
@@ -570,7 +589,7 @@ document.addEventListener('click',e=>{
  if(a==='pass'){perform({type:'pass'});return}
  if(a==='event-continue'){modal=null;advanceEvent();return}
  if(a==='open-rotation'){if(focus)showModal({rotation:'garrison',field:focus,outIds:[],stances:{}});return}
- if(a==='handover-confirm'){gate=false;focus=null;selection.clear();reveals.clear();pause();resume();render();return}
+ if(a==='ready'||a==='handover-confirm'){gate=false;focus=null;selection.clear();reveals.clear();pause();resume();render();return}
 });
 document.addEventListener('change',e=>{
  const input=e.target.closest('[data-option]');
@@ -593,6 +612,9 @@ document.addEventListener('keydown',e=>{
 });
 onLangChange(()=>{render()});
 window.addEventListener('error',()=>{toast(t('toast.error_reload'))});
+setInterval(()=>{
+ if(events.length&&!modal&&eventEnd!==null&&Date.now()>=eventEnd)advanceEvent();
+},250);
 const boot=()=>{
  const value=saved();
  if(value&&value.phase!=='draft'&&value.phase!=='over'&&options.resume!==false){/* keep menu on boot; resume via button */}
