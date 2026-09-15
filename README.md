@@ -5,9 +5,9 @@
 [![deploy release](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=release&label=deploy%20release)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![deploy preview](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20preview)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.20.6-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.20.7-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.1**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.20.6**](https://lordstone.github.io/shadowline-war/preview/)
+[**▶ 正式版在线游玩 · v1.19.1**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.20.7**](https://lordstone.github.io/shadowline-war/preview/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -65,12 +65,12 @@
 
 `node tests/engine.test.mjs` 或 `npm test`。
 
-已通过 54 组规则与事件测试：
+已通过 55 组规则与事件测试：
 - 全部24,804种三张牌组合的分类数量；
 - 非法部署、严格比较、平手、防守翻牌、撤退、收牌和临时晋升清除；
 - 13种策略的前置条件和效果，地图邻接、固定驻军、驻军明暗限制、整编、快速换防、首都胜利和牌数守恒；
 - 超时行动、存档恢复与隐藏信息隔离；
-- 384 场跨地图、规则、牌库规模、策略开关和 AI 风格的完整对局，共 38,063 次合法行动。
+- 384 场跨地图、规则、牌库规模、策略开关和 AI 风格的完整对局，共 37,349 次合法行动。
 
 已在 Chrome 中完成真实浏览器交互回归：AI 入侵与计时暂停、新牌展示、策略目标选择、驻军查看、同机交接保密、闪电战窗口、AI 反超后玩家继续翻牌、商店收展与策略悬停；覆盖桌面、390×600／659／844 iPhone、430×700 手机与 834×1112 iPad 视口，并验证手牌和战术栏始终保留在屏幕内。测试覆盖这些场景，不代表绝对没有其他 bug。
 
@@ -100,6 +100,14 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.20.7 修复移动端布局、选牌与文案回归
+
+- 修复选牌后部署按钮仍禁用、排序按钮被选牌计数覆盖、暗置选择失效，以及中立据点无法部署驻军的问题。
+- 恢复行动计时、事件自动推进、全部 AI 阶段调度、同机交接和暂停期间事件可见性；修复当前存档载入时阵营被错误重置。
+- 恢复补给账本、公开牌／驻军查看、医疗与驻军轮换弹窗的完整 UI，并修复玩家一补给账本无法打开。
+- 让移动端布局规则正确作用于 `game-shell`，修复短屏溢出、策略提示越界和密集历史地图据点遮挡。
+- 对齐 1.19.3 的中文界面和完整规则／教程，补齐对应英文，并校正补牌、围城和经典模式说明。
 
 ## 1.20.6 恢复核心交互与存档安全
 

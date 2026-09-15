@@ -77,6 +77,13 @@ test('player identities default cleanly and retain custom names, logos and facti
  const local=createGame({rules:'classic',strategies:false,mode:'local',playerNames:['','小林'],playerLogos:['⚓','▲'],factions:['海峡联合舰队','波斯湾卫队']});
  assert.deepEqual(local.players.map(p=>[p.name,p.logo,p.faction]),[['玩家一','⚓','海峡联合舰队'],['小林','▲','波斯湾卫队']]);
 });
+
+test('loading a current save preserves numeric faction sides',()=>{
+ const s=createGame({map:'duel',rules:'campaign',strategies:false,factions:[0,1]});
+ const loaded=structuredClone(s);upgradeState(loaded);
+ assert.deepEqual(loaded.opt.factions,[0,1]);
+ assert.deepEqual(loaded.players.map(p=>p.side),[0,1]);
+});
 test('choosing the opposite faction swaps player themes and capital ownership',()=>{
  const s=createGame({map:'china_civil_war',rules:'campaign',strategies:false,factions:['解放军','国民政府军'],playerLogos:['★','☀'],seed:19});
  assert.deepEqual(s.players.map(p=>[p.faction,p.logo,p.side]),[['解放军','★',1],['国民政府军','☀',0]]);

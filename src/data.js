@@ -48,7 +48,7 @@ export const MAPS=[
  f('krakow','克拉科夫','town',24,50,['berlin','warsaw','lviv']),
  f('baltic','波罗的海走廊','port',34,21,['prussia','minsk','smolensk','leningrad']),
  f('minsk','明斯克','town',42,34,['warsaw','baltic','smolensk','kyiv'],null,false,true),
- f('lviv','利沃夫','town',33,51,['warsaw','krakow','kyiv','caucasus']),
+ f('lviv','利沃夫','town',36,55,['warsaw','krakow','kyiv','caucasus']),
  f('smolensk','斯摩棱斯克','town',53,30,['baltic','minsk','moscow','kharkov'],null,false,true),
  f('kyiv','基辅','town',49,48,['minsk','lviv','kharkov']),
  f('leningrad','列宁格勒','port',48,9,['baltic','moscow'],null,false,true),
@@ -61,21 +61,21 @@ export const MAPS=[
  f('sinuiju','鸭绿江补给线','oil',16,33,['pyongyang','chosin']),
  f('chosin','长津山地','mountain',47,29,['sinuiju','wonsan']),
  f('wonsan','元山港','port',49,40,['pyongyang','chosin','chuncheon','incheon']),
- f('kaesong','开城防线','town',39,50,['pyongyang','seoul','chuncheon'],null,false,true),
- f('incheon','仁川港','port',41,55,['seoul','daejeon','wonsan']),
- f('seoul','首尔枢纽','town',44,54,['kaesong','incheon','chuncheon','daejeon'],null,false,true),
- f('chuncheon','春川山口','mountain',53,51,['wonsan','kaesong','seoul','daegu']),
+ f('kaesong','开城防线','town',34,48,['pyongyang','seoul','chuncheon'],null,false,true),
+ f('incheon','仁川港','port',34,62,['seoul','daejeon','wonsan']),
+ f('seoul','首尔枢纽','town',52,56,['kaesong','incheon','chuncheon','daejeon'],null,false,true),
+ f('chuncheon','春川山口','mountain',57,43,['wonsan','kaesong','seoul','daegu']),
  f('daejeon','大田','town',49,64,['incheon','seoul','daegu']),
  f('daegu','大邱防线','town',62,68,['chuncheon','daejeon','busan'],null,false,true),
  f('busan','釜山指挥部','capital',68,74,['daegu'],1,true)]},
  {id:'western_front',historical:{control:{berlin:0,hamburg:0,ruhr:0,frankfurt:0,munich:0,luxembourg:1,alsace:1,ardennes:1,sedan:1,belgium:1,reims:1,paris:1}},seaLinks:[['belgium','hamburg']],fields:[
- f('paris','巴黎指挥部','capital',38,51,['reims','belgium','alsace'],1,true),
- f('reims','兰斯','town',46,48,['paris','belgium','sedan']),
+ f('paris','巴黎指挥部','capital',30,57,['reims','belgium','alsace'],1,true),
+ f('reims','兰斯','town',40,50,['paris','belgium','sedan']),
  f('belgium','比利时低地','port',47,34,['paris','reims','ardennes','hamburg']),
- f('sedan','色当要塞','town',50,45,['reims','ardennes','luxembourg','alsace'],null,false,true),
- f('ardennes','阿登山林','forest',53,41,['belgium','sedan','luxembourg','ruhr']),
+ f('sedan','色当要塞','town',52,60,['reims','ardennes','luxembourg','alsace'],null,false,true),
+ f('ardennes','阿登山林','forest',53,38,['belgium','sedan','luxembourg','ruhr']),
  f('alsace','阿尔萨斯','mountain',63,53,['paris','sedan','luxembourg','munich']),
- f('luxembourg','卢森堡走廊','town',55,46,['sedan','ardennes','alsace','frankfurt'],null,false,true),
+ f('luxembourg','卢森堡走廊','town',66,49,['sedan','ardennes','alsace','frankfurt'],null,false,true),
  f('hamburg','汉堡港','port',73,18,['belgium','ruhr','berlin']),
  f('ruhr','鲁尔工业区','oil',59,33,['ardennes','hamburg','frankfurt','berlin']),
  f('frankfurt','法兰克福','town',67,42,['luxembourg','ruhr','munich','berlin'],null,false,true),
@@ -84,7 +84,7 @@ export const MAPS=[
  {id:'hormuz',historical:{control:{oman_hq:0,gulf_port:0,musandam:0,offshore:0,desert:0,iran_hq:1,iran_coast:1,bandar:1,qeshm:1,island:1}},seaLinks:[['musandam','qeshm'],['gulf_port','qeshm']],fields:[
  f('oman_hq','马斯喀特指挥部','capital',88,77,['gulf_port','musandam'],0,true),f('gulf_port','苏哈尔港','port',58,66,['oman_hq','musandam','island','qeshm','desert']),f('musandam','穆桑代姆','mountain',50,40,['oman_hq','gulf_port','island','qeshm','offshore']),f('island','海峡中岛','town',54,35,['gulf_port','musandam','qeshm','bandar'],null,false,true),f('qeshm','格什姆港','port',43,31,['gulf_port','musandam','island','bandar','iran_coast']),f('bandar','阿巴斯油港','oil',48,26,['island','qeshm','iran_hq','offshore']),f('iran_coast','沿岸山口','mountain',64,26,['qeshm','iran_hq','desert']),f('iran_hq','波斯湾指挥部','capital',20,35,['bandar','iran_coast'],1,true),f('offshore','外海锚地','port',45,49,['musandam','bandar']),f('desert','内陆沙漠','town',80,90,['gulf_port','iran_coast'],null,false)]},
  {id:'china_civil_war',factionLogos:['☀','★'],historical:{control:{nanjing:0,shanghai:0,hangzhou:0,wuhan:0,changsha:0,nanchang:0,xuzhou:0,tianjin:0,beiping:0,zhengzhou:0,jinan:1,yanan:1,shenyang:1}},seaLinks:[['shanghai','tianjin']],fields:[
- f('nanjing','南京指挥部','capital',67,51,['xuzhou','wuhan','shanghai'],0,true),f('shanghai','上海港','port',78,52,['nanjing','hangzhou','tianjin']),f('hangzhou','杭州','town',73,55,['shanghai','wuhan']),f('wuhan','武汉枢纽','town',49,54,['nanjing','hangzhou','xuzhou','zhengzhou','changsha','nanchang'],null,false,true),f('changsha','长沙','forest',44,61,['wuhan','nanchang']),f('nanchang','南昌','town',55,60,['changsha','wuhan']),f('xuzhou','徐州','town',61,44,['nanjing','wuhan','jinan','zhengzhou'],null,false,true),f('jinan','济南','town',60,35,['xuzhou','tianjin','zhengzhou'],null,false,true),f('tianjin','天津港','port',61,32,['jinan','beiping','shenyang','shanghai']),f('beiping','北平枢纽','town',58,30,['tianjin','zhengzhou','yanan','shenyang'],null,false,true),f('zhengzhou','郑州','town',46,42,['wuhan','xuzhou','jinan','beiping','yanan'],null,false,true),f('yanan','延安指挥部','capital',30,32,['beiping','zhengzhou','shenyang'],1,true),f('shenyang','沈阳油区','oil',86,22,['tianjin','beiping','yanan'])]}
+ f('nanjing','南京指挥部','capital',65,57,['xuzhou','wuhan','shanghai'],0,true),f('shanghai','上海港','port',82,51,['nanjing','hangzhou','tianjin']),f('hangzhou','杭州','town',74,68,['shanghai','wuhan']),f('wuhan','武汉枢纽','town',49,54,['nanjing','hangzhou','xuzhou','zhengzhou','changsha','nanchang'],null,false,true),f('changsha','长沙','forest',40,68,['wuhan','nanchang']),f('nanchang','南昌','town',56,70,['changsha','wuhan']),f('xuzhou','徐州','town',62,45,['nanjing','wuhan','jinan','zhengzhou'],null,false,true),f('jinan','济南','town',51,35,['xuzhou','tianjin','zhengzhou'],null,false,true),f('tianjin','天津港','port',69,37,['jinan','beiping','shenyang','shanghai']),f('beiping','北平枢纽','town',62,23,['tianjin','zhengzhou','yanan','shenyang'],null,false,true),f('zhengzhou','郑州','town',43,44,['wuhan','xuzhou','jinan','beiping','yanan'],null,false,true),f('yanan','延安指挥部','capital',27,29,['beiping','zhengzhou','shenyang'],1,true),f('shenyang','沈阳油区','oil',86,22,['tianjin','beiping','yanan'])]}
 ];
 export const defaults={mode:'ai',map:'duel',rules:'campaign',difficulty:'normal',timer:0,eventSeconds:3,seed:2026,strategies:true,first:0,maxRounds:80,deckCount:'auto',deployment:'standard',sound:true,playerNames:['',''],playerLogos:['⟐','✣'],factions:[0,1]};
 export const strategyById=id=>STRATEGIES.find(s=>s.id===id);
