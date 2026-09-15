@@ -294,6 +294,10 @@ function marketView(){
  const p=viewer();
  return '<div class="eyebrow">'+t('modal.market.eyebrow')+'</div><h2>'+t('modal.market.title')+'</h2><p class="modal-desc">'+t('modal.market.desc',{supply:s.players[p].supply})+'</p><div class="market-list">'+s.strategyMarket.map((id,index)=>{const c=strategyById(id),st=strategyText(id),reason=canBuyStrategy(s,p,id),label=!reason?t('game.market.buy',{price:c.price}):reason==='need_supply'?t('game.market.need',{price:c.price}):reason==='duplicate_strategy'?t('game.market.owned'):reason==='strategies_full'?t('game.market.full'):reason==='market_bought'?t('game.market.bought_one'):t('game.market.unavailable');return '<article class="market-card"><span class="market-icon">'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div>'+btn(label,'buy-strategy','market-buy',!!reason,'data-id="'+id+'" data-index="'+index+'"')+'</article>'}).join('')+'</div>'+btn(t('modal.close'),'close','primary');
 }
+function strategyConfirmView(config){
+ const id=config.strategyId,c=strategyById(id),st=strategyText(id),target=config.field?s.fields.find(f=>f.id===config.field):null;
+ return '<div class="eyebrow">'+t('modal.strategy_confirm.eyebrow')+'</div><h2>'+t('modal.strategy_confirm.title',{name:st.name})+'</h2><div class="event-strategy-card strategy-confirm-card"><span>'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div></div><p class="modal-desc">'+st.use+'</p>'+(target?'<p class="modal-desc">'+t('modal.strategy_confirm.target',{name:fieldName(s.opt.map,target)})+'</p>':'')+'<p class="modal-desc">'+t('modal.strategy_confirm.single_use')+'</p><div class="modal-actions">'+btn(t('modal.cancel'),'close','secondary')+btn(t(config.chooseTarget?'modal.strategy_confirm.choose_target':'modal.strategy_confirm.confirm'),'strategy-confirm','primary',false,'data-id="'+id+'"')+'</div>';
+}
 function logView(){
  return '<div class="eyebrow">'+t('modal.log.eyebrow')+'</div><h2>'+t('modal.log.title')+'</h2><div class="log-modal-list">'+battleLogList()+'</div>'+btn(t('modal.close'),'close','primary');
 }
@@ -318,6 +322,7 @@ function modalView(kind=modal){
  else if(kind==='event'&&events.length)content=eventView(events[0]);
  else if(kind==='market')content=marketView();
  else if(kind==='log')content=logView();
+ else if(kind&&kind.kind==='strategy-confirm')content=strategyConfirmView(kind);
  else if(kind&&kind.kind==='reserve')content=reserveView(kind);
  else if(modal&&modal.rotation==='medic')content=medicView(modal.strategyId);
  else if(modal&&modal.rotation==='garrison')content=garrisonRotationView(modal);
@@ -391,9 +396,17 @@ function startMedicPicker(strategyId){showModal({rotation:'medic',strategyId,cho
 function rotationFields(){return s.fields.filter(f=>modal.picked.has(f.id))}
 function runStrategy(id){
  const reason=canStrategy(s,viewer(),id,focus),targeted=['isr','revolution','economic_sanctions'].includes(id);
- if(reason){if(s.phase==='campaign'&&targeted&&s.fields.some(f=>!canStrategy(s,viewer(),id,f.id))){targeting=id;toast(t('toast.strategy_target_first'));render()}else toast(reason);return}
+ const chooseTarget=!!reason&&s.phase==='campaign'&&targeted&&s.fields.some(f=>!canStrategy(s,viewer(),id,f.id));
+ if(reason&&!chooseTarget){toast(reason);return}
  if(id==='meds_team'){targeting=null;startMedicPicker(id);return}
- targeting=null;perform({type:'strategy',id,field:focus});
+ showModal({kind:'strategy-confirm',strategyId:id,field:chooseTarget?null:focus,chooseTarget});
+}
+function confirmStrategy(id){
+ const pending=modal&&modal.kind==='strategy-confirm'&&modal.strategyId===id?modal:null;
+ if(!pending)return;
+ modal=null;resume();
+ if(pending.chooseTarget){targeting=id;toast(t('toast.strategy_target_first'));render();return}
+ targeting=null;perform({type:'strategy',id,field:pending.field});
 }
 function queueEvent(ev){events.push(ev);pause();if(s&&s.phase!=='over')save()}
 function eventQueueToLog(){for(const ev of events.splice(0))s.log.unshift({round:s.round,text:ev.title+' —— '+ev.detail});eventEnd=null;eventRemaining=null}
@@ -586,6 +599,7 @@ document.addEventListener('click',e=>{
  if(a==='open-log'){showModal('log');return}
  if(a==='choose-strategy'){if(s.phase==='draft'){perform({type:'draft',id});return}runStrategy(id);return}
  if(a==='use-strategy'){if(isAI())return;runStrategy(id);return}
+ if(a==='strategy-confirm'){confirmStrategy(id);return}
  if(a==='buy-strategy'){modal=null;resume();perform({type:'buy_strategy',id});return}
  if(a==='cancel-target'){targeting=null;render();return}
  if(a==='medic-toggle'){const cid=Number(id),set=modal.chosen;if(set.has(cid))set.delete(cid);else if(set.size<2)set.add(cid);else toast(t('toast.medic_max'));render();return}

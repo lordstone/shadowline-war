@@ -26,11 +26,14 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  await page.waitForFunction(()=>/30|29/.test(document.querySelector('#clock')?.textContent));
  checks.push('AI invasion target, automatic 3-second queue, pause, preserved action timer, visible map garrisons and rank/suit hand sorting');
  s=createGame({strategies:false,mode:'ai'});s.players[0].strategies=['conscription'];await load(s);await page.locator('[data-action="use-strategy"][data-id="conscription"]').click();
+ assert.match(await page.locator('.modal').innerText(),/使用「征召令」？.*每局只能使用一次/s);assert.ok((await state()).players[0].strategies.includes('conscription'));await click('close');assert.ok((await state()).players[0].strategies.includes('conscription'));
+ await page.locator('[data-action="use-strategy"][data-id="conscription"]').click();await click('strategy-confirm');
  await click('event-continue');assert.equal(await page.locator('.event-cards .playing-card:not(.back)').count(),2);
  assert.equal(await page.locator('.event-cards + .event-progress').count(),1);
  assert.equal(await page.locator('.event-cards .new-card-badge').count(),2);await drain();
  assert.equal(await page.locator('.hand-tray .new-card-badge').count(),2);checks.push('strengthened conscription draws two cards with face animations and persistent hand markers');
  s=createGame({strategies:false,mode:'ai'});s.players[0].strategies=['isr'];await load(s);await page.locator('[data-action="use-strategy"][data-id="isr"]').click();
+ assert.match(await page.locator('.modal').innerText(),/使用「全域侦察」？.*确认并选择目标/s);await click('strategy-confirm');
  assert.equal(await page.locator('.targeting-note').count(),1);
  const enemy=s.fields.find(f=>f.owner===1);await page.locator('[data-action="focus"][data-id="'+enemy.id+'"]').click();
  await page.setViewportSize({width:390,height:600});const strategyEventLayout=await page.evaluate(()=>{const screen=document.querySelector('.event-screen'),panel=document.querySelector('.event-panel'),sr=screen.getBoundingClientRect(),pr=panel.getBoundingClientRect();return {screenDisplay:getComputedStyle(screen).display,screen:{left:sr.left,right:sr.right,top:sr.top,bottom:sr.bottom},panel:{left:pr.left,right:pr.right,top:pr.top,bottom:pr.bottom,width:pr.width},viewport:{width:innerWidth,height:innerHeight},page:{width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight}}});assert.equal(strategyEventLayout.screenDisplay,'flex');assert.ok(strategyEventLayout.panel.width>=350&&strategyEventLayout.panel.left>=0&&strategyEventLayout.panel.right<=strategyEventLayout.viewport.width&&strategyEventLayout.panel.top>=0&&strategyEventLayout.panel.bottom<=strategyEventLayout.viewport.height&&strategyEventLayout.page.width<=strategyEventLayout.viewport.width,JSON.stringify(strategyEventLayout));await page.setViewportSize({width:1440,height:1000});await drain();
@@ -53,7 +56,7 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  const deployment=aiAction(s,s.active);assert.equal(deployment.type,'deploy');
  await load(s);for(const c of deployment.cards){await page.locator('[data-action="card"][data-id="'+c.id+'"]').click();if(!c.open)await page.locator('[data-action="card"][data-id="'+c.id+'"]').click()}
  await click('deploy');await drain();assert.equal((await state()).phase,'tactics');
- await page.locator('[data-action="use-strategy"][data-id="blitzkrieg"]').click();assert.equal(await page.locator('.event-strategy').count(),1);await drain();
+ await page.locator('[data-action="use-strategy"][data-id="blitzkrieg"]').click();assert.match(await page.locator('.modal').innerText(),/使用「闪电战」？.*确认使用/s);await click('strategy-confirm');assert.equal(await page.locator('.event-strategy').count(),1);await drain();
  assert.equal((await state()).players[1].wins,1);checks.push('actual deployment to tactical window and successful blitzkrieg');
  await page.setViewportSize({width:375,height:812});s=createGame({strategies:false,mode:'ai',eventSeconds:5});s.active=1;s.raid=true;await load(s);await page.locator('.event-invasion').waitFor();
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:fileURLToPath(new URL('../../shadowline-event-mobile.png',import.meta.url)),fullPage:true});
