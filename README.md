@@ -5,9 +5,9 @@
 [![deploy release](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=release&label=deploy%20release)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![deploy preview](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20preview)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.20.9-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.20.10-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.1**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.20.9**](https://lordstone.github.io/shadowline-war/preview/)
+[**▶ 正式版在线游玩 · v1.19.1**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.20.10**](https://lordstone.github.io/shadowline-war/preview/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -100,6 +100,12 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.20.10 明确平手与反击方
+
+- 完全平手时明确显示“平手 · 防守方占优”，不再只用容易混淆的己方／敌方领先文案。
+- 反击阶段直接标明由进攻方或防守方反击，避免把防守方平手占优误读为防守方被压制。
+- 增加完全平手裁决与 390px 手机战斗界面的回归测试。（fixes #83）
 
 ## 1.20.9 修复手机密集地图据点重叠
 
