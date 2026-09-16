@@ -500,6 +500,11 @@ test('historical capital ownership matches the named factions',()=>{
  assert.ok(hormuz.fields.find(f=>f.id==='bandar').y<hormuz.fields.find(f=>f.id==='oman_hq').y);
 });
 
+test('November 1948 historical control connects Jinan through liberated Zhengzhou',()=>{
+ const s=createGame({map:'china_civil_war',deployment:'historical',strategies:false,seed:710}),jinan=s.fields.find(f=>f.id==='jinan'),zhengzhou=s.fields.find(f=>f.id==='zhengzhou');
+ assert.equal(jinan.owner,1);assert.equal(zhengzhou.owner,1);assert.ok(supplyConnected(s,1).has('jinan'));validate(s);
+});
+
 function cutScenario(seed){
  // rift: P0 持有西部指挥部；P1 持有北部隘口/南部油田，切断纵深据点与首都的通路
  const s=createGame({rules:'campaign',strategies:false,seed,map:'rift'});
