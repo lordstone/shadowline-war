@@ -5,9 +5,9 @@
 [![deploy release](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=release&label=deploy%20release)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![deploy preview](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20preview)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.21.1-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.21.2-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.1**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.21.1**](https://lordstone.github.io/shadowline-war/preview/)
+[**▶ 正式版在线游玩 · v1.19.1**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.21.2**](https://lordstone.github.io/shadowline-war/preview/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -101,12 +101,13 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
 
-## 1.21.1 修复史实态势先手覆盖
+## 1.21.2 修复史实态势与外交机制
 
 - 人机模式选择“玩家先行”后，史实态势跳过策略三选一时不再被旧的 AI 草拟逻辑覆盖为 AI 先行。
 - “AI 先行”仍按设置生效；普通随机策略对局仍允许 AI 先完成自己的策略选择。
 - 将外交机制拆分为两张独立策略卡：“停火谈判”仅在交锋中结束当前交锋；“和平谈判”在地图阶段建立两回合禁止进攻。
 - 校正 1948 年11月史实态势中郑州的控制方，使济南经郑州连回延安补给网；断供据点新增在紧凑地图上也始终可见的独立徽标。
+- 升级预览版资源缓存键，避免浏览器继续加载修复前的地图配置和样式。
 
 ## 1.21.0 外交、撤退与战略纵深
 
