@@ -16,6 +16,7 @@ let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map(),fittedMap=n
 const STORE='shadowline-war-v1';
 const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆',hormuz:'≋',china_civil_war:'山'}[id]||'◇');
 const LOGOS=['⟐','✣','♜','⚓','▲','✦','◈','☄'];
+const FIELD_TARGET_STRATEGIES=new Set(['isr','revolution','economic_sanctions','scorched_earth','relocate_capital']);
 const factionLogo=(map,faction)=>{const i=Number.isInteger(faction)?faction:mapFactions(map.id).indexOf(faction);return map.factionLogos?.[i]||LOGOS[Math.max(0,i)]};
 const sideOf=p=>s?.players[p]?.side??p;
 const themedFields=fields=>fields.map(f=>({...f,owner:f.owner===null?null:sideOf(f.owner)}));
@@ -402,11 +403,11 @@ function startRotationPicker(strategyId){showModal({rotation:'rotation',strategy
 function startMedicPicker(strategyId){showModal({rotation:'medic',strategyId,chosen:new Set()})}
 function rotationFields(){return s.fields.filter(f=>modal.picked.has(f.id))}
 function runStrategy(id){
- const reason=canStrategy(s,viewer(),id,focus),targeted=['isr','revolution','economic_sanctions','scorched_earth','relocate_capital'].includes(id);
+ const targeted=FIELD_TARGET_STRATEGIES.has(id),reason=canStrategy(s,viewer(),id,targeted?focus:null);
  const chooseTarget=!!reason&&s.phase==='campaign'&&targeted&&s.fields.some(f=>!canStrategy(s,viewer(),id,f.id));
  if(reason&&!chooseTarget){toast(reason);return}
  if(id==='meds_team'){targeting=null;startMedicPicker(id);return}
- showModal({kind:'strategy-confirm',strategyId:id,field:chooseTarget?null:focus,chooseTarget});
+ showModal({kind:'strategy-confirm',strategyId:id,field:targeted&&!chooseTarget?focus:null,chooseTarget});
 }
 function confirmStrategy(id){
  const pending=modal&&modal.kind==='strategy-confirm'&&modal.strategyId===id?modal:null;
