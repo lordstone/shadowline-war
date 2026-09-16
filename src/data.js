@@ -82,5 +82,5 @@ export const HISTORICAL_STRATEGIES={
  korea:[['international_support'],['economic_sanctions']],
  western_front:[['blitzkrieg'],['peace_talk']],
  hormuz:[['economic_sanctions'],['economic_espionage']],
- china_civil_war:[['relocate_capital','peace_talk'],['peace_talk','international_support']]
+ china_civil_war:[['relocate_capital','peace_negotiation'],['peace_negotiation','international_support']]
 };

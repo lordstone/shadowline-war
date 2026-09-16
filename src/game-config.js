@@ -144,6 +144,14 @@ export const GAME_CONFIG={
       "id": "peace_talk",
       "icon": "⚑",
       "phase": "battle",
+      "count": 1,
+      "price": 4,
+      "effect": {}
+    },
+    {
+      "id": "peace_negotiation",
+      "icon": "☮",
+      "phase": "campaign",
       "count": 2,
       "price": 4,
       "effect": {
