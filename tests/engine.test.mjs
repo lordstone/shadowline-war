@@ -216,9 +216,10 @@ test('meds_team player-chosen cards are honored (up to 2)',()=>{
 test('all campaign strategy effects preserve cards and enforce target requirements',()=>{
  for(const id of STRATEGIES.filter(x=>x.phase==='campaign').map(x=>x.id)){
  let s=createGame({strategies:false,seed:119});s.players[0].strategies=[id];
- const neutral=s.fields.find(f=>f.owner===null),enemy=s.fields.find(f=>f.owner===1);
+ const neutral=s.fields.find(f=>f.owner===null),enemy=s.fields.find(f=>f.owner===1),own=s.fields.find(f=>f.id==='p1_oil');
+ if(['scorched_earth','relocate_capital'].includes(id)){own.owner=0;own.garrison=[{...s.players[0].hand.pop(),open:true}]}
  if(id==='meds_team')s.players[0].reserve.push(s.players[0].hand.pop());
- const f=id==='revolution'?neutral:enemy;
+ const f=id==='revolution'?neutral:['scorched_earth','relocate_capital'].includes(id)?own:enemy;
  const r=act(s,0,{type:'strategy',id,field:f.id});assert.equal(r.ok,true,id+': '+r.error);s=r.state;validate(s);
  assert.equal(s.generated,id==='revolution'?1:0);
  assert.equal(s.players[0].strategies.length,0);
@@ -550,4 +551,31 @@ test('supply line cut: reconnecting the field restores its income',()=>{
  income(s);
  assert.equal(s.supplyLedger[0].entries.find(e=>e.label.startsWith('北部油田')).amount,2);
  validate(s);
+});
+
+test('opening truce and peace talks share the attack lock',()=>{
+ let s=createGame({strategies:false,openingTruceRounds:1,seed:701}),target=s.fields.find(f=>f.id==='center_town');target.owner=1;target.garrison=[{...s.players[1].hand.pop(),open:true}];
+ let r=act(s,0,{type:'attack',field:target.id});assert.equal(r.ok,false);assert.match(r.error,/停战期/);
+ s.truceUntilRound=0;r=act(s,0,{type:'attack',field:target.id});assert.equal(r.ok,true);
+ s=r.state;s.phase='tactics';s.active=0;s.players[0].strategies=['peace_talk'];s.strategyLocked=[[],[]];
+ s=next(s,{type:'strategy',id:'peace_talk'});assert.equal(s.truceUntilRound,s.round+2);assert.equal(s.phase,'campaign');
+});
+
+test('abandon and scorched earth share safe garrison withdrawal',()=>{
+ let s=createGame({strategies:false,seed:702}),field=s.fields.find(f=>f.id==='p1_oil');field.owner=0;field.garrison=[{...s.players[0].hand.pop(),open:true},{...s.players[0].hand.pop(),open:false}];
+ const open=field.garrison[0].id,hidden=field.garrison[1].id;s=next(s,{type:'abandon_field',field:field.id});field=s.fields.find(f=>f.id==='p1_oil');
+ assert.equal(field.owner,null);assert.ok(s.players[0].reserve.some(c=>c.id===open));assert.ok(s.players[0].hand.some(c=>c.id===hidden));
+ s=createGame({strategies:false,seed:703});field=s.fields.find(f=>f.id==='p1_oil');field.owner=0;field.garrison=[{...s.players[0].hand.pop(),open:true}];s.players[0].strategies=['scorched_earth'];
+ s=next(s,{type:'strategy',id:'scorched_earth',field:field.id});field=s.fields.find(f=>f.id==='p1_oil');assert.equal(field.owner,null);assert.ok(field.scorchedUntil>s.round);
+});
+
+test('economic espionage transfers supply and relocation moves the capital',()=>{
+ let s=createGame({strategies:false,seed:704});s.players[0].strategies=['economic_espionage'];s.players[0].supply=1;s.players[1].supply=3;
+ s=next(s,{type:'strategy',id:'economic_espionage'});assert.equal(s.players[0].supply,4);assert.equal(s.players[1].supply,0);assert.equal(s.supplyLedger[0].entries.at(-1).amount,3);
+ s=createGame({strategies:false,seed:705});const old=s.fields.find(f=>f.capital&&f.owner===0),field=s.fields.find(f=>f.id==='p1_oil');field.owner=0;field.garrison=[{...s.players[0].hand.pop(),open:true}];s.players[0].strategies=['relocate_capital'];
+ s=next(s,{type:'strategy',id:'relocate_capital',field:field.id});const movedOld=s.fields.find(f=>f.id===old.id),movedNew=s.fields.find(f=>f.id===field.id);assert.equal(movedOld.capital,false);assert.equal(movedNew.capital,true);assert.ok(movedOld.garrison.some(c=>c.open));
+});
+
+test('historical deployment starts with scenario strategy cards',()=>{
+ const s=createGame({map:'china_civil_war',deployment:'historical',strategies:true,seed:706});assert.equal(s.phase,'campaign');assert.ok(s.players[0].strategies.length&&s.players[1].strategies.length);assert.ok(s.players.flatMap(p=>p.strategies).includes('relocate_capital'));
 });

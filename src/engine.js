@@ -1,5 +1,5 @@
 
-import {BALANCE,MAPS,STRATEGIES,SUITS,defaults,strategyById} from './data.js';
+import {BALANCE,MAPS,STRATEGIES,SUITS,defaults,strategyById,HISTORICAL_STRATEGIES} from './data.js';
 import {t,strategyText,mapFactions,fieldLabel} from './i18n/index.js';
 const fieldName=(s,f)=>fieldLabel(s.opt.map,f.id);
 export function random(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/4294967296}
@@ -119,7 +119,7 @@ export function createGame(options={}){
  players:[{name:names[0],logo:logos[0],faction:factions[0],side:sides[0],hand:[],reserve:[],strategies:[],supply:BALANCE.campaign.startingSupply,wins:0},{name:names[1],logo:logos[1],faction:factions[1],side:sides[1],hand:[],reserve:[],strategies:[],supply:BALANCE.campaign.startingSupply,wins:0}],
  deck:[],fields:structuredClone(map.fields).map(f=>({...f,owner:f.owner===null?null:sides.indexOf(f.owner)})),
  battle:null,log:[],winner:null,reason:'',draft:[[],[]],drafted:[false,false],turn:1,strategyUsed:false,supplyUsed:false,raid:false,knowledge:[{},{}],
- strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false,actionSpent:false,supplyLedger:[null,null]};
+ strategyDeck:[],strategyMarket:[],strategyDiscard:[],strategyLocked:[[],[]],marketBought:false,rapidRedeployUsed:false,actionSpent:false,supplyLedger:[null,null],truceUntilRound:Number(opt.openingTruceRounds)||0};
  const deckCount=resolvedDeckCount(opt,s.fields);s.baseDeckSize=54+(deckCount-1)*52;
  s.deck=shuffle(s,makeDeck(deckCount));for(let i=0;i<BALANCE.deck.initialHand;i++)for(let p=0;p<2;p++)s.players[p].hand.push(s.deck.pop());
  if(opt.rules==='campaign'){
@@ -129,7 +129,12 @@ export function createGame(options={}){
  }
  else s.fields=[];
  const available=STRATEGIES.filter(c=>opt.rules==='campaign'||c.phase==='battle');
- if(opt.strategies){s.strategyDeck=shuffle(s,available.flatMap(c=>Array(c.count).fill(c.id)));for(let p=0;p<2;p++)s.draft[p]=s.strategyDeck.splice(-BALANCE.campaign.draftSize)}
+ if(opt.strategies){
+  const historical=opt.rules==='campaign'&&opt.deployment==='historical'&&HISTORICAL_STRATEGIES[map.id];
+  if(historical)for(let p=0;p<2;p++)s.players[p].strategies=[...historical[s.players[p].side]];
+  const held=s.players.flatMap(p=>p.strategies);s.strategyDeck=shuffle(s,available.flatMap(c=>Array(Math.max(0,c.count-held.filter(id=>id===c.id).length)).fill(c.id)));
+  if(historical){s.drafted=[true,true];begin(s)}else for(let p=0;p<2;p++)s.draft[p]=s.strategyDeck.splice(-BALANCE.campaign.draftSize);
+ }
  s.active=0;
  if(!opt.strategies){s.drafted=[true,true];begin(s)}
  log(s,t('engine.log.game_ready'));validate(s);return s;
@@ -170,6 +175,8 @@ export function upgradeState(s){
  if(typeof s.rapidRedeployUsed!=='boolean')s.rapidRedeployUsed=false;
  if(typeof s.actionSpent!=='boolean')s.actionSpent=false;
  if(!Array.isArray(s.supplyLedger))s.supplyLedger=[null,null];
+ if(!Number.isInteger(s.truceUntilRound))s.truceUntilRound=0;
+ for(const f of s.fields)if(!Number.isInteger(f.scorchedUntil))f.scorchedUntil=0;
  const template=MAPS.find(m=>m.id===s.opt.map);if(template)for(const f of s.fields)f.fortified=!!template.fields.find(x=>x.id===f.id)?.fortified;
  if(s.opt.rules==='campaign')for(const f of s.fields)if(f.owner!==null&&!f.capital&&f.garrison.length&&!f.garrison.some(c=>c.open))f.garrison[0].open=true;
  if(s.opt.rules==='campaign'&&s.opt.strategies)fillMarket(s);
@@ -201,9 +208,9 @@ export function income(s){
  let operationalNet=0;
  const connected=supplyConnected(s,who);
  for(const f of s.fields.filter(f=>f.owner===who)){
-  const base=BALANCE.campaign.supplyByFieldType[f.type]??BALANCE.campaign.supplyByFieldType.default,open=f.garrison.filter(c=>c.open).length,blocked=f.blockedUntil>=s.round,upkeep=BALANCE.campaign.garrisonUpkeep;
-  let amount=blocked?0:open>=upkeep.negativeAtOpen?-base:open===upkeep.idleAtOpen?0:base;
-  let label=fieldName(s,f)+t(blocked?'engine.ledger.blocked':open>=upkeep.negativeAtOpen?'engine.ledger.upkeep':open===upkeep.idleAtOpen?'engine.ledger.idle':'engine.ledger.output');
+  const base=BALANCE.campaign.supplyByFieldType[f.type]??BALANCE.campaign.supplyByFieldType.default,open=f.garrison.filter(c=>c.open).length,blocked=f.blockedUntil>=s.round,scorched=f.scorchedUntil>=s.round,upkeep=BALANCE.campaign.garrisonUpkeep;
+  let amount=blocked?0:scorched?(open<=1?0:-(open-1)):open>=upkeep.negativeAtOpen?-base:open===upkeep.idleAtOpen?0:base;
+  let label=fieldName(s,f)+t(blocked?'engine.ledger.blocked':scorched?'engine.ledger.scorched':open>=upkeep.negativeAtOpen?'engine.ledger.upkeep':open===upkeep.idleAtOpen?'engine.ledger.idle':'engine.ledger.output');
   const cut=!blocked&&!connected.has(f.id);
   if(cut&&amount>0){amount=0;label+=t('engine.ledger.cut');log(s,t('engine.log.supply_cut',{field:fieldName(s,f)}))}
   else if(cut&&amount<0){
@@ -297,6 +304,7 @@ function raidReachable(s,p,f){
  return false;
 }
 export function reachable(s,p,f){return s.raid?raidReachable(s,p,f):s.fields.some(x=>x.owner===p&&x.links.includes(f.id))}
+export function canAttack(s,p,f){const connected=supplyConnected(s,p);return s.round>s.truceUntilRound&&(s.raid||s.fields.some(x=>x.owner===p&&x.links.includes(f.id)&&connected.has(x.id)))}
 function target(s,id){return s.fields.find(x=>x.id===id)}
 function strategyError(s,p,id,fieldId,cards){
  const c=strategyById(id);if(!c||!s.players[p].strategies.includes(id))return t('engine.error.no_such_strategy');
@@ -305,7 +313,7 @@ function strategyError(s,p,id,fieldId,cards){
  if(c.phase==='campaign'&&!campaign)return t('engine.error.strategy_phase_campaign');
  if(c.phase==='battle'&&!['tactics','counter'].includes(s.phase))return t('engine.error.strategy_phase_battle');
  if(campaign?s.strategyUsed:s.battle.strategyUsed[p])return t('engine.error.strategy_used');
- if(['revolution','airborne_raid'].includes(id)&&s.actionSpent)return t('engine.error.action_spent');
+ if(['revolution','airborne_raid','scorched_earth','relocate_capital'].includes(id)&&s.actionSpent)return t('engine.error.action_spent');
  const enemy=1-p,f=target(s,fieldId),line=s.battle?.lines[p]||[],other=s.battle?.lines[enemy]||[];
  if(['conscription','paratrooper'].includes(id)&&!s.deck.length)return t('engine.error.deck_empty');
  if(id==='meds_team'){if(!s.players[p].reserve.length)return t('engine.error.meds_no_reserve');if(cards){if(!Array.isArray(cards)||!cards.length||cards.length>c.effect.recover)return t('engine.error.meds_pick_count');const ids=new Set(s.players[p].reserve.map(c=>c.id));if(new Set(cards).size!==cards.length||!cards.every(id=>ids.has(id)))return t('engine.error.meds_own_reserve');}}
@@ -317,6 +325,12 @@ function strategyError(s,p,id,fieldId,cards){
  if(id==='blitzkrieg'&&leading(s)!==p)return t('engine.error.blitzkrieg_behind');
  if(id==='revolution'&&(!f||f.owner!==null))return t('engine.error.revolution_target');
  if(id==='economic_sanctions'&&(!f||f.owner!==enemy))return t('engine.error.sanctions_target');
+ if(id==='economic_espionage'&&!s.players[enemy].supply)return t('engine.error.espionage_empty');
+ if(id==='scorched_earth'&&(!f||f.owner!==p||f.capital||!supplyConnected(s,p).has(f.id)))return t('engine.error.scorched_target');
+ if(id==='relocate_capital'){
+  const capital=s.fields.find(x=>x.owner===p&&x.capital);
+  if(!f||f.owner!==p||f.capital||!capital?.links.includes(f.id)||!supplyConnected(s,p).has(f.id)||!capital.garrison.some(c=>!c.open))return t('engine.error.relocate_target');
+ }
  return null;
 }
 export function canStrategy(s,p,id,fieldId,cards){return p===s.active&&s.phase!=='over'?strategyError(s,p,id,fieldId,cards):t('engine.error.not_your_turn')}
@@ -354,6 +368,8 @@ function returnGarrisonCards(s,p,cards){
  s.players[p].reserve.push(...cards.filter(c=>c.open).map(clean));
  s.players[p].hand.push(...cards.filter(c=>!c.open).map(clean));
 }
+function fieldConnected(s,p,f){return supplyConnected(s,p).has(f.id)}
+function withdrawField(s,p,f){returnGarrisonCards(s,p,f.garrison);f.garrison=[];f.owner=null}
 function strategy(s,p,id,fieldId,cards){
  const error=strategyError(s,p,id,fieldId,cards);if(error)return error;
  const pl=s.players[p],enemy=1-p,f=target(s,fieldId),config=strategyById(id),pick=a=>a[Math.floor(random(s)*a.length)];
@@ -369,12 +385,15 @@ function strategy(s,p,id,fieldId,cards){
  case 'paratrooper':s.battle.lines[p].push({...clean(s.deck.pop()),open:true});if(s.phase==='counter')resolveCounter(s);break;
  case 'rank_up':{const card=pick(s.battle.lines[p].filter(card=>rankUpAllowed(s,p,s.battle.lines[p],card)));card.boost=Math.min(13-card.rank,(card.boost||0)+config.effect.boost);if(s.phase==='counter')resolveCounter(s);break}
  case 'scouting':pick(s.battle.lines[enemy].filter(c=>!c.open)).open=true;resolveCounter(s);break;
- case 'peace_talk':settle(s,null);break;
+ case 'peace_talk':s.truceUntilRound=Math.max(s.truceUntilRound,s.round+config.effect.rounds);settle(s,null);break;
  case 'revolution':f.owner=p;f.garrison.push({id:s.baseDeckSize+s.generated++,rank:config.effect.cardRank,suit:Math.floor(random(s)*SUITS.length),open:true});s.actionSpent=true;break;
  case 'blitzkrieg':settle(s,leading(s));break;
  case 'international_support':supplyFlow(s,p,t('engine.ledger.aid'),config.effect.supply);break;
  case 'airborne_raid':s.raid=true;break;
  case 'economic_sanctions':f.blockedUntil=s.round+config.effect.rounds;break;
+ case 'economic_espionage':{const amount=Math.min(config.effect.supply,s.players[enemy].supply);supplyFlow(s,enemy,t('engine.ledger.espionage_loss'),-amount);supplyFlow(s,p,t('engine.ledger.espionage_gain'),amount);break}
+ case 'scorched_earth':withdrawField(s,p,f);f.scorchedUntil=s.round+config.effect.rounds;s.actionSpent=true;break;
+ case 'relocate_capital':{const capital=s.fields.find(x=>x.owner===p&&x.capital),hidden=capital.garrison.find(c=>!c.open);hidden.open=true;capital.capital=false;f.capital=true;s.actionSpent=true;break}
  }
  return null;
 }
@@ -396,9 +415,10 @@ function apply(s,p,a){
  if(a.type==='pass'){log(s,t('engine.log.pass',{name:s.players[p].name}));nextCampaign(s);return null}
  const f=target(s,a.field);
  if(!f)return t('engine.error.pick_field');
- if(s.actionSpent&&['occupy','reorganize','attack','siege'].includes(a.type))return t('engine.error.action_spent_hint');
+ if(s.actionSpent&&['occupy','reorganize','attack','siege','abandon_field'].includes(a.type))return t('engine.error.action_spent_hint');
  if(a.type==='reorganize'){
  if(f.owner!==p)return t('engine.error.reorganize_own');
+ if(!fieldConnected(s,p,f))return t('engine.error.field_cut_action');
  const prepared=garrisonFromHand(s,p,a.cards,f);if(prepared.error)return prepared.error;
  const selected=new Set(prepared.line.map(c=>c.id));
  s.players[p].hand=s.players[p].hand.filter(c=>!selected.has(c.id));
@@ -408,6 +428,7 @@ function apply(s,p,a){
  }
  if(a.type==='rotate_garrison'){
   if(f.owner!==p)return t('engine.error.rotate_own');
+  if(!fieldConnected(s,p,f))return t('engine.error.field_cut_action');
   if(s.rapidRedeployUsed)return t('engine.error.rotate_used');
   const outIds=Array.isArray(a.outIds)?a.outIds:[],specs=Array.isArray(a.cards)?a.cards:[],cost=outIds.length*BALANCE.campaign.rotationCostPerCard;
   if(outIds.length<1||outIds.length!==specs.length)return t('engine.error.rotate_equal');
@@ -424,6 +445,11 @@ function apply(s,p,a){
   supplyFlow(s,p,t('engine.ledger.rotate',{field:fieldName(s,f)}),-cost);s.rapidRedeployUsed=true;
   log(s,t('engine.log.rotate_garrison',{name:s.players[p].name,cost,field:fieldName(s,f)}));return null;
  }
+ if(a.type==='abandon_field'){
+  if(f.owner!==p||f.capital)return t('engine.error.abandon_target');
+  if(!fieldConnected(s,p,f))return t('engine.error.field_cut_action');
+  const label=fieldName(s,f);withdrawField(s,p,f);s.actionSpent=true;log(s,t('engine.log.abandon_field',{name:s.players[p].name,field:label}));return null;
+ }
  if(f.owner===p)return t('engine.error.target_enemy_or_neutral');
  if(!reachable(s,p,f))return t('engine.error.not_adjacent');
  if(a.type==='occupy'){
@@ -435,6 +461,8 @@ function apply(s,p,a){
  }
  if(['attack','siege'].includes(a.type)){
   if(f.owner===null)return t('engine.error.attack_neutral');
+  if(s.round<=s.truceUntilRound)return t('engine.error.attack_truce',{round:s.truceUntilRound});
+  if(!s.raid&&!s.fields.some(x=>x.owner===p&&x.links.includes(f.id)&&supplyConnected(s,p).has(x.id)))return t('engine.error.attack_cut');
   if(a.type==='siege'){
    if(f.garrison.length<=BALANCE.campaign.siegeThreshold)return t('engine.error.siege_none');
    if(s.players[p].supply<BALANCE.campaign.siegeCost)return t('engine.error.siege_cost',{cost:BALANCE.campaign.siegeCost});
@@ -523,17 +551,18 @@ export function aiAction(s,p,level='normal'){
  if(v.phase==='campaign'){
  const targets=v.fields.filter(f=>f.owner!==p&&reachable(v,p,f));
  const enemy=targets.filter(f=>f.owner===1-p).sort((a,b)=>Number(b.capital)-Number(a.capital));
+ const attackable=enemy.filter(f=>canAttack(v,p,f));
  const neutral=targets.filter(f=>f.owner===null).sort((a,b)=>(b.type==='oil')-(a.type==='oil'));
  const focus=enemy[0]||neutral[0];
  if(!v.marketBought&&pl.strategies.length<BALANCE.campaign.strategyHandLimit){
- const priority=['international_support',...(pl.hand.length<9?['conscription']:[]),'spy','rank_up','scouting','meds_team','isr','paratrooper','economic_sanctions','airborne_raid','revolution','peace_talk','blitzkrieg'];
+ const priority=['international_support','economic_espionage',...(pl.hand.length<9?['conscription']:[]),'spy','rank_up','scouting','meds_team','isr','paratrooper','economic_sanctions','airborne_raid','revolution','peace_talk','blitzkrieg'];
  const affordable=priority.find(id=>v.strategyMarket.includes(id)&&!pl.strategies.includes(id)&&!canBuyStrategy(s,p,id)&&(id==='international_support'||pl.supply-strategyById(id).price>=2));
  if(affordable)return {type:'buy_strategy',id:affordable};
  }
  for(const id of pl.strategies){
  const f=id==='revolution'?v.fields.find(x=>x.owner===null):id==='isr'?v.fields.find(x=>x.owner===1-p&&x.garrison.some(c=>c.hidden)):focus;
  // Availability is evaluated against own/visible resources, no hidden ranks.
- if(!canStrategy(s,p,id,f?.id)&&['conscription','meds_team','revolution','international_support','economic_sanctions','isr'].includes(id))return {type:'strategy',id,field:f?.id};
+ if(!canStrategy(s,p,id,f?.id)&&['conscription','meds_team','revolution','international_support','economic_espionage','economic_sanctions','isr'].includes(id))return {type:'strategy',id,field:f?.id};
  }
  const rotation=v.fields.find(f=>f.owner===p&&f.garrison.filter(c=>c.open).length>=2);
  if(rotation&&pl.supply>=BALANCE.campaign.rotationCostPerCard&&!v.rapidRedeployUsed&&pl.hand.length){
@@ -543,9 +572,9 @@ export function aiAction(s,p,level='normal'){
  }
  if(pl.hand.length<10&&pl.supply>=BALANCE.campaign.resupplyCost&&!v.supplyUsed&&v.deck.length>=BALANCE.campaign.resupplyCards)return {type:'supply'};
  if(v.actionSpent)return {type:'pass'};
- if(enemy.length&&(pl.hand.length>=3||!neutral.length))return {type:enemy[0].garrison.length>BALANCE.campaign.siegeThreshold&&pl.supply>=BALANCE.campaign.siegeCost?'siege':'attack',field:enemy[0].id};
+ if(attackable.length&&(pl.hand.length>=3||!neutral.length))return {type:attackable[0].garrison.length>BALANCE.campaign.siegeThreshold&&pl.supply>=BALANCE.campaign.siegeCost?'siege':'attack',field:attackable[0].id};
  if(neutral.length&&pl.hand.length>1)return {type:'occupy',field:neutral[0].id,cards:[{id:[...pl.hand].sort((a,b)=>a.rank-b.rank)[0].id,open:true}]};
- if(enemy.length&&pl.hand.length)return {type:enemy[0].garrison.length>BALANCE.campaign.siegeThreshold&&pl.supply>=BALANCE.campaign.siegeCost?'siege':'attack',field:enemy[0].id};
+ if(attackable.length&&pl.hand.length)return {type:attackable[0].garrison.length>BALANCE.campaign.siegeThreshold&&pl.supply>=BALANCE.campaign.siegeCost?'siege':'attack',field:attackable[0].id};
  return {type:'pass'};
  }
  if(v.phase==='defend'||v.phase==='attack'){

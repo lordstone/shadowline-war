@@ -22,7 +22,7 @@ for(const card of config.strategies||[]){
  if(!['campaign','battle'].includes(card.phase))throw new Error('Invalid strategy phase: '+card.id);
  for(const [key,value] of Object.entries(card.effect||{}))positive(value,'strategies.'+card.id+'.effect.'+key);
 }
-if(ids.size!==13)throw new Error('Expected all 13 strategy cards');
+if(ids.size<13)throw new Error('Expected the complete strategy card set');
 
 const output='// Generated from config/game-balance.yaml by tools/generate-game-config.mjs. Do not edit.\n'+
  'export const GAME_CONFIG='+JSON.stringify(config,null,2)+';\n';
