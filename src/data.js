@@ -1,20 +1,9 @@
 
+import {GAME_CONFIG} from './game-config.js';
+
 export const SUITS=['♠','♥','♣','♦'];
-export const STRATEGIES=[
- {id:'conscription',icon:'✚',phase:'campaign',count:3,price:3},
- {id:'meds_team',icon:'✥',phase:'campaign',count:2,price:3},
- {id:'spy',icon:'◈',phase:'battle',count:2,price:3},
- {id:'isr',icon:'◎',phase:'campaign',count:2,price:4},
- {id:'paratrooper',icon:'↧',phase:'battle',count:2,price:5},
- {id:'rank_up',icon:'↑',phase:'battle',count:2,price:3},
- {id:'scouting',icon:'⌖',phase:'battle',count:2,price:4},
- {id:'peace_talk',icon:'⚑',phase:'battle',count:1,price:4},
- {id:'revolution',icon:'✦',phase:'campaign',count:1,price:6},
- {id:'blitzkrieg',icon:'ϟ',phase:'battle',count:1,price:7},
- {id:'international_support',icon:'▣',phase:'campaign',count:2,price:4},
- {id:'airborne_raid',icon:'⤴',phase:'campaign',count:1,price:5},
- {id:'economic_sanctions',icon:'⊘',phase:'campaign',count:2,price:4}
-];
+export const BALANCE=GAME_CONFIG;
+export const STRATEGIES=GAME_CONFIG.strategies;
 const f=(id,label,type,x,y,links,owner=null,capital=false,fortified=false)=>({id,label,type,x,y,links,owner,capital,fortified,garrison:[],blockedUntil:0});
 export const MAPS=[
  {id:'duel',fields:[
@@ -86,5 +75,5 @@ export const MAPS=[
  {id:'china_civil_war',factionLogos:['☀','★'],historical:{control:{nanjing:0,shanghai:0,hangzhou:0,wuhan:0,changsha:0,nanchang:0,xuzhou:0,tianjin:0,beiping:0,zhengzhou:0,jinan:1,yanan:1,shenyang:1}},seaLinks:[['shanghai','tianjin']],fields:[
  f('nanjing','南京指挥部','capital',65,57,['xuzhou','wuhan','shanghai'],0,true),f('shanghai','上海港','port',82,51,['nanjing','hangzhou','tianjin']),f('hangzhou','杭州','town',74,68,['shanghai','wuhan']),f('wuhan','武汉枢纽','town',49,54,['nanjing','hangzhou','xuzhou','zhengzhou','changsha','nanchang'],null,false,true),f('changsha','长沙','forest',40,68,['wuhan','nanchang']),f('nanchang','南昌','town',56,70,['changsha','wuhan']),f('xuzhou','徐州','town',62,45,['nanjing','wuhan','jinan','zhengzhou'],null,false,true),f('jinan','济南','town',51,35,['xuzhou','tianjin','zhengzhou'],null,false,true),f('tianjin','天津港','port',69,37,['jinan','beiping','shenyang','shanghai']),f('beiping','北平枢纽','town',62,23,['tianjin','zhengzhou','yanan','shenyang'],null,false,true),f('zhengzhou','郑州','town',43,44,['wuhan','xuzhou','jinan','beiping','yanan'],null,false,true),f('yanan','延安指挥部','capital',27,29,['beiping','zhengzhou','shenyang'],1,true),f('shenyang','沈阳油区','oil',86,22,['tianjin','beiping','yanan'])]}
 ];
-export const defaults={mode:'ai',map:'duel',rules:'campaign',difficulty:'normal',timer:0,eventSeconds:3,seed:2026,strategies:true,first:0,maxRounds:80,deckCount:'auto',deployment:'standard',sound:true,playerNames:['',''],playerLogos:['⟐','✣'],factions:[0,1]};
+export const defaults=GAME_CONFIG.defaults;
 export const strategyById=id=>STRATEGIES.find(s=>s.id===id);

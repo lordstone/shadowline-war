@@ -4,6 +4,7 @@
 
 import zh from './zh.js';
 import en from './en.js';
+import {GAME_CONFIG} from '../game-config.js';
 
 const packs = {zh, en};
 const FALLBACK = 'zh';
@@ -52,9 +53,10 @@ export function supportedLangs() { return Object.keys(packs); }
 // Localized text helpers for game data. These keep data.js (structure)
 // decoupled from the language packs (text).
 export function strategyText(id) {
+  const params=GAME_CONFIG.strategies.find(card=>card.id===id)?.effect;
   return {
     name: t('strategy.' + id + '.name'),
-    desc: t('strategy.' + id + '.desc'),
+    desc: t('strategy.' + id + '.desc',params),
     use: t('strategy.' + id + '.use'),
   };
 }
