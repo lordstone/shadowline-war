@@ -160,7 +160,7 @@ test('failed partial reveal retains control; exhausted hidden line loses',()=>{
  t=next(t,{type:'deploy',cards:ids(t.players[0].hand)});t=next(t,{type:'deploy',cards:ids(t.players[1].hand)});
  t=next(t,{type:'reveal',ids:[t.battle.lines[0][1].id]});assert.equal(t.players[1].wins,1);
 });
-test('fold and peace return all hidden cards and clear temporary boosts',()=>{
+test('fold and ceasefire talks return all hidden cards and clear temporary boosts',()=>{
  for(const peace of [false,true]){
  let s=confrontation();const concealed=s.battle.lines.map(l=>l.find(c=>!c.open).id);
  s.battle.lines[0][0].boost=1;
@@ -557,8 +557,9 @@ test('opening truce and peace talks share the attack lock',()=>{
  let s=createGame({strategies:false,openingTruceRounds:1,seed:701}),target=s.fields.find(f=>f.id==='center_town');target.owner=1;target.garrison=[{...s.players[1].hand.pop(),open:true}];
  let r=act(s,0,{type:'attack',field:target.id});assert.equal(r.ok,false);assert.match(r.error,/停战期/);
  s.truceUntilRound=0;r=act(s,0,{type:'attack',field:target.id});assert.equal(r.ok,true);
- s=r.state;s.phase='tactics';s.active=0;s.players[0].strategies=['peace_talk'];s.strategyLocked=[[],[]];
- s=next(s,{type:'strategy',id:'peace_talk'});assert.equal(s.truceUntilRound,s.round+2);assert.equal(s.phase,'campaign');
+ s=createGame({strategies:false,seed:704});s.players[0].strategies=['peace_negotiation'];s.strategyLocked=[[],[]];
+ s=next(s,{type:'strategy',id:'peace_negotiation'});assert.equal(s.truceUntilRound,s.round+2);assert.equal(s.phase,'campaign');assert.equal(s.battle,null);
+ let battle=confrontation();battle.players[0].strategies=['peace_negotiation'];assert.match(canStrategy(battle,0,'peace_negotiation'),/地图行动阶段/);
 });
 
 test('abandon and scorched earth share safe garrison withdrawal',()=>{
