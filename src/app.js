@@ -489,7 +489,9 @@ function launchGame(){
  events=[];eventEnd=null;eventRemaining=null;deadline=null;remaining=null;aiTask=null;
  mapViewport={x:0,y:0,scale:1};fittedMap=null;
  s=createGame(options);
- if(options.mode==='ai'&&options.first===0)s.active=1;
+ // Let the AI resolve its strategy draft first without overriding the chosen
+ // first player when historical deployment skips the draft entirely.
+ if(options.mode==='ai'&&options.first===0&&s.phase==='draft')s.active=1;
  toast(t('toast.game_start',{map:mapText(map.id).name}));
  modal=null;pause();render();
 }
