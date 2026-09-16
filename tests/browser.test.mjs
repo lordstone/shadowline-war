@@ -199,9 +199,26 @@ export async function launchFromMenuCheck(browser,url='http://127.0.0.1:4173/'){
  assert.equal(phase,'draft');
  const toastText=await page.locator('#toast').innerText();
  assert.ok(!/出错/.test(toastText),'unexpected error toast: '+toastText);
+ // Historical scenarios with built-in strategy cards skip the draft entirely.
+ // Exercise the real menu -> launchGame path because createGame-only tests cannot
+ // catch launch-time code overriding the configured first player.
+ await page.goto(url);
+ await page.evaluate(()=>localStorage.removeItem('shadowline-war-v1'));
+ await page.reload();
+ await page.locator('[data-action="map"][data-id="china_civil_war"]').click();
+ await page.locator('details.advanced summary').click();
+ await page.locator('[data-option="first"]').selectOption('0');
+ await page.locator('[data-option="deployment"]').selectOption('historical');
+ await page.locator('[data-option="strategies"]').selectOption('true');
+ const historicalLaunch=await page.locator('[data-action="start"]').evaluate(button=>{
+  button.click();
+  const current=document.querySelector('.army-panel.current');
+  return {phase:document.querySelector('.game-shell')?.dataset.phase,active:current?.dataset.player};
+ });
+ assert.deepEqual(historicalLaunch,{phase:'campaign',active:'0'});
  assert.deepEqual(errors,[]);
  await page.close();
- return 'clicking 开始作战 from the menu enters draft phase without crashing';
+ return 'menu launch enters draft safely and preserves player initiative when historical strategies skip the draft';
 }
 
 export async function headerVisibilityCheck(browser,url='http://127.0.0.1:4173/'){
