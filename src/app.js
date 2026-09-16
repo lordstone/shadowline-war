@@ -300,6 +300,10 @@ function strategyConfirmView(config){
  const id=config.strategyId,c=strategyById(id),st=strategyText(id),target=config.field?s.fields.find(f=>f.id===config.field):null;
  return '<div class="eyebrow">'+t('modal.strategy_confirm.eyebrow')+'</div><h2>'+t('modal.strategy_confirm.title',{name:st.name})+'</h2><div class="event-strategy-card strategy-confirm-card"><span>'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div></div><p class="modal-desc">'+st.use+'</p>'+(target?'<p class="modal-desc">'+t('modal.strategy_confirm.target',{name:fieldName(s.opt.map,target)})+'</p>':'')+'<p class="modal-desc">'+t('modal.strategy_confirm.single_use')+'</p><div class="modal-actions">'+btn(t('modal.cancel'),'close','secondary')+btn(t(config.chooseTarget?'modal.strategy_confirm.choose_target':'modal.strategy_confirm.confirm'),'strategy-confirm','primary',false,'data-id="'+id+'"')+'</div>';
 }
+function abandonConfirmView(config){
+ const f=s.fields.find(x=>x.id===config.field),open=f.garrison.filter(c=>c.open).length,hidden=f.garrison.length-open;
+ return '<div class="eyebrow">'+t('modal.abandon.eyebrow')+'</div><h2>'+t('modal.abandon.title',{field:fieldName(s.opt.map,f)})+'</h2><p class="modal-desc">'+t('modal.abandon.desc',{open,hidden})+'</p><div class="modal-actions">'+btn(t('modal.cancel'),'close','secondary')+btn(t('modal.abandon.confirm'),'abandon-confirm','primary danger',false,'data-id="'+f.id+'"')+'</div>';
+}
 function logView(){
  return '<div class="eyebrow">'+t('modal.log.eyebrow')+'</div><h2>'+t('modal.log.title')+'</h2><div class="log-modal-list">'+battleLogList()+'</div>'+btn(t('modal.close'),'close','primary');
 }
@@ -325,6 +329,7 @@ function modalView(kind=modal){
  else if(kind==='market')content=marketView();
  else if(kind==='log')content=logView();
  else if(kind&&kind.kind==='strategy-confirm')content=strategyConfirmView(kind);
+ else if(kind&&kind.kind==='abandon-confirm')content=abandonConfirmView(kind);
  else if(kind&&kind.kind==='reserve')content=reserveView(kind);
  else if(modal&&modal.rotation==='medic')content=medicView(modal.strategyId);
  else if(modal&&modal.rotation==='garrison')content=garrisonRotationView(modal);
@@ -596,7 +601,8 @@ document.addEventListener('click',e=>{
  if(a==='reorganize'){occupy(focus,[...selection].map(([cid,open])=>({...s.players[viewer()].hand.find(c=>c.id===cid),open})),'reorganize');return}
  if(a==='attack'){if(focus)perform({type:'attack',field:focus});return}
  if(a==='siege'){if(focus)perform({type:'siege',field:focus});return}
- if(a==='abandon-field'){if(focus&&confirm(t('game.action.abandon_confirm')))perform({type:'abandon_field',field:focus});return}
+ if(a==='abandon-field'){if(focus)showModal({kind:'abandon-confirm',field:focus});return}
+ if(a==='abandon-confirm'){modal=null;resume();perform({type:'abandon_field',field:id});return}
  if(a==='supply'){supplyToHand();return}
  if(a==='open-market'){showModal('market');return}
  if(a==='open-log'){showModal('log');return}
