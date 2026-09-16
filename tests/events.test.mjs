@@ -28,6 +28,12 @@ test('strategy purchase produces a priced acquisition event',()=>{
  const a={type:'buy_strategy',id:'conscription'},r=act(s,0,a);assert.equal(r.ok,true);
  const event=actionEvents(s,r.state,a,0)[0];assert.equal(event.kind,'purchase');assert.equal(event.strategy.id,'conscription');assert.match(event.detail,/3 点补给/);
 });
+test('concealed cards returned by garrison rotation are marked new only for their owner',()=>{
+ const s=createGame({strategies:false,seed:94}),field=s.fields.find(f=>f.owner===0),returned=field.garrison[1],incoming=s.players[0].hand[0];
+ const a={type:'rotate_garrison',field:field.id,outIds:[returned.id],cards:[{id:incoming.id,open:false}]},r=act(s,0,a);assert.equal(r.ok,true);
+ const mine=actionEvents(s,r.state,a,0).find(e=>e.kind==='garrison'),other=actionEvents(s,r.state,a,1).find(e=>e.kind==='garrison');
+ assert.deepEqual(mine.newIds,[returned.id]);assert.deepEqual(other.newIds,[]);
+});
 test('negative garrison upkeep reports its ledger and public discard',()=>{
  let s=createGame({strategies:false,map:'duel',seed:94});const capital=s.fields.find(f=>f.owner===0&&f.capital);capital.garrison.forEach(c=>c.open=true);
  s=act(s,0,{type:'pass'}).state;const before=s,a={type:'pass'},r=act(before,1,a);assert.equal(r.ok,true);

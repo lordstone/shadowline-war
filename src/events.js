@@ -19,7 +19,7 @@ export function actionEvents(before,after,action,perspective){
  const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison,open=old.filter(c=>c.open).length,hidden=old.length-open;add('garrison',t('event.title.reorganize',{name:name(actor)}),t('event.detail.reorganize',{label:label(f),total:f.garrison.length,open,hidden}),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
  }
  if(action.type==='rotate_garrison'){
- const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison.filter(c=>action.outIds.includes(c.id)),open=old.filter(c=>c.open).length,hidden=old.length-open;add('garrison',t('event.title.rotate_garrison',{name:name(actor)}),t('event.detail.rotate_garrison',{label:label(f),n:old.length,open,hidden}),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
+ const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison.filter(c=>action.outIds.includes(c.id)),returned=old.filter(c=>!c.open),open=old.length-returned.length,hidden=returned.length;add('garrison',t('event.title.rotate_garrison',{name:name(actor)}),t('event.detail.rotate_garrison',{label:label(f),n:old.length,open,hidden}),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor)),newIds:perspective===actor?returned.map(c=>c.id):[]});
  }
  if(action.type==='strategy'){
  const strategy=strategyById(action.id),st=strategyText(action.id);
