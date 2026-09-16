@@ -187,7 +187,7 @@ function score(s,p){return s.players[p].reserve.length+s.fields.filter(f=>f.owne
 function finish(s,winner,reason){s.phase='over';s.winner=winner;s.reason=reason;s.battle=null;log(s,winner===null?t('engine.log.game_draw'):t('engine.log.game_win',{name:s.players[winner].name}))}
 function begin(s){s.active=s.opt.first===1?1:0;if(s.opt.rules==='classic')startBattle(s,1-s.active,s.active,null);else{fillMarket(s);s.phase='campaign';income(s)}}
 function ledger(s,p){return s.supplyLedger[p]||(s.supplyLedger[p]={round:s.round,opening:s.players[p].supply,entries:[],net:0,discardedId:null})}
-function supplyFlow(s,p,label,amount){const report=ledger(s,p),before=s.players[p].supply,after=Math.max(0,Math.min(BALANCE.campaign.supplyCap,before+amount)),actual=after-before;s.players[p].supply=after;report.entries.push({label,amount:actual});report.net+=actual;return actual}
+function supplyFlow(s,p,label,amount){const report=ledger(s,p),before=s.players[p].supply,after=Math.max(0,Math.min(BALANCE.campaign.supplyCap,before+amount)),actual=after-before;s.players[p].supply=after;report.entries.push({label,amount:actual,balance:after});report.net+=actual;return actual}
 export function supplyConnected(s,who){
  const owned=new Set(s.fields.filter(f=>f.owner===who).map(f=>f.id)),seen=new Set();
  const cap=s.fields.find(f=>f.owner===who&&f.capital);
@@ -217,6 +217,7 @@ export function income(s){
  const raw=opening+operationalNet,persisted=Math.max(0,Math.min(BALANCE.campaign.supplyCap,raw));p.supply=persisted;report.net=persisted-opening;
  if(raw>BALANCE.campaign.supplyCap)report.entries.push({label:t('engine.ledger.overflow'),amount:BALANCE.campaign.supplyCap-raw});
  if(raw<0)report.entries.push({label:t('engine.ledger.shortfall'),amount:-raw});
+ let running=opening;for(const entry of report.entries){running=Math.max(0,Math.min(BALANCE.campaign.supplyCap,running+entry.amount));entry.balance=running}
  if(operationalNet<0&&p.hand.length){const card=p.hand.splice(Math.floor(random(s)*p.hand.length),1)[0];p.reserve.push(clean(card));report.discardedId=card.id;log(s,t('engine.log.supply_negative_discard',{name:p.name}))}
  log(s,operationalNet>=0?t('engine.log.supply_gain',{name:p.name,amount:Math.abs(operationalNet)}):t('engine.log.supply_loss',{name:p.name,amount:Math.abs(operationalNet)}));
 }
