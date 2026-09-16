@@ -1,4 +1,4 @@
-import {strategyById} from './data.js';
+import {BALANCE,strategyById} from './data.js';
 import {t,strategyText,fieldLabel} from './i18n/index.js';
 export function actionEvents(before,after,action,perspective){
  const events=[],actor=before.active,name=p=>after.players[p].name;
@@ -9,7 +9,7 @@ export function actionEvents(before,after,action,perspective){
  if(['attack','siege'].includes(action.type)){
  const f=field(action.field),stationed=before.fields.find(x=>x.id===f.id).garrison;
  const siege=action.type==='siege';
- add('invasion',t('event.title.'+(siege?'siege':'attack'),{name:name(actor)}),t('event.detail.'+(siege?'siege':'attack'),{label:label(f)}),{field:f.id,map:after.fields,owner:actor});
+ add('invasion',t('event.title.'+(siege?'siege':'attack'),{name:name(actor)}),t('event.detail.'+(siege?'siege':'attack'),{label:label(f),cost:BALANCE.campaign.siegeCost}),{field:f.id,map:after.fields,owner:actor});
  if(stationed.length)add('garrison',t('event.title.garrison.defend'),t('event.detail.garrison.defend',{label:label(f),original:stationed.length,committed:after.battle.lines[1-actor].length}),{field:f.id,cards:after.battle.lines[1-actor].map(c=>visible(c,1-actor)),owner:1-actor});
  }
  if(action.type==='occupy'){
@@ -57,10 +57,10 @@ export function actionEvents(before,after,action,perspective){
  const report=after.supplyLedger?.[p],harvest=report&&report!==before.supplyLedger?.[p]&&(after.turn!==before.turn||before.phase==='draft');
  if(harvest){
   const details=report.entries.map(e=>e.label+' '+(e.amount>0?'+':'')+e.amount).join(t('event.list.separator'));
-  add('resources',t('event.title.resources.harvest',{name:name(p),net:(report.net>0?'+':'')+report.net}),t('event.detail.resources.harvest',{details,supply:after.players[p].supply}),{owner:p});
+  add('resources',t('event.title.resources.harvest',{name:name(p),net:(report.net>0?'+':'')+report.net}),t('event.detail.resources.harvest',{details,supply:after.players[p].supply,cap:BALANCE.campaign.supplyCap}),{owner:p});
   if(report.discardedId!==null){const discarded=after.players[p].reserve.find(c=>c.id===report.discardedId);if(discarded)add('cards',t('event.title.resources.deficit'),t('event.detail.resources.deficit',{name:name(p)}),{owner:p,cards:[visible(discarded,p,true)]})}
  }else if(gained>0){
-  add('resources',t('event.title.resources.gained',{name:name(p),amount:gained}),t('event.detail.resources.gained',{supply:after.players[p].supply}),{owner:p});
+  add('resources',t('event.title.resources.gained',{name:name(p),amount:gained}),t('event.detail.resources.gained',{supply:after.players[p].supply,cap:BALANCE.campaign.supplyCap}),{owner:p});
  }
  const fresh=after.players[p].hand.filter(c=>before.deck.some(d=>d.id===c.id));
  if(fresh.length)add('cards',t('event.title.cards.new.'+(fresh.length===1?'one':'other'),{name:name(p),n:fresh.length}),p===perspective?t('event.detail.cards.new.self'):t('event.detail.cards.new.other'),{owner:p,cards:fresh.map(c=>visible(c,p)),newIds:p===perspective?fresh.map(c=>c.id):[]});

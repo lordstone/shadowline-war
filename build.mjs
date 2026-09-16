@@ -6,6 +6,7 @@ const root=path.dirname(fileURLToPath(import.meta.url));
 const modules={
  'shadow/three-core':'vendor/three.core.min.js',
  'shadow/three':'vendor/three.module.min.js',
+ 'shadow/game-config':'src/game-config.js',
  'shadow/data':'src/data.js',
  'shadow/engine':'src/engine.js',
  'shadow/scene':'src/battlefield.js',
@@ -19,6 +20,8 @@ const modules={
 const replacements={
  './three.core.min.js':'shadow/three-core',
  '../vendor/three.module.min.js':'shadow/three',
+ './game-config.js':'shadow/game-config',
+ '../game-config.js':'shadow/game-config',
  './data.js':'shadow/data',
  './engine.js':'shadow/engine',
  './events.js':'shadow/events',
