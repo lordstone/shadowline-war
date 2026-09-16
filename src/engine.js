@@ -385,7 +385,8 @@ function strategy(s,p,id,fieldId,cards){
  case 'paratrooper':s.battle.lines[p].push({...clean(s.deck.pop()),open:true});if(s.phase==='counter')resolveCounter(s);break;
  case 'rank_up':{const card=pick(s.battle.lines[p].filter(card=>rankUpAllowed(s,p,s.battle.lines[p],card)));card.boost=Math.min(13-card.rank,(card.boost||0)+config.effect.boost);if(s.phase==='counter')resolveCounter(s);break}
  case 'scouting':pick(s.battle.lines[enemy].filter(c=>!c.open)).open=true;resolveCounter(s);break;
- case 'peace_talk':s.truceUntilRound=Math.max(s.truceUntilRound,s.round+config.effect.rounds);settle(s,null);break;
+ case 'peace_talk':settle(s,null);break;
+ case 'peace_negotiation':s.truceUntilRound=Math.max(s.truceUntilRound,s.round+config.effect.rounds);break;
  case 'revolution':f.owner=p;f.garrison.push({id:s.baseDeckSize+s.generated++,rank:config.effect.cardRank,suit:Math.floor(random(s)*SUITS.length),open:true});s.actionSpent=true;break;
  case 'blitzkrieg':settle(s,leading(s));break;
  case 'international_support':supplyFlow(s,p,t('engine.ledger.aid'),config.effect.supply);break;
@@ -555,14 +556,14 @@ export function aiAction(s,p,level='normal'){
  const neutral=targets.filter(f=>f.owner===null).sort((a,b)=>(b.type==='oil')-(a.type==='oil'));
  const focus=enemy[0]||neutral[0];
  if(!v.marketBought&&pl.strategies.length<BALANCE.campaign.strategyHandLimit){
- const priority=['international_support','economic_espionage',...(pl.hand.length<9?['conscription']:[]),'spy','rank_up','scouting','meds_team','isr','paratrooper','economic_sanctions','airborne_raid','revolution','peace_talk','blitzkrieg'];
+ const priority=['international_support','economic_espionage',...(pl.hand.length<9?['conscription']:[]),'spy','rank_up','scouting','meds_team','isr','paratrooper','economic_sanctions','airborne_raid','revolution','peace_negotiation','peace_talk','blitzkrieg'];
  const affordable=priority.find(id=>v.strategyMarket.includes(id)&&!pl.strategies.includes(id)&&!canBuyStrategy(s,p,id)&&(id==='international_support'||pl.supply-strategyById(id).price>=2));
  if(affordable)return {type:'buy_strategy',id:affordable};
  }
  for(const id of pl.strategies){
  const f=id==='revolution'?v.fields.find(x=>x.owner===null):id==='isr'?v.fields.find(x=>x.owner===1-p&&x.garrison.some(c=>c.hidden)):focus;
  // Availability is evaluated against own/visible resources, no hidden ranks.
- if(!canStrategy(s,p,id,f?.id)&&['conscription','meds_team','revolution','international_support','economic_espionage','economic_sanctions','isr'].includes(id))return {type:'strategy',id,field:f?.id};
+ if(!canStrategy(s,p,id,f?.id)&&['conscription','meds_team','revolution','international_support','economic_espionage','economic_sanctions','isr','peace_negotiation'].includes(id))return {type:'strategy',id,field:f?.id};
  }
  const rotation=v.fields.find(f=>f.owner===p&&f.garrison.filter(c=>c.open).length>=2);
  if(rotation&&pl.supply>=BALANCE.campaign.rotationCostPerCard&&!v.rapidRedeployUsed&&pl.hand.length){
