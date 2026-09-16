@@ -14,6 +14,7 @@ export const GAME_CONFIG={
     "maxRounds": 80,
     "deckCount": "auto",
     "deployment": "standard",
+    "openingTruceRounds": 0,
     "sound": true,
     "playerNames": [
       "",
@@ -143,9 +144,11 @@ export const GAME_CONFIG={
       "id": "peace_talk",
       "icon": "⚑",
       "phase": "battle",
-      "count": 1,
+      "count": 2,
       "price": 4,
-      "effect": {}
+      "effect": {
+        "rounds": 2
+      }
     },
     {
       "id": "revolution",
@@ -194,6 +197,34 @@ export const GAME_CONFIG={
       "effect": {
         "rounds": 3
       }
+    },
+    {
+      "id": "economic_espionage",
+      "icon": "¤",
+      "phase": "campaign",
+      "count": 2,
+      "price": 4,
+      "effect": {
+        "supply": 4
+      }
+    },
+    {
+      "id": "scorched_earth",
+      "icon": "♨",
+      "phase": "campaign",
+      "count": 2,
+      "price": 4,
+      "effect": {
+        "rounds": 3
+      }
+    },
+    {
+      "id": "relocate_capital",
+      "icon": "♜",
+      "phase": "campaign",
+      "count": 1,
+      "price": 6,
+      "effect": {}
     }
   ]
 };

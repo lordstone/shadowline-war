@@ -4,7 +4,7 @@ import {GAME_CONFIG} from './game-config.js';
 export const SUITS=['♠','♥','♣','♦'];
 export const BALANCE=GAME_CONFIG;
 export const STRATEGIES=GAME_CONFIG.strategies;
-const f=(id,label,type,x,y,links,owner=null,capital=false,fortified=false)=>({id,label,type,x,y,links,owner,capital,fortified,garrison:[],blockedUntil:0});
+const f=(id,label,type,x,y,links,owner=null,capital=false,fortified=false)=>({id,label,type,x,y,links,owner,capital,fortified,garrison:[],blockedUntil:0,scorchedUntil:0});
 export const MAPS=[
  {id:'duel',fields:[
  f('p1_capital','西境指挥部','capital',16,74,['p1_oil','center_town'],0,true),
@@ -77,3 +77,10 @@ export const MAPS=[
 ];
 export const defaults=GAME_CONFIG.defaults;
 export const strategyById=id=>STRATEGIES.find(s=>s.id===id);
+export const HISTORICAL_STRATEGIES={
+ eastern_front:[['blitzkrieg'],['international_support']],
+ korea:[['international_support'],['economic_sanctions']],
+ western_front:[['blitzkrieg'],['peace_talk']],
+ hormuz:[['economic_sanctions'],['economic_espionage']],
+ china_civil_war:[['relocate_capital','peace_talk'],['peace_talk','international_support']]
+};
