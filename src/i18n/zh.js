@@ -555,6 +555,7 @@ export default {
   'game.node_blocked': ' · 封锁中',
   'game.node_scorched': ' · 焦土中',
   'game.node_cut': ' · 补给线断',
+  'game.node_cut_title': '与首都的补给线已切断',
   'game.target.current': '当前目标',
   'game.target.field': '{label} · 驻军上限 {n}',
   'game.target.select': '点击地图选择据点',

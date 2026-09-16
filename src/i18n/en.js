@@ -550,6 +550,7 @@ export default {
   'game.node_blocked': ' · Blockaded',
   'game.node_scorched': ' · Scorched',
   'game.node_cut': ' · Supply cut',
+  'game.node_cut_title': 'Supply line to the capital is cut',
   'game.target.current': 'Current target',
   'game.target.field': '{label} · garrison cap {n}',
   'game.target.select': 'Click a field on the map',
