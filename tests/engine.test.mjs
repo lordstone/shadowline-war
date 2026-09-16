@@ -352,6 +352,7 @@ test('partial rapid rotation costs one supply per card and preserves revealed in
  cap.garrison[0].open=true;s.players[0].supply=4;
  s=next(s,{type:'rotate_garrison',field:cap.id,outIds:[outOpen.id,outHidden.id],cards:[{id:incoming[0].id,open:true},{id:incoming[1].id,open:false}]});
  assert.equal(s.active,0);assert.equal(s.players[0].supply,2);assert.equal(s.rapidRedeployUsed,true);
+ assert.equal(s.supplyLedger[0].entries.at(-1).balance,2);assert.equal(s.supplyLedger[0].entries.at(-1).amount,-2);
  assert.ok(s.players[0].reserve.some(c=>c.id===outOpen.id));assert.ok(!s.players[0].hand.some(c=>c.id===outOpen.id));assert.ok(s.players[0].hand.some(c=>c.id===outHidden.id));
  assert.deepEqual(new Set(s.fields.find(f=>f.id===cap.id).garrison.map(c=>c.id)),new Set([cap.garrison[2].id,...incoming.map(c=>c.id)]));
  assert.equal(act(s,0,{type:'rotate_garrison',field:cap.id,outIds:[cap.garrison[2].id],cards:[{id:s.players[0].hand[0].id,open:false}]}).ok,false);validate(s);

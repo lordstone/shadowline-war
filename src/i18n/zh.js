@@ -677,6 +677,7 @@ export default {
   'modal.ledger.desc': '第 {round} 回合，期初 {opening} 点。',
   'modal.ledger.legacy': '旧存档尚无本回合明细；下一回合开始后自动记录。',
   'modal.ledger.empty': '暂无进项或出项',
+  'modal.ledger.balance': '余额 {n}',
   'modal.ledger.total': '本回合净变化',
   'modal.ledger.warning': '据点净产出为负，本回合已公开弃置一张暗牌。',
   'modal.ledger.note': '补给用于购买策略卡、补充暗牌与围城。每回合按控制据点结算收入。',

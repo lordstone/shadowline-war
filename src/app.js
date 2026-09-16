@@ -8,6 +8,7 @@ const app=document.querySelector('#app'),sceneEl=document.querySelector('#scene'
 const scene=new Battlefield(sceneEl);
 let s=null,options={...defaults,seed:Math.floor(Math.random()*4294967296)},selection=new Map(),reveals=new Set(),focus=null,gate=false,modal=null,aiTask=null,deadline=null,remaining=null,clockKey='',muted=false;
 let handSort='rank';
+const sortHand=(cards,sort='rank')=>[...cards].sort(sort==='suit'?(a,b)=>a.suit-b.suit||a.rank-b.rank||a.id-b.id:(a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id);
 let advancedOpen=false;
 let targeting=null;
 let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
@@ -206,7 +207,7 @@ function battleView(){
 }
 function handTray(){
  const p=viewer(),pl=s.players[p],interactive=!isAI()&&s.active===p&&['campaign','defend','attack'].includes(s.phase);
- const cards=[...pl.hand].sort(handSort==='suit'?(a,b)=>a.suit-b.suit||a.rank-b.rank||a.id-b.id:(a,b)=>a.rank-b.rank||a.suit-b.suit||a.id-b.id);
+ const cards=sortHand(pl.hand,handSort);
  const sort='<span class="hand-sort-toggle" role="group" aria-label="'+t('game.hand.sort_label')+'"><button class="'+(handSort==='rank'?'active':'')+'" data-action="hand-sort" data-id="rank" aria-pressed="'+(handSort==='rank')+'">'+t('game.hand.sort_rank')+'</button><button class="'+(handSort==='suit'?'active':'')+'" data-action="hand-sort" data-id="suit" aria-pressed="'+(handSort==='suit')+'">'+t('game.hand.sort_suit')+'</button></span>';
  return '<section class="hand-tray"><div class="hand-top"><div><span class="eyebrow">'+t('game.hand.eyebrow')+'</span><b>'+t('game.hand.count',{n:pl.hand.length})+'</b></div><div>'+sort+'<span class="hand-selection-status">'+(['defend','attack'].includes(s.phase)?t('game.hand.selected',{n:selection.size}):s.phase==='campaign'?t('game.hand.choose_garrison'):t('game.hand.safe'))+'</span></div></div><div class="hand-scroll" style="--hand-count:'+cards.length+'">'+cards.map((c,i)=>'<div class="hand-card-shell" style="--rot:'+((i-(cards.length-1)/2)*1.15)+'deg;--lift:'+(-Math.abs(i-(cards.length-1)/2)*1.15)+'px;--z:'+i+'">'+card(c,{interactive,selected:selection.has(c.id),stance:selection.has(c.id)?selection.get(c.id):null})+'</div>').join('')+'</div></section>';
 }
@@ -265,7 +266,8 @@ function eventView(ev){
 }
 function supplyLedgerView(){
  const p=modal.player,pl=s.players[p],report=s.supplyLedger?.[p],entries=report?.entries||[];
- return '<div class="eyebrow">'+t('modal.ledger.eyebrow')+'</div><h2>'+t('modal.ledger.title',{name:pl.name,supply:pl.supply})+'</h2><p>'+t(report?'modal.ledger.desc':'modal.ledger.legacy',{round:report?.round??s.round,opening:report?.opening??pl.supply})+'</p><div class="supply-ledger">'+(entries.map(e=>'<div><span>'+esc(e.label)+'</span><b class="'+(e.amount<0?'negative':'positive')+'">'+(e.amount>0?'+':'')+e.amount+'</b></div>').join('')||'<div><span>'+t('modal.ledger.empty')+'</span><b>0</b></div>')+(report?'<div class="ledger-total"><span>'+t('modal.ledger.total')+'</span><b class="'+(report.net<0?'negative':'positive')+'">'+(report.net>0?'+':'')+report.net+'</b></div>':'')+'</div>'+(report?.discardedId!=null?'<p class="ledger-warning">'+t('modal.ledger.warning')+'</p>':'')+btn(t('modal.close'),'close','primary');
+ let running=report?.opening??pl.supply;
+ return '<div class="eyebrow">'+t('modal.ledger.eyebrow')+'</div><h2>'+t('modal.ledger.title',{name:pl.name,supply:pl.supply})+'</h2><p>'+t(report?'modal.ledger.desc':'modal.ledger.legacy',{round:report?.round??s.round,opening:report?.opening??pl.supply})+'</p><div class="supply-ledger">'+(entries.map(e=>{running=e.balance??Math.max(0,Math.min(BALANCE.campaign.supplyCap,running+e.amount));return '<div><span>'+esc(e.label)+'<small>'+t('modal.ledger.balance',{n:running})+'</small></span><b class="'+(e.amount<0?'negative':'positive')+'">'+(e.amount>0?'+':'')+e.amount+'</b></div>'}).join('')||'<div><span>'+t('modal.ledger.empty')+'</span><b>0</b></div>')+(report?'<div class="ledger-total"><span>'+t('modal.ledger.total')+'</span><b class="'+(report.net<0?'negative':'positive')+'">'+(report.net>0?'+':'')+report.net+'</b></div>':'')+'</div>'+(report?.discardedId!=null?'<p class="ledger-warning">'+t('modal.ledger.warning')+'</p>':'')+btn(t('modal.close'),'close','primary');
 }
 function medicView(strategyId){
  const p=viewer(),openPile=[...s.players[p].reserve].sort((a,b)=>b.rank-a.rank||a.suit-b.suit||a.id-b.id),chosen=modal.chosen;
@@ -277,10 +279,10 @@ function rotationView(strategyId){
  return '<div class="eyebrow">'+t('modal.rotation.eyebrow')+'</div><h2>'+strategyText(strategyId).name+'</h2><p class="modal-desc">'+t('modal.rotation.desc')+'</p><p class="modal-desc">'+t('modal.rotation.picked',{n:picked.length})+'</p><div class="choose-grid">'+s.fields.map(f=>'<div class="choose-card rotation-card '+(modal.picked.has(f.id)?'chosen':'')+'" data-action="rotation-toggle" data-id="'+f.id+'" role="checkbox" aria-checked="'+modal.picked.has(f.id)+'" tabindex="0"><b>'+fieldName(s.opt.map,f)+'</b><span>'+t('modal.rotation.count',{n:f.garrison.length})+'</span><span class="choose-mark">'+(modal.picked.has(f.id)?'✓':'')+'</span></div>').join('')+'</div><div class="modal-actions">'+btn(t('modal.cancel'),'close','text-button')+btn(t('modal.rotation.confirm'),'rotation-confirm','primary',!canSwap,'data-id="'+strategyId+'"')+'</div>';
 }
 function garrisonRotationView(config){
- const f=s.fields.find(x=>x.id===config.field),p=viewer(),out=new Set(config.outIds||[]),stances=config.stances||{},incoming=Object.keys(stances).map(Number),cost=out.size*BALANCE.campaign.rotationCostPerCard;
+ const f=s.fields.find(x=>x.id===config.field),p=viewer(),out=new Set(config.outIds||[]),stances=config.stances||{},incoming=Object.keys(stances).map(Number),cost=out.size*BALANCE.campaign.rotationCostPerCard,sort=config.sort||handSort,cards=sortHand(s.players[p].hand,sort);
  const kept=f.garrison.filter(c=>!out.has(c.id)),added=incoming.map(id=>({...s.players[p].hand.find(c=>c.id===id),open:!!stances[id]})),valid=out.size>0&&out.size===incoming.length&&cost<=s.players[p].supply&&(f.capital||[...kept,...added].some(c=>c.open));
  const warning=out.size!==incoming.length?t('modal.garrison_rotation.equal'):!f.capital&&![...kept,...added].some(c=>c.open)?t('modal.garrison_rotation.keep_open'):cost>s.players[p].supply?t('modal.garrison_rotation.insufficient'):'';
- return '<div class="eyebrow">'+t('modal.garrison_rotation.eyebrow')+'</div><h2>'+t('modal.garrison_rotation.title',{field:fieldName(s.opt.map,f),cost:BALANCE.campaign.rotationCostPerCard})+'</h2><p>'+t('modal.garrison_rotation.desc')+'</p><div class="rotation-grid"><section><h3>'+t('modal.garrison_rotation.out',{n:out.size})+'</h3><div class="rotation-cards">'+f.garrison.map(c=>card(c,{small:true,interactive:true,selected:out.has(c.id),stance:c.open,action:'rotate-out'})).join('')+'</div></section><section><h3>'+t('modal.garrison_rotation.in',{n:incoming.length})+'</h3><div class="rotation-cards">'+s.players[p].hand.map(c=>card(c,{small:true,interactive:true,selected:incoming.includes(c.id),stance:incoming.includes(c.id)?!!stances[c.id]:null,action:'rotate-in'})).join('')+'</div></section></div><div class="rotation-summary"><b>'+t('modal.garrison_rotation.cost',{n:cost})+'</b><span>'+(warning||t('modal.garrison_rotation.ready'))+'</span></div><div class="modal-actions">'+btn(t('modal.cancel'),'close','secondary')+btn(t('modal.garrison_rotation.confirm'),'rotate-submit','primary',!valid)+'</div>';
+ return '<div class="eyebrow">'+t('modal.garrison_rotation.eyebrow')+'</div><h2>'+t('modal.garrison_rotation.title',{field:fieldName(s.opt.map,f),cost:BALANCE.campaign.rotationCostPerCard})+'</h2><p>'+t('modal.garrison_rotation.desc')+'</p><div class="rotation-grid"><section><h3>'+t('modal.garrison_rotation.out',{n:out.size})+'</h3><div class="rotation-cards">'+f.garrison.map(c=>card(c,{small:true,interactive:true,selected:out.has(c.id),stance:c.open,action:'rotate-out'})).join('')+'</div></section><section><div class="rotation-heading"><h3>'+t('modal.garrison_rotation.in',{n:incoming.length})+'</h3><span class="hand-sort-toggle" role="group" aria-label="'+t('game.hand.sort_label')+'"><button class="'+(sort==='rank'?'active':'')+'" data-action="rotation-hand-sort" data-id="rank" aria-pressed="'+(sort==='rank')+'">'+t('game.hand.sort_rank')+'</button><button class="'+(sort==='suit'?'active':'')+'" data-action="rotation-hand-sort" data-id="suit" aria-pressed="'+(sort==='suit')+'">'+t('game.hand.sort_suit')+'</button></span></div><div class="rotation-cards">'+cards.map(c=>card(c,{small:true,interactive:true,selected:incoming.includes(c.id),stance:incoming.includes(c.id)?!!stances[c.id]:null,action:'rotate-in'})).join('')+'</div></section></div><div class="rotation-summary"><b>'+t('modal.garrison_rotation.cost',{n:cost})+'</b><span>'+(warning||t('modal.garrison_rotation.ready'))+'</span></div><div class="modal-actions">'+btn(t('modal.cancel'),'close','secondary')+btn(t('modal.garrison_rotation.confirm'),'rotate-submit','primary',!valid)+'</div>';
 }
 function handoverView(){
  return '<div class="eyebrow">'+t('modal.handover.eyebrow')+'</div><h2>'+t('modal.handover.title',{n:s.active})+'</h2><p class="modal-desc">'+t('modal.handover.desc',{name:s.players[s.active].name})+'</p><div class="modal-actions">'+btn(t('modal.handover.confirm'),'handover-confirm','primary')+'</div>';
@@ -606,6 +608,7 @@ document.addEventListener('click',e=>{
  if(a==='rotation-confirm'){rotationConfirm(id);return}
  if(modal&&modal.rotation==='garrison'){
   const n=Number(id);
+  if(a==='rotation-hand-sort'){modal.sort=id==='suit'?'suit':'rank';render();return}
   if(a==='rotate-out'){const out=new Set(modal.outIds||[]);out.has(n)?out.delete(n):out.add(n);modal.outIds=[...out];render();return}
   if(a==='rotate-in'){modal.stances=modal.stances||{};if(!(n in modal.stances))modal.stances[n]=true;else if(modal.stances[n])modal.stances[n]=false;else delete modal.stances[n];render();return}
   if(a==='rotate-submit'){const action={type:'rotate_garrison',field:modal.field,outIds:[...(modal.outIds||[])],cards:Object.entries(modal.stances||{}).map(([cardId,open])=>({id:Number(cardId),open}))};modal=null;resume();perform(action);return}
@@ -649,7 +652,7 @@ document.addEventListener('click',e=>{
  if(a==='continue'){perform({type:'continue'});return}
  if(a==='pass'){perform({type:'pass'});return}
  if(a==='event-continue'){modal=null;advanceEvent();return}
- if(a==='open-rotation'){if(focus)showModal({rotation:'garrison',field:focus,outIds:[],stances:{}});return}
+ if(a==='open-rotation'){if(focus)showModal({rotation:'garrison',field:focus,outIds:[],stances:{},sort:handSort});return}
  if(a==='ready'||a==='handover-confirm'){gate=false;focus=null;selection.clear();reveals.clear();pause();resume();render();return}
 });
 document.addEventListener('change',e=>{

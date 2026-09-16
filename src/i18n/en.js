@@ -672,6 +672,7 @@ export default {
   'modal.ledger.desc': 'Round {round}, opening balance {opening}.',
   'modal.ledger.legacy': 'This older save has no current-round detail; tracking begins next round.',
   'modal.ledger.empty': 'No income or spending',
+  'modal.ledger.balance': 'Balance {n}',
   'modal.ledger.total': 'Net change this round',
   'modal.ledger.warning': 'Field output was negative, so one hidden card was openly discarded this round.',
   'modal.ledger.note': 'Supply buys strategy cards, face-down draws and sieges. Income settles each round from held fields.',
