@@ -1,11 +1,21 @@
-# 注意：此文件在 release 和 main 分支各有一份，内容必须保持一致。
-# 修改时请同步更新两个分支，否则推送到另一分支时部署行为会不一致。
-name: Deploy Pages (release + preview)
+name: Deploy configurable Pages channels
+run-name: >-
+  Pages: release=${{ inputs.release_ref || 'configured' }},
+  preview=${{ inputs.preview_ref || 'configured' }}
 
 on:
   push:
-    branches: [release, main]
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      release_ref:
+        description: Optional production branch, tag, or commit (blank uses deploy/channels.json)
+        required: false
+        type: string
+      preview_ref:
+        description: Optional preview branch, tag, or commit (blank uses deploy/channels.json)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -13,43 +23,99 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  build:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      release_ref: ${{ steps.refs.outputs.release_ref }}
+      preview_ref: ${{ steps.refs.outputs.preview_ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve configured channels and validate overrides
+        id: refs
+        env:
+          RELEASE_OVERRIDE: ${{ inputs.release_ref }}
+          PREVIEW_OVERRIDE: ${{ inputs.preview_ref }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {appendFileSync} from 'node:fs';
+          import {readChannels,validateRef} from './tools/assemble-pages.mjs';
+          const config=readChannels();
+          const release=process.env.RELEASE_OVERRIDE?validateRef(process.env.RELEASE_OVERRIDE,'release override'):config.release;
+          const preview=process.env.PREVIEW_OVERRIDE?validateRef(process.env.PREVIEW_OVERRIDE,'preview override'):config.preview;
+          appendFileSync(process.env.GITHUB_OUTPUT,`release_ref=${release}\npreview_ref=${preview}\n`);
+          NODE
+
+  verify:
+    needs: resolve
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - channel: release
+            ref: ${{ needs.resolve.outputs.release_ref }}
+          - channel: preview
+            ref: ${{ needs.resolve.outputs.preview_ref }}
+    steps:
+      - name: Checkout ${{ matrix.channel }} from ${{ matrix.ref }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test ${{ matrix.channel }}
+        run: npm test
+      - name: Rebuild and verify committed standalone file
+        run: |
+          npm run build
+          git diff --exit-code
+          npm run test:bundle
+
+  assemble:
+    needs: [resolve, verify]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout release (production)
+      - name: Checkout deployment control plane
         uses: actions/checkout@v4
         with:
-          ref: release
-          path: prod
-      - name: Checkout main (preview)
+          fetch-depth: 0
+          path: control
+      - name: Checkout release channel
         uses: actions/checkout@v4
         with:
-          ref: main
-          path: preview
-      - name: Assemble site
-        run: |
-          mkdir -p _site/preview
-          # Production site (release branch) at /
-          cp -r prod/. _site/
-          rm -rf _site/.git _site/.github
-          # Preview site (main branch) at /preview/
-          cp -r preview/. _site/preview/
-          rm -rf _site/preview/.git _site/preview/.github
-      - name: Upload artifact
+          ref: ${{ needs.resolve.outputs.release_ref }}
+          path: slots/release
+      - name: Checkout preview channel
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.preview_ref }}
+          path: slots/preview
+      - name: Assemble release, preview, and historical versions
+        working-directory: control
+        run: >-
+          node tools/assemble-pages.mjs
+          --release ../slots/release
+          --preview ../slots/preview
+          --repo .
+          --output ../_site
+          --release-ref '${{ needs.resolve.outputs.release_ref }}'
+          --preview-ref '${{ needs.resolve.outputs.preview_ref }}'
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
   deploy:
+    needs: assemble
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

@@ -1,0 +1,30 @@
+name: Pull request checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Unit, rules, and deployment assembly tests
+        run: npm test
+      - name: Rebuild and verify standalone output
+        run: |
+          npm run build
+          git diff --exit-code
+          npm run test:bundle
