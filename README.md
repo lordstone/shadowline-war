@@ -2,12 +2,12 @@
 
 <p align="center"><img src="assets/icons/shadowline-192.png" width="128" height="128" alt="暗线战争游戏图标"></p>
 
-[![deploy release](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=release&label=deploy%20release)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
-[![deploy preview](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20preview)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
+[![deploy pages](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20pages)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
+[![pull request checks](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/ci.yml?branch=main&label=PR%20checks)](https://github.com/lordstone/shadowline-war/actions/workflows/ci.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.21.4-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.21.5-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.21.4**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
+[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.21.5**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -21,10 +21,10 @@
 
 ### 在线版本
 
-- **正式版**（`release` 分支）：[https://lordstone.github.io/shadowline-war/](https://lordstone.github.io/shadowline-war/) —— 稳定版本，推荐玩家使用。
+- **正式版**（`v1.19.3` tag）：[https://lordstone.github.io/shadowline-war/](https://lordstone.github.io/shadowline-war/) —— 稳定版本，推荐玩家使用。
 - **预览版**（`main` 分支）：[https://lordstone.github.io/shadowline-war/preview/](https://lordstone.github.io/shadowline-war/preview/) —— 最新开发版，用于测试未发布的新功能，可能不稳定。
 
-推送到 `release` 或 `main` 分支会自动触发 GitHub Actions 重新部署对应版本。
+推送到 `main` 会触发统一的 GitHub Actions workflow，并按 `deploy/channels.json` 组装正式版、预览版和历史版本。
 
 ## 游戏内容
 
@@ -100,6 +100,11 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.21.5 整理 release 分支关系
+
+- 正式版来源固定到不可变的 `v1.19.3` tag，避免部署随分支历史整理而改变。
+- `release` 分支对齐到 `main` 已有提交，不再包含 main 没有的独有提交或旧部署 workflow。
 
 ## 1.21.4 可配置部署与历史版本
 

@@ -1,11 +1,11 @@
 {
-  "release": "release",
+  "release": "v1.19.3",
   "preview": "main",
   "versions": [
     {"slug": "1.16", "ref": "30fc3e6326f6778383103492ea9c5b6a5f870e0b"},
     {"slug": "1.17", "ref": "6b968ceb6440eaa6d73465f4910b741c7bce35f3"},
     {"slug": "1.18", "ref": "092d8119b2820ed260ee37dd3e29a0317f0816e2"},
-    {"slug": "1.19", "ref": "release"},
+    {"slug": "1.19", "ref": "v1.19.3"},
     {"slug": "1.20", "ref": "f7f7f43a435d739d1100fb50e1b770f40a8d4ff1"},
     {"slug": "1.21", "ref": "main"}
   ]
