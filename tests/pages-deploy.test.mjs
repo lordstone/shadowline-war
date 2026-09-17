@@ -8,7 +8,7 @@ import {assemblePages,readChannels,validateRef} from '../tools/assemble-pages.mj
 const root=resolve(new URL('..',import.meta.url).pathname);
 
 test('deployment channel configuration uses safe unique refs and minor slugs',()=>{
- const config=readChannels();assert.equal(config.release,'release');assert.equal(config.preview,'main');
+ const config=readChannels();assert.equal(config.release,'v1.19.3');assert.equal(config.preview,'main');
  assert.deepEqual(config.versions.map(v=>v.slug),['1.16','1.17','1.18','1.19','1.20','1.21']);
  assert.throws(()=>validateRef('../main'),/unsafe|unsupported/);assert.throws(()=>validateRef('main\nother'),/unsupported/);
 });

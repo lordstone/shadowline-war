@@ -10,6 +10,8 @@ GitHub Pages 由 `main` 分支上唯一的 `.github/workflows/pages.yml` 组装�
 
 修改 `deploy/channels.json` 中的 `release` 或 `preview`，值可以是 branch、tag 或完整 commit SHA。这种切换会留下 Git 记录，后续每次部署都继续使用该来源。
 
+正式版固定到不可变的 `v1.19.3` tag；`release` 分支只指向 `main` 已有历史，不再承载独有部署提交或旧 workflow。这样 GitHub 的 ahead/behind 关系保持单向，正式版内容也不会因分支整理而漂移。
+
 `versions` 列表的 `slug` 必须是 `major.minor`，`ref` 建议使用 tag 或完整 SHA，避免历史版本随分支变动。当前开发 minor 可以指向 `main`。
 
 ## 临时部署
