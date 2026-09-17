@@ -2,12 +2,12 @@
 
 <p align="center"><img src="assets/icons/shadowline-192.png" width="128" height="128" alt="暗线战争游戏图标"></p>
 
-[![deploy release](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=release&label=deploy%20release)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
-[![deploy preview](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20preview)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
-[![Release version](https://img.shields.io/badge/release-v1.19.1-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.19.3-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![deploy pages](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20pages)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
+[![pull request checks](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/ci.yml?branch=main&label=PR%20checks)](https://github.com/lordstone/shadowline-war/actions/workflows/ci.yml)
+[![Release version](https://img.shields.io/badge/release-v1.19.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
+[![Preview version](https://img.shields.io/badge/preview-v1.21.5-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.1**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/preview/)
+[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.21.5**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -21,10 +21,10 @@
 
 ### 在线版本
 
-- **正式版**（`release` 分支）：[https://lordstone.github.io/shadowline-war/](https://lordstone.github.io/shadowline-war/) —— 稳定版本，推荐玩家使用。
+- **正式版**（`v1.19.3` tag）：[https://lordstone.github.io/shadowline-war/](https://lordstone.github.io/shadowline-war/) —— 稳定版本，推荐玩家使用。
 - **预览版**（`main` 分支）：[https://lordstone.github.io/shadowline-war/preview/](https://lordstone.github.io/shadowline-war/preview/) —— 最新开发版，用于测试未发布的新功能，可能不稳定。
 
-推送到 `release` 或 `main` 分支会自动触发 GitHub Actions 重新部署对应版本。
+推送到 `main` 会触发统一的 GitHub Actions workflow，并按 `deploy/channels.json` 组装正式版、预览版和历史版本。
 
 ## 游戏内容
 
@@ -32,7 +32,7 @@
 - 人机对战：新兵与老兵两种策略风格；AI 不读取对方隐藏牌的点数、花色或洗牌状态。
 - 同机双人对战：每次换人时遮蔽手牌，准备就绪后开始计时。**不是两台设备联网模式**。
 - 玩家可在顶栏编辑名字和徽记；战役高级选项可选择地图双方势力，首都、徽记和对手身份会随之更新。
-- 初始策略三选一，13 种战役／交锋策略；公开战术商店每回合可购买一张。
+- 初始策略三选一，14 种战役／交锋策略；公开战术商店每回合可购买一张。
 - 战役夺取首都模式，以及不含地图、驻军、补给的经典模式。
 - 沼泽、林地、山地、强化城市、油田和港口具有不同容量、资源或交战规则；部分港口通过跨海路线连接。
 - 30／60／120 秒或无限时、先行军团、随机种子、回合上限、策略开关。
@@ -65,12 +65,12 @@
 
 `node tests/engine.test.mjs` 或 `npm test`。
 
-已通过 54 组规则与事件测试：
+已通过 55 组规则与事件测试：
 - 全部24,804种三张牌组合的分类数量；
 - 非法部署、严格比较、平手、防守翻牌、撤退、收牌和临时晋升清除；
 - 13种策略的前置条件和效果，地图邻接、固定驻军、驻军明暗限制、整编、快速换防、首都胜利和牌数守恒；
 - 超时行动、存档恢复与隐藏信息隔离；
-- 384 场跨地图、规则、牌库规模、策略开关和 AI 风格的完整对局，共 38,063 次合法行动。
+- 384 场跨地图、规则、牌库规模、策略开关和 AI 风格的完整对局，共 37,349 次合法行动。
 
 已在 Chrome 中完成真实浏览器交互回归：AI 入侵与计时暂停、新牌展示、策略目标选择、驻军查看、同机交接保密、闪电战窗口、AI 反超后玩家继续翻牌、商店收展与策略悬停；覆盖桌面、390×600／659／844 iPhone、430×700 手机与 834×1112 iPad 视口，并验证手牌和战术栏始终保留在屏幕内。测试覆盖这些场景，不代表绝对没有其他 bug。
 
@@ -100,6 +100,131 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.21.5 整理 release 分支关系
+
+- 正式版来源固定到不可变的 `v1.19.3` tag，避免部署随分支历史整理而改变。
+- `release` 分支对齐到 `main` 已有提交，不再包含 main 没有的独有提交或旧部署 workflow。
+
+## 1.21.4 可配置部署与历史版本
+
+- Pages 的正式版和预览版改由 `deploy/channels.json` 独立指定 branch、tag 或 commit，也可从 Actions 手动临时覆盖。
+- 新增 `/versions/` 历史版本选择页，保留 1.16–1.21 各 minor 版本的独立可玩快照。
+- PR 和部署都先运行规则测试、重建离线包并检查产物是否已提交；Pages 只包含运行所需文件。（fixes #112）
+
+## 1.21.3 策略确认界面
+
+- 全局策略不再携带或显示与效果无关的当前地图焦点；只有侦察、起义、经济封锁、焦土政策和迁都保留据点目标。（fixes #120）
+
+## 1.21.2 修复史实态势与外交机制
+
+- 人机模式选择“玩家先行”后，史实态势跳过策略三选一时不再被旧的 AI 草拟逻辑覆盖为 AI 先行。
+- “AI 先行”仍按设置生效；普通随机策略对局仍允许 AI 先完成自己的策略选择。
+- 将外交机制拆分为两张独立策略卡：“停火谈判”仅在交锋中结束当前交锋；“和平谈判”在地图阶段建立两回合禁止进攻。
+- 校正 1948 年11月史实态势中郑州的控制方，使济南经郑州连回延安补给网；断供据点新增在紧凑地图上也始终可见的独立徽标。
+- 升级预览版资源缓存键，避免浏览器继续加载修复前的地图配置和样式。
+
+## 1.21.0 外交、撤退与战略纵深
+
+- 新增可配置的 0／1／2 回合开局停战期，以及可在地图阶段禁止双方进攻两回合的外交机制。（fixes #107, #110）
+- 新增“放弃据点”：非首都驻军的明牌进入公开牌堆、暗牌返回手牌，据点恢复中立；补给线切断的据点不能进攻、整编、轮换或放弃。（fixes #84, #100）
+- 新增“焦土政策”“迁都”“经济间谍”三张策略卡，分别复用撤出、首都拓扑与补给流水机制。（fixes #99, #101, #109）
+- 史实态势会按地图和阵营直接配置符合场景的初始策略牌，不再进入随机三选一。（fixes #108）
+
+## 1.20.16 修复补给流水与驻军轮换手牌
+
+- 补给流水在每次收入或支出后记录并展示实时余额，避免轮换、补牌或购买策略后仍显示旧数据。（fixes #92）
+- 驻军轮换返回手牌的暗牌恢复“新”标识，并且只向牌的拥有者暴露该标识。（fixes #94）
+- 轮换弹窗中的可用手牌默认按点数排列，也可切换为按花色排列；切换排序会保留已选牌。（fixes #95）
+
+## 1.20.15 游戏数值配置解耦
+
+- 新增 `config/game-balance.yaml`，集中管理默认对局、发牌、战役经济、驻军／战线限制与全部策略牌参数。
+- 构建时生成浏览器运行模块，服务器版和离线单文件共用同一份配置；策略说明会同步显示配置中的效果数字。
+- 增加 schema 校验、生成物同步检查与配置一致性测试，避免修改 YAML 后遗漏构建或形成静默漂移。（fixes #102）
+
+## 1.20.14 修复平板横屏战斗遮挡
+
+- 1024–1200px 短横屏将双方战线压缩为独立网格行，卡牌不再跨行重叠。
+- 战斗操作区恢复横向排列，跳过与确认按钮始终留在当前视口内。
+- 事件报告压缩地图、卡牌和留白，继续按钮无需滚动即可操作；增加 1080×700 回归测试。（fixes #105）
+
+## 1.20.13 修复桌面地图据点遮挡
+
+- 全部八张地图在桌面、平板和手机上执行确定性据点防碰撞，不再遗漏非密集地图或桌面宽度。
+- 法德西线的法兰克福、卢森堡走廊和阿尔萨斯保持完整间距，并同步重绘道路与海路端点。
+- 增加全部地图的 1366×768 桌面零重叠、零控件遮挡回归测试。（fixes #93）
+
+## 1.20.12 修复关键布局回归
+
+- 策略市场弹窗改为稳定的单列卡片布局，恢复名称、阶段和效果说明的正常横向排版。
+- 桌面短屏战场将手牌区固定为独立网格行，不再因目标栏或战场内容变化被挤出视口。
+- 扩充手机、平板和 1024／1280／1366 短屏浏览器回归矩阵，并检查策略说明的实际宽度与行数。（fixes #82, #97, #98）
+
+## 1.20.11 策略牌使用确认
+
+- 除已有选牌确认的医疗分队外，所有可用策略牌在实际消耗前统一显示名称、效果、使用条件与一次性警告。
+- 取消确认不会消耗策略牌；全域侦察、起义烽火和经济封锁确认后再进入目标据点选择。
+- 增加立即生效、取消保留和目标选择三条真实浏览器回归流程。（fixes #59）
+
+## 1.20.10 明确平手与反击方
+
+- 完全平手时明确显示“平手 · 防守方占优”，不再只用容易混淆的己方／敌方领先文案。
+- 反击阶段直接标明由进攻方或防守方反击，避免把防守方平手占优误读为防守方被压制。
+- 增加完全平手裁决与 390px 手机战斗界面的回归测试。（fixes #83）
+
+## 1.20.9 修复手机密集地图据点重叠
+
+- 手机端对 10 个以上据点的历史地图按实际节点尺寸执行确定性防碰撞布局，不再允许据点卡片互相覆盖。
+- 防碰撞后同步调整陆路和海路端点，保持连线与据点一致；横竖屏尺寸变化时重新布局。
+- 将 390px 浏览器回归标准从“最多允许 30% 重叠”收紧为五张密集地图全部零重叠。
+
+## 1.20.8 恢复暗牌选择反馈
+
+- 修复手牌局部更新没有同步暗牌样式的问题，恢复“明牌 → 暗牌 → 取消”的完整视觉循环。
+- 统一普通牌与大小王的暗置外观，避免王牌主题覆盖暗牌状态，并同步更新读屏标签。
+- 增加普通牌和王牌三态交互回归测试，重建离线单文件。
+
+## 1.20.7 修复移动端布局、选牌与文案回归
+
+- 修复选牌后部署按钮仍禁用、排序按钮被选牌计数覆盖、暗置选择失效，以及中立据点无法部署驻军的问题。
+- 恢复行动计时、事件自动推进、全部 AI 阶段调度、同机交接和暂停期间事件可见性；修复当前存档载入时阵营被错误重置。
+- 恢复补给账本、公开牌／驻军查看、医疗与驻军轮换弹窗的完整 UI，并修复玩家一补给账本无法打开。
+- 让移动端布局规则正确作用于 `game-shell`，修复短屏溢出、策略提示越界和密集历史地图据点遮挡。
+- 对齐 1.19.3 的中文界面和完整规则／教程，补齐对应英文，并校正补牌、围城和经典模式说明。
+
+## 1.20.6 恢复核心交互与存档安全
+
+- 修复主菜单规则、教程和身份弹窗不显示，以及刷新主菜单会删除本机存档的问题。
+- 恢复占领、进攻、补给、策略购买、部署、反击、撤退、结束行动和驻军轮换的状态提交与事件快报。
+- 修复策略市场错误显示为空、同机存档载入不再遮蔽手牌、阵营和地图名称本地化错误，并把 i18n 校验纳入默认测试。
+
+## 1.20.5 地图缩放跟随 + 选牌动画恢复
+
+- 修复：据点和连线移入 map-camera，地图缩放/平移时跟随背景
+- 修复：选牌改为局部 DOM 更新，恢复卡牌上浮选中动画（不再全量 innerHTML 重建）
+
+## 1.20.4 AI 模式玩家二改名
+
+AI 模式下玩家二（AI）的名字从"Player 2"改为"AI Commander"（中文"AI 指挥官"），
+不再与双人模式的玩家二混淆。
+
+## 1.20.3 修复 AI 卡死（hotfix）
+
+修复 v1.20.0 i18n 重构误删 `perform()` 导致的严重 bug：`act()` 返回新 state 而不原地修改，缺少 `perform()` 做 `s=res.state` 状态提交后，玩家和 AI 的所有行动都被丢弃，游戏卡在"AI 正在选择策略…"。恢复 `perform()`（含状态提交、事件、保存、render），AI draft/campaign 改为 `perform(aiAction(...))`，draft 阶段选策略改为 `perform({type:'draft',id})`。浏览器完整对局 e2e 验证通过。
+
+## 1.20.2 修复 iOS 显示问题（hotfix）
+
+- 减小 AI 思考提示的 padding（100px → 40px），移动端不再把 draft 界面内容顶出屏幕。
+- 品牌图标 `<img>` 增加 onerror fallback，图片加载失败时自动隐藏，避免 iOS 布局错乱导致顶栏不可见。
+
+## 1.20.1 修复开局崩溃（hotfix）
+
+修复点击「开始作战」后报错无法进入游戏的严重 bug：`game()` 在 draft 阶段错误调用 `battleView()`（此时 `s.battle` 为 null 导致崩溃），现 draft 阶段正确渲染 `draft()` 选牌界面。另修复 `upgradeState()` 旧存档阵营名称未转为 side index 的问题，以及移除不存在的 hero SVG 引用（404）。
+
+## 1.20.0 英文国际化（fixes #62）
+
+新增完整英文版本。Setup 界面右上角顶栏加入"中｜EN"语言切换按钮，可随时切换中英文；所有界面文字、策略牌、地图、事件日志均提供中英双语。语言包（`src/i18n/zh.js` / `en.js`）与业务逻辑解耦，业务代码仅通过 `t()` 接口取词；语言选择持久化到本地存储。
 
 ## 1.19.3 文档：README badge 改为双分支部署状态
 
