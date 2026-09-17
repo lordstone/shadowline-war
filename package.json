@@ -1,12 +1,14 @@
 {
   "name": "shadowline-war",
-  "version": "1.19.3",
+  "version": "1.21.5",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node tests/engine.test.mjs && node tests/events.test.mjs",
-    "build": "node build.mjs",
+    "config:generate": "node tools/generate-game-config.mjs",
+    "test:config": "node tools/generate-game-config.mjs --check",
+    "test": "npm run test:config && node --test tests/config.test.mjs tests/pages-deploy.test.mjs && node tests/engine.test.mjs && node tests/events.test.mjs && node --test tests/i18n.test.mjs",
+    "build": "npm run config:generate && node build.mjs",
     "test:bundle": "node --experimental-vm-modules tests/bundle.test.mjs"
   }
 }

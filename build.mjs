@@ -6,21 +6,32 @@ const root=path.dirname(fileURLToPath(import.meta.url));
 const modules={
  'shadow/three-core':'vendor/three.core.min.js',
  'shadow/three':'vendor/three.module.min.js',
+ 'shadow/game-config':'src/game-config.js',
  'shadow/data':'src/data.js',
  'shadow/engine':'src/engine.js',
  'shadow/scene':'src/battlefield.js',
  'shadow/events':'src/events.js',
  'shadow/geography':'src/map-geography.js',
+ 'shadow/i18n':'src/i18n/index.js',
+ 'shadow/i18n-zh':'src/i18n/zh.js',
+ 'shadow/i18n-en':'src/i18n/en.js',
  'shadow/app':'src/app.js'
 };
 const replacements={
  './three.core.min.js':'shadow/three-core',
  '../vendor/three.module.min.js':'shadow/three',
+ './game-config.js':'shadow/game-config',
+ '../game-config.js':'shadow/game-config',
  './data.js':'shadow/data',
  './engine.js':'shadow/engine',
  './events.js':'shadow/events',
  './battlefield.js':'shadow/scene',
- './map-geography.js':'shadow/geography'
+ './map-geography.js':'shadow/geography',
+ './i18n/index.js':'shadow/i18n',
+ './i18n/zh.js':'shadow/i18n-zh',
+ './i18n/en.js':'shadow/i18n-en',
+ './zh.js':'shadow/i18n-zh',
+ './en.js':'shadow/i18n-en'
 };
 const tutorialImages={};
 for(const name of ['01-map.png','02-occupy.png','03-battle.png','04-supply.png','05-draw.png','05-market.png','06-strategy.png','07-victory.png'])tutorialImages[name]='data:image/png;base64,'+(await fs.readFile(path.join(root,'assets/tutorial',name))).toString('base64');

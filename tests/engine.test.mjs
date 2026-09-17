@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,terrainLimit,battleLineLimit,resolvedDeckCount,leading,orderForDisplay,supplyConnected,income} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
+import {mapFactions} from '../src/i18n/index.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
 function next(s,a,p=s.active){const r=act(s,p,a);assert.equal(r.ok,true,r.error);return r.state}
@@ -69,12 +70,19 @@ test('all maps have symmetric, connected topology and two capitals',()=>{
  for(const m of MAPS){const seen=new Set([m.fields[0].id]);while(true){const n=seen.size;for(const f of m.fields)if(seen.has(f.id))for(const id of f.links){assert.ok(m.fields.find(g=>g.id===id)?.links.includes(f.id),m.id+': '+f.id+' ↔ '+id);seen.add(id)}if(seen.size===n)break}assert.equal(seen.size,m.fields.length,m.id);assert.equal(m.fields.filter(f=>f.capital).length,2,m.id)}
  assert.deepEqual(MAPS.slice(-5).map(m=>m.fields.length),[14,11,12,10,13]);
  assert.ok(MAPS.slice(-5).every(m=>m.fields.some(f=>f.type==='port')&&m.fields.some(f=>f.type==='mountain'||f.type==='oil')));
- assert.ok(MAPS.every(m=>m.factions.length===2&&new Set(m.factions).size===2));
+ assert.ok(MAPS.every(m=>mapFactions(m.id).length===2&&new Set(mapFactions(m.id)).size===2));
 });
 test('player identities default cleanly and retain custom names, logos and factions',()=>{
- const ai=createGame({rules:'classic',strategies:false,difficulty:'normal'});assert.equal(ai.players[0].name,'玩家');assert.equal(ai.players[1].name,'老兵 AI');
+ const ai=createGame({rules:'classic',strategies:false,difficulty:'normal'});assert.equal(ai.players[0].name,'指挥官');assert.equal(ai.players[1].name,'AI 指挥官');
  const local=createGame({rules:'classic',strategies:false,mode:'local',playerNames:['','小林'],playerLogos:['⚓','▲'],factions:['海峡联合舰队','波斯湾卫队']});
- assert.deepEqual(local.players.map(p=>[p.name,p.logo,p.faction]),[['玩家1','⚓','海峡联合舰队'],['小林','▲','波斯湾卫队']]);
+ assert.deepEqual(local.players.map(p=>[p.name,p.logo,p.faction]),[['玩家一','⚓','海峡联合舰队'],['小林','▲','波斯湾卫队']]);
+});
+
+test('loading a current save preserves numeric faction sides',()=>{
+ const s=createGame({map:'duel',rules:'campaign',strategies:false,factions:[0,1]});
+ const loaded=structuredClone(s);upgradeState(loaded);
+ assert.deepEqual(loaded.opt.factions,[0,1]);
+ assert.deepEqual(loaded.players.map(p=>p.side),[0,1]);
 });
 test('choosing the opposite faction swaps player themes and capital ownership',()=>{
  const s=createGame({map:'china_civil_war',rules:'campaign',strategies:false,factions:['解放军','国民政府军'],playerLogos:['★','☀'],seed:19});
@@ -152,7 +160,7 @@ test('failed partial reveal retains control; exhausted hidden line loses',()=>{
  t=next(t,{type:'deploy',cards:ids(t.players[0].hand)});t=next(t,{type:'deploy',cards:ids(t.players[1].hand)});
  t=next(t,{type:'reveal',ids:[t.battle.lines[0][1].id]});assert.equal(t.players[1].wins,1);
 });
-test('fold and peace return all hidden cards and clear temporary boosts',()=>{
+test('fold and ceasefire talks return all hidden cards and clear temporary boosts',()=>{
  for(const peace of [false,true]){
  let s=confrontation();const concealed=s.battle.lines.map(l=>l.find(c=>!c.open).id);
  s.battle.lines[0][0].boost=1;
@@ -208,9 +216,10 @@ test('meds_team player-chosen cards are honored (up to 2)',()=>{
 test('all campaign strategy effects preserve cards and enforce target requirements',()=>{
  for(const id of STRATEGIES.filter(x=>x.phase==='campaign').map(x=>x.id)){
  let s=createGame({strategies:false,seed:119});s.players[0].strategies=[id];
- const neutral=s.fields.find(f=>f.owner===null),enemy=s.fields.find(f=>f.owner===1);
+ const neutral=s.fields.find(f=>f.owner===null),enemy=s.fields.find(f=>f.owner===1),own=s.fields.find(f=>f.id==='p1_oil');
+ if(['scorched_earth','relocate_capital'].includes(id)){own.owner=0;own.garrison=[{...s.players[0].hand.pop(),open:true}]}
  if(id==='meds_team')s.players[0].reserve.push(s.players[0].hand.pop());
- const f=id==='revolution'?neutral:enemy;
+ const f=id==='revolution'?neutral:['scorched_earth','relocate_capital'].includes(id)?own:enemy;
  const r=act(s,0,{type:'strategy',id,field:f.id});assert.equal(r.ok,true,id+': '+r.error);s=r.state;validate(s);
  assert.equal(s.generated,id==='revolution'?1:0);
  assert.equal(s.players[0].strategies.length,0);
@@ -344,6 +353,7 @@ test('partial rapid rotation costs one supply per card and preserves revealed in
  cap.garrison[0].open=true;s.players[0].supply=4;
  s=next(s,{type:'rotate_garrison',field:cap.id,outIds:[outOpen.id,outHidden.id],cards:[{id:incoming[0].id,open:true},{id:incoming[1].id,open:false}]});
  assert.equal(s.active,0);assert.equal(s.players[0].supply,2);assert.equal(s.rapidRedeployUsed,true);
+ assert.equal(s.supplyLedger[0].entries.at(-1).balance,2);assert.equal(s.supplyLedger[0].entries.at(-1).amount,-2);
  assert.ok(s.players[0].reserve.some(c=>c.id===outOpen.id));assert.ok(!s.players[0].hand.some(c=>c.id===outOpen.id));assert.ok(s.players[0].hand.some(c=>c.id===outHidden.id));
  assert.deepEqual(new Set(s.fields.find(f=>f.id===cap.id).garrison.map(c=>c.id)),new Set([cap.garrison[2].id,...incoming.map(c=>c.id)]));
  assert.equal(act(s,0,{type:'rotate_garrison',field:cap.id,outIds:[cap.garrison[2].id],cards:[{id:s.players[0].hand[0].id,open:false}]}).ok,false);validate(s);
@@ -398,6 +408,7 @@ test('defender tie gives attacker with hidden cards a response instead of victor
  s=next(s,{type:'deploy',cards:ids(s.players[0].hand)});
  s=next(s,{type:'deploy',cards:s.players[1].hand.map((c,i)=>({id:c.id,open:i<2}))});
  s=next(s,{type:'reveal',ids:[s.battle.lines[0][1].id]});
+ assert.equal(compare(opened(s,0),opened(s,1)),0);assert.equal(leading(s),s.battle.defender);
  assert.equal(s.active,1);assert.equal(s.phase,'counter');assert.equal(s.players[0].wins,0);
  s=next(s,{type:'reveal',ids:[s.battle.lines[1][2].id]});assert.equal(s.players[1].wins,1);
 });
@@ -489,6 +500,11 @@ test('historical capital ownership matches the named factions',()=>{
  assert.ok(hormuz.fields.find(f=>f.id==='bandar').y<hormuz.fields.find(f=>f.id==='oman_hq').y);
 });
 
+test('November 1948 historical control connects Jinan through liberated Zhengzhou',()=>{
+ const s=createGame({map:'china_civil_war',deployment:'historical',strategies:false,seed:710}),jinan=s.fields.find(f=>f.id==='jinan'),zhengzhou=s.fields.find(f=>f.id==='zhengzhou');
+ assert.equal(jinan.owner,1);assert.equal(zhengzhou.owner,1);assert.ok(supplyConnected(s,1).has('jinan'));validate(s);
+});
+
 function cutScenario(seed){
  // rift: P0 持有西部指挥部；P1 持有北部隘口/南部油田，切断纵深据点与首都的通路
  const s=createGame({rules:'campaign',strategies:false,seed,map:'rift'});
@@ -540,4 +556,32 @@ test('supply line cut: reconnecting the field restores its income',()=>{
  income(s);
  assert.equal(s.supplyLedger[0].entries.find(e=>e.label.startsWith('北部油田')).amount,2);
  validate(s);
+});
+
+test('opening truce and peace talks share the attack lock',()=>{
+ let s=createGame({strategies:false,openingTruceRounds:1,seed:701}),target=s.fields.find(f=>f.id==='center_town');target.owner=1;target.garrison=[{...s.players[1].hand.pop(),open:true}];
+ let r=act(s,0,{type:'attack',field:target.id});assert.equal(r.ok,false);assert.match(r.error,/停战期/);
+ s.truceUntilRound=0;r=act(s,0,{type:'attack',field:target.id});assert.equal(r.ok,true);
+ s=createGame({strategies:false,seed:704});s.players[0].strategies=['peace_negotiation'];s.strategyLocked=[[],[]];
+ s=next(s,{type:'strategy',id:'peace_negotiation'});assert.equal(s.truceUntilRound,s.round+2);assert.equal(s.phase,'campaign');assert.equal(s.battle,null);
+ let battle=confrontation();battle.players[0].strategies=['peace_negotiation'];assert.match(canStrategy(battle,0,'peace_negotiation'),/地图行动阶段/);
+});
+
+test('abandon and scorched earth share safe garrison withdrawal',()=>{
+ let s=createGame({strategies:false,seed:702}),field=s.fields.find(f=>f.id==='p1_oil');field.owner=0;field.garrison=[{...s.players[0].hand.pop(),open:true},{...s.players[0].hand.pop(),open:false}];
+ const open=field.garrison[0].id,hidden=field.garrison[1].id;s=next(s,{type:'abandon_field',field:field.id});field=s.fields.find(f=>f.id==='p1_oil');
+ assert.equal(field.owner,null);assert.ok(s.players[0].reserve.some(c=>c.id===open));assert.ok(s.players[0].hand.some(c=>c.id===hidden));
+ s=createGame({strategies:false,seed:703});field=s.fields.find(f=>f.id==='p1_oil');field.owner=0;field.garrison=[{...s.players[0].hand.pop(),open:true}];s.players[0].strategies=['scorched_earth'];
+ s=next(s,{type:'strategy',id:'scorched_earth',field:field.id});field=s.fields.find(f=>f.id==='p1_oil');assert.equal(field.owner,null);assert.ok(field.scorchedUntil>s.round);
+});
+
+test('economic espionage transfers supply and relocation moves the capital',()=>{
+ let s=createGame({strategies:false,seed:704});s.players[0].strategies=['economic_espionage'];s.players[0].supply=1;s.players[1].supply=3;
+ s=next(s,{type:'strategy',id:'economic_espionage'});assert.equal(s.players[0].supply,4);assert.equal(s.players[1].supply,0);assert.equal(s.supplyLedger[0].entries.at(-1).amount,3);
+ s=createGame({strategies:false,seed:705});const old=s.fields.find(f=>f.capital&&f.owner===0),field=s.fields.find(f=>f.id==='p1_oil');field.owner=0;field.garrison=[{...s.players[0].hand.pop(),open:true}];s.players[0].strategies=['relocate_capital'];
+ s=next(s,{type:'strategy',id:'relocate_capital',field:field.id});const movedOld=s.fields.find(f=>f.id===old.id),movedNew=s.fields.find(f=>f.id===field.id);assert.equal(movedOld.capital,false);assert.equal(movedNew.capital,true);assert.ok(movedOld.garrison.some(c=>c.open));
+});
+
+test('historical deployment starts with scenario strategy cards',()=>{
+ const s=createGame({map:'china_civil_war',deployment:'historical',strategies:true,seed:706});assert.equal(s.phase,'campaign');assert.ok(s.players[0].strategies.length&&s.players[1].strategies.length);assert.ok(s.players.flatMap(p=>p.strategies).includes('relocate_capital'));
 });

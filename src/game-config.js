@@ -1,0 +1,238 @@
+// Generated from config/game-balance.yaml by tools/generate-game-config.mjs. Do not edit.
+export const GAME_CONFIG={
+  "schemaVersion": 1,
+  "defaults": {
+    "mode": "ai",
+    "map": "duel",
+    "rules": "campaign",
+    "difficulty": "normal",
+    "timer": 0,
+    "eventSeconds": 3,
+    "seed": 2026,
+    "strategies": true,
+    "first": 0,
+    "maxRounds": 80,
+    "deckCount": "auto",
+    "deployment": "standard",
+    "openingTruceRounds": 0,
+    "sound": true,
+    "playerNames": [
+      "",
+      ""
+    ],
+    "playerLogos": [
+      "⟐",
+      "✣"
+    ],
+    "factions": [
+      0,
+      1
+    ]
+  },
+  "deck": {
+    "initialHand": 12,
+    "campaignDoubleDeckFieldThreshold": 12
+  },
+  "campaign": {
+    "startingSupply": 2,
+    "supplyCap": 30,
+    "capitalGarrison": 3,
+    "historicalGarrison": 3,
+    "marketSize": 3,
+    "strategyHandLimit": 3,
+    "draftSize": 3,
+    "marketRefreshRounds": 3,
+    "resupplyCost": 2,
+    "resupplyCards": 1,
+    "siegeCost": 3,
+    "siegeThreshold": 3,
+    "siegeFrontCards": 3,
+    "rotationCostPerCard": 1,
+    "scorePerField": 3,
+    "logLimit": 70,
+    "supplyByFieldType": {
+      "oil": 2,
+      "default": 1
+    },
+    "garrisonUpkeep": {
+      "idleAtOpen": 2,
+      "negativeAtOpen": 3
+    }
+  },
+  "battle": {
+    "terrainLineLimits": {
+      "swamp": 1,
+      "forest": 2,
+      "default": 3
+    },
+    "garrisonLimits": {
+      "swamp": 1,
+      "forest": 2,
+      "default": 3,
+      "fortified": 4,
+      "capital": 5
+    },
+    "mountainMinOpen": 2,
+    "maxCounterReveal": 2
+  },
+  "strategies": [
+    {
+      "id": "conscription",
+      "icon": "✚",
+      "phase": "campaign",
+      "count": 3,
+      "price": 3,
+      "effect": {
+        "draw": 2
+      }
+    },
+    {
+      "id": "meds_team",
+      "icon": "✥",
+      "phase": "campaign",
+      "count": 2,
+      "price": 3,
+      "effect": {
+        "recover": 2
+      }
+    },
+    {
+      "id": "spy",
+      "icon": "◈",
+      "phase": "battle",
+      "count": 2,
+      "price": 3,
+      "effect": {}
+    },
+    {
+      "id": "isr",
+      "icon": "◎",
+      "phase": "campaign",
+      "count": 2,
+      "price": 4,
+      "effect": {}
+    },
+    {
+      "id": "paratrooper",
+      "icon": "↧",
+      "phase": "battle",
+      "count": 2,
+      "price": 5,
+      "effect": {
+        "draw": 1
+      }
+    },
+    {
+      "id": "rank_up",
+      "icon": "↑",
+      "phase": "battle",
+      "count": 2,
+      "price": 3,
+      "effect": {
+        "boost": 2
+      }
+    },
+    {
+      "id": "scouting",
+      "icon": "⌖",
+      "phase": "battle",
+      "count": 2,
+      "price": 4,
+      "effect": {}
+    },
+    {
+      "id": "peace_talk",
+      "icon": "⚑",
+      "phase": "battle",
+      "count": 1,
+      "price": 4,
+      "effect": {}
+    },
+    {
+      "id": "peace_negotiation",
+      "icon": "☮",
+      "phase": "campaign",
+      "count": 2,
+      "price": 4,
+      "effect": {
+        "rounds": 2
+      }
+    },
+    {
+      "id": "revolution",
+      "icon": "✦",
+      "phase": "campaign",
+      "count": 1,
+      "price": 6,
+      "effect": {
+        "cardRank": 1
+      }
+    },
+    {
+      "id": "blitzkrieg",
+      "icon": "ϟ",
+      "phase": "battle",
+      "count": 1,
+      "price": 7,
+      "effect": {}
+    },
+    {
+      "id": "international_support",
+      "icon": "▣",
+      "phase": "campaign",
+      "count": 2,
+      "price": 4,
+      "effect": {
+        "supply": 6
+      }
+    },
+    {
+      "id": "airborne_raid",
+      "icon": "⤴",
+      "phase": "campaign",
+      "count": 1,
+      "price": 5,
+      "effect": {
+        "range": 2
+      }
+    },
+    {
+      "id": "economic_sanctions",
+      "icon": "⊘",
+      "phase": "campaign",
+      "count": 2,
+      "price": 4,
+      "effect": {
+        "rounds": 3
+      }
+    },
+    {
+      "id": "economic_espionage",
+      "icon": "¤",
+      "phase": "campaign",
+      "count": 2,
+      "price": 4,
+      "effect": {
+        "supply": 4
+      }
+    },
+    {
+      "id": "scorched_earth",
+      "icon": "♨",
+      "phase": "campaign",
+      "count": 2,
+      "price": 4,
+      "effect": {
+        "rounds": 3
+      }
+    },
+    {
+      "id": "relocate_capital",
+      "icon": "♜",
+      "phase": "campaign",
+      "count": 1,
+      "price": 6,
+      "effect": {}
+    }
+  ]
+};
