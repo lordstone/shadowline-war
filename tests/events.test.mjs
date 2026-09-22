@@ -24,7 +24,7 @@ test('new cards have private faces and own-hand new markers; harvest lists locat
  assert.ok(r.state.fields.some(f=>f.owner===harvest.owner&&harvest.detail.includes(f.label)));
 });
 test('strategy purchase produces a priced acquisition event',()=>{
- const s=createGame({strategies:false});s.opt.strategies=true;s.players[0].supply=10;s.strategyMarket=['conscription'];s.strategyDeck=['spy'];s.strategyDiscard=[];s.strategyLocked=[[],[]];s.marketBought=false;
+ const s=createGame({strategies:false});s.opt.strategies=true;s.players[0].supply=10;s.strategyMarkets=[['conscription'],[]];s.strategyRefreshCounts=[0,0];s.strategyLocked=[[],[]];s.marketBought=false;
  const a={type:'buy_strategy',id:'conscription'},r=act(s,0,a);assert.equal(r.ok,true);
  const event=actionEvents(s,r.state,a,0)[0];assert.equal(event.kind,'purchase');assert.equal(event.strategy.id,'conscription');assert.match(event.detail,/3 点补给/);
 });

@@ -41,7 +41,6 @@ export const GAME_CONFIG={
     "marketSize": 3,
     "strategyHandLimit": 3,
     "draftSize": 3,
-    "marketRefreshRounds": 3,
     "resupplyCost": 2,
     "resupplyCards": 1,
     "siegeCost": 3,
@@ -80,7 +79,6 @@ export const GAME_CONFIG={
       "id": "conscription",
       "icon": "✚",
       "phase": "campaign",
-      "count": 3,
       "price": 3,
       "effect": {
         "draw": 2
@@ -90,7 +88,6 @@ export const GAME_CONFIG={
       "id": "meds_team",
       "icon": "✥",
       "phase": "campaign",
-      "count": 2,
       "price": 3,
       "effect": {
         "recover": 2
@@ -100,7 +97,6 @@ export const GAME_CONFIG={
       "id": "spy",
       "icon": "◈",
       "phase": "battle",
-      "count": 2,
       "price": 3,
       "effect": {}
     },
@@ -108,7 +104,6 @@ export const GAME_CONFIG={
       "id": "isr",
       "icon": "◎",
       "phase": "campaign",
-      "count": 2,
       "price": 4,
       "effect": {}
     },
@@ -116,7 +111,6 @@ export const GAME_CONFIG={
       "id": "paratrooper",
       "icon": "↧",
       "phase": "battle",
-      "count": 2,
       "price": 5,
       "effect": {
         "draw": 1
@@ -126,7 +120,6 @@ export const GAME_CONFIG={
       "id": "rank_up",
       "icon": "↑",
       "phase": "battle",
-      "count": 2,
       "price": 3,
       "effect": {
         "boost": 2
@@ -136,7 +129,6 @@ export const GAME_CONFIG={
       "id": "scouting",
       "icon": "⌖",
       "phase": "battle",
-      "count": 2,
       "price": 4,
       "effect": {}
     },
@@ -144,7 +136,6 @@ export const GAME_CONFIG={
       "id": "peace_talk",
       "icon": "⚑",
       "phase": "battle",
-      "count": 1,
       "price": 4,
       "effect": {}
     },
@@ -152,7 +143,6 @@ export const GAME_CONFIG={
       "id": "peace_negotiation",
       "icon": "☮",
       "phase": "campaign",
-      "count": 2,
       "price": 4,
       "effect": {
         "rounds": 2
@@ -162,7 +152,6 @@ export const GAME_CONFIG={
       "id": "revolution",
       "icon": "✦",
       "phase": "campaign",
-      "count": 1,
       "price": 6,
       "effect": {
         "cardRank": 1
@@ -172,7 +161,6 @@ export const GAME_CONFIG={
       "id": "blitzkrieg",
       "icon": "ϟ",
       "phase": "battle",
-      "count": 1,
       "price": 7,
       "effect": {}
     },
@@ -180,7 +168,6 @@ export const GAME_CONFIG={
       "id": "international_support",
       "icon": "▣",
       "phase": "campaign",
-      "count": 2,
       "price": 4,
       "effect": {
         "supply": 6
@@ -190,7 +177,6 @@ export const GAME_CONFIG={
       "id": "airborne_raid",
       "icon": "⤴",
       "phase": "campaign",
-      "count": 1,
       "price": 5,
       "effect": {
         "range": 2
@@ -200,7 +186,6 @@ export const GAME_CONFIG={
       "id": "economic_sanctions",
       "icon": "⊘",
       "phase": "campaign",
-      "count": 2,
       "price": 4,
       "effect": {
         "rounds": 3
@@ -210,7 +195,6 @@ export const GAME_CONFIG={
       "id": "economic_espionage",
       "icon": "¤",
       "phase": "campaign",
-      "count": 2,
       "price": 4,
       "effect": {
         "supply": 4
@@ -220,7 +204,6 @@ export const GAME_CONFIG={
       "id": "scorched_earth",
       "icon": "♨",
       "phase": "campaign",
-      "count": 2,
       "price": 4,
       "effect": {
         "rounds": 3
@@ -230,7 +213,6 @@ export const GAME_CONFIG={
       "id": "relocate_capital",
       "icon": "♜",
       "phase": "campaign",
-      "count": 1,
       "price": 6,
       "effect": {}
     }
