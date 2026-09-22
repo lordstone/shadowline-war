@@ -18,7 +18,7 @@ for(const [key,value] of Object.entries(config.campaign))if(typeof value==='numb
 const ids=new Set();
 for(const card of config.strategies||[]){
  if(!card.id||ids.has(card.id))throw new Error('Strategy ids must be present and unique: '+card.id);
- ids.add(card.id);positive(card.count,'strategies.'+card.id+'.count');positive(card.price,'strategies.'+card.id+'.price');
+ ids.add(card.id);positive(card.price,'strategies.'+card.id+'.price');
  if(!['campaign','battle'].includes(card.phase))throw new Error('Invalid strategy phase: '+card.id);
  for(const [key,value] of Object.entries(card.effect||{}))positive(value,'strategies.'+card.id+'.effect.'+key);
 }

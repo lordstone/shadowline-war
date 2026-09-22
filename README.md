@@ -5,9 +5,9 @@
 [![deploy pages](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20pages)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![pull request checks](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/ci.yml?branch=main&label=PR%20checks)](https://github.com/lordstone/shadowline-war/actions/workflows/ci.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.22.0-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.23.0-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.22.0**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
+[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.23.0**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -32,7 +32,7 @@
 - 人机对战：新兵与老兵两种策略风格；AI 不读取对方隐藏牌的点数、花色或洗牌状态。
 - 同机双人对战：每次换人时遮蔽手牌，准备就绪后开始计时。**不是两台设备联网模式**。
 - 玩家可在顶栏编辑名字和徽记；战役高级选项可选择地图双方势力，首都、徽记和对手身份会随之更新。
-- 初始策略三选一，14 种战役／交锋策略；公开战术商店每回合可购买一张。
+- 17 种战役／交锋策略；每张地图的经典、战役模式分别使用加权私人三选一，战役中还能购买或刷新自己的候选。
 - 战役夺取首都模式，以及不含地图、驻军、补给的经典模式。
 - 沼泽、林地、山地、强化城市、油田和港口具有不同容量、资源或交战规则；部分港口通过跨海路线连接。
 - 30／60／120 秒或无限时、先行军团、随机种子、回合上限、策略开关。
@@ -101,6 +101,13 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.23.0 私人策略候选与地图权重
+
+- 每张地图分别配置经典与战役模式的策略权重；经典模式只出现交锋策略，战役模式使用完整策略池。（closes #136）
+- 开局选牌与战役商店均改为双方独立、仅本人可见的三张候选；购买后只补充购买者自己的候选。
+- 取消每三轮自动刷新。每名玩家可整体刷新自己的三张候选，首次免费，此后费用按 1、2、3……点补给递增且整局不重置。
+- AI 使用同一套私人候选和刷新规则；旧版公共市场存档会自动迁移，离线单文件与中英文规则同步更新。
 
 ## 1.22.0 地图数据配置解耦
 

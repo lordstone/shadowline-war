@@ -435,33 +435,49 @@ test('two open cards of the same rank form a pair while a matching concealed car
  assert.equal(s.battle.lines[0].filter(c=>!c.open).length,1);
 });
 
-test('strategy market purchase spends supply, refills, locks until next own turn and preserves inventory',()=>{
+test('map and mode weighted drafts contain only compatible strategies and stay private',()=>{
+ for(const map of MAPS)for(const rules of ['classic','campaign']){
+  const s=createGame({map:map.id,rules,strategies:true,seed:515});
+  const allowed=new Set(Object.entries(map.strategyPools[rules]).filter(([,weight])=>weight>0).map(([id])=>id));
+  for(const offers of s.draft){assert.equal(offers.length,3,map.id+' '+rules);assert.equal(new Set(offers).size,3);assert.ok(offers.every(id=>allowed.has(id)))}
+  if(rules==='classic')assert.ok(s.draft.flat().every(id=>STRATEGIES.find(card=>card.id===id).phase==='battle'));
+  const hidden=viewFor(s,0);assert.deepEqual(hidden.draft[1],['?','?','?']);assert.deepEqual(hidden.draft[0],s.draft[0]);
+ }
+});
+test('private strategy purchase spends supply, refills only the buyer offers and locks until next own turn',()=>{
  let s=createGame({strategies:true,seed:515});
  s=next(s,{type:'draft',id:s.draft[0][0]});s=next(s,{type:'draft',id:s.draft[1][0]});
- const total=STRATEGIES.reduce((n,c)=>n+c.count,0),inventory=x=>x.strategyDeck.length+x.strategyMarket.length+x.strategyDiscard.length+x.draft.flat().length+x.players.reduce((n,p)=>n+p.strategies.length,0);
- assert.equal(inventory(s),total);assert.equal(s.strategyMarket.length,3);
- const id=s.strategyMarket[0],price=STRATEGIES.find(c=>c.id===id).price;s.players[0].supply=30;
- s=next(s,{type:'buy_strategy',id});assert.equal(s.players[0].supply,30-price);assert.ok(s.players[0].strategies.includes(id));assert.ok(s.strategyLocked[0].includes(id));assert.equal(s.strategyMarket.length,3);assert.equal(s.marketBought,true);assert.equal(inventory(s),total);
- assert.match(canStrategy(s,0,id),/下一个地图回合/);assert.equal(act(s,0,{type:'buy_strategy',id:s.strategyMarket[0]}).ok,false);
- s=next(s,{type:'pass'});assert.ok(s.strategyLocked[0].includes(id));s=next(s,{type:'pass'});assert.deepEqual(s.strategyLocked[0],[]);assert.equal(s.marketBought,false);assert.equal(inventory(s),total);validate(s);
+ const opponentOffers=[...s.strategyMarkets[1]],id=s.strategyMarkets[0][0],price=STRATEGIES.find(c=>c.id===id).price;s.players[0].supply=30;
+ s=next(s,{type:'buy_strategy',id});assert.equal(s.players[0].supply,30-price);assert.ok(s.players[0].strategies.includes(id));assert.ok(s.strategyLocked[0].includes(id));assert.equal(s.strategyMarkets[0].length,3);assert.deepEqual(s.strategyMarkets[1],opponentOffers);assert.equal(s.marketBought,true);
+ assert.ok(!s.strategyMarkets[0].includes(id));assert.match(canStrategy(s,0,id),/下一个地图回合/);assert.equal(act(s,0,{type:'buy_strategy',id:s.strategyMarkets[0][0]}).ok,false);
+ const hidden=viewFor(s,0);assert.deepEqual(hidden.strategyMarkets[1],['?','?','?']);assert.deepEqual(hidden.strategyMarkets[0],s.strategyMarkets[0]);
+ s=next(s,{type:'pass'});assert.ok(s.strategyLocked[0].includes(id));s=next(s,{type:'pass'});assert.deepEqual(s.strategyLocked[0],[]);assert.equal(s.marketBought,false);validate(s);
 });
-test('strategy market rejects insufficient funds, duplicate holdings and a full three-card hand without mutation',()=>{
- let s=createGame({strategies:false});s.opt.strategies=true;s.strategyDeck=[];s.strategyDiscard=[];s.strategyLocked=[[],[]];s.strategyMarket=['conscription','spy','rank_up'];s.marketBought=false;
+test('private offer refresh replaces all three cards and permanently escalates each players own cost',()=>{
+ let s=createGame({strategies:true,seed:616});s=next(s,{type:'draft',id:s.draft[0][0]});s=next(s,{type:'draft',id:s.draft[1][0]});s.players[0].supply=10;
+ const opponent=[...s.strategyMarkets[1]],first=[...s.strategyMarkets[0]];
+ s=next(s,{type:'refresh_strategy_market'});assert.equal(s.players[0].supply,10);assert.equal(s.strategyRefreshCounts[0],1);assert.equal(first.some(id=>s.strategyMarkets[0].includes(id)),false);assert.deepEqual(s.strategyMarkets[1],opponent);
+ const second=[...s.strategyMarkets[0]];s=next(s,{type:'refresh_strategy_market'});assert.equal(s.players[0].supply,9);assert.equal(s.strategyRefreshCounts[0],2);assert.equal(second.some(id=>s.strategyMarkets[0].includes(id)),false);assert.equal(s.strategyRefreshCounts[1],0);
+ s=next(s,{type:'pass'});s=next(s,{type:'pass'});const before=s.players[0].supply;s=next(s,{type:'refresh_strategy_market'});assert.equal(s.players[0].supply,before-2);assert.equal(s.strategyRefreshCounts[0],3);
+ s.players[0].supply=0;const frozen=structuredClone(s),failed=act(s,0,{type:'refresh_strategy_market'});assert.equal(failed.ok,false);assert.deepEqual(s,frozen);validate(s);
+});
+test('private strategy offers reject insufficient funds, duplicate holdings and a full three-card hand without mutation',()=>{
+ let s=createGame({strategies:false});s.opt.strategies=true;s.strategyMarkets=[['conscription','spy','rank_up'],[]];s.strategyRefreshCounts=[0,0];s.strategyLocked=[[],[]];s.marketBought=false;
  for(const setup of [
  x=>{x.players[0].supply=0},
  x=>{x.players[0].supply=30;x.players[0].strategies=['conscription']},
  x=>{x.players[0].supply=30;x.players[0].strategies=['spy','rank_up','peace_talk']}
  ]){const t=structuredClone(s);setup(t);const frozen=structuredClone(t),r=act(t,0,{type:'buy_strategy',id:'conscription'});assert.equal(r.ok,false);assert.deepEqual(t,frozen)}
 });
-test('AI can purchase from the public market and used strategies enter the discard pile',()=>{
- let s=createGame({strategies:false});s.opt.strategies=true;s.strategyDeck=['spy'];s.strategyMarket=['international_support'];s.strategyDiscard=[];s.strategyLocked=[[],[]];s.marketBought=false;s.players[0].supply=10;
+test('AI purchases only from its private offers and used strategies leave its hand',()=>{
+ let s=createGame({strategies:false});s.opt.strategies=true;s.strategyMarkets=[['international_support'],['spy']];s.strategyRefreshCounts=[0,0];s.strategyLocked=[[],[]];s.marketBought=false;s.players[0].supply=10;
  const a=aiAction(s,0);assert.deepEqual(a,{type:'buy_strategy',id:'international_support'});s=next(s,a);
  s=next(s,{type:'pass'});s=next(s,{type:'pass'});s=next(s,{type:'strategy',id:'international_support'});
- assert.ok(s.strategyDiscard.includes('international_support'));assert.ok(!s.players[0].strategies.includes('international_support'));validate(s);
+ assert.ok(!s.players[0].strategies.includes('international_support'));assert.equal('strategyDiscard' in s,false);validate(s);
 });
-test('older version-one saves gain a valid strategy market without losing their state',()=>{
- const s=createGame({strategies:false});s.opt.strategies=true;const hand=s.players[0].hand.map(c=>c.id);delete s.strategyDeck;delete s.strategyMarket;delete s.strategyDiscard;delete s.strategyLocked;delete s.marketBought;
- upgradeState(s);assert.equal(s.strategyMarket.length,3);assert.deepEqual(s.strategyLocked,[[],[]]);assert.deepEqual(s.players[0].hand.map(c=>c.id),hand);validate(s);
+test('older version-one shared-market saves migrate to valid private offers without losing state',()=>{
+ const s=createGame({strategies:false});s.opt.strategies=true;const hand=s.players[0].hand.map(c=>c.id);delete s.strategyMarkets;delete s.strategyRefreshCounts;delete s.strategyLocked;delete s.marketBought;s.strategyMarket=['conscription','spy'];s.strategyDeck=['rank_up'];s.strategyDiscard=[];
+ upgradeState(s);assert.deepEqual(s.strategyMarkets.map(offers=>offers.slice(0,2)),[['conscription','spy'],['conscription','spy']]);assert.ok(s.strategyMarkets.every(offers=>offers.length===3));assert.deepEqual(s.strategyRefreshCounts,[0,0]);assert.deepEqual(s.strategyLocked,[[],[]]);assert.deepEqual(s.players[0].hand.map(c=>c.id),hand);assert.equal('strategyMarket' in s,false);validate(s);
 });
 
 test('battle and garrison display order presents the strongest formation from low to high',()=>{

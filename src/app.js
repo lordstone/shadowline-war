@@ -1,6 +1,6 @@
 import {BALANCE,MAPS,STRATEGIES,defaults,strategyById,SUITS} from './data.js';
 import {t,setLang,getLang,onLangChange,strategyText,mapText,mapFactions,fieldLabel} from './i18n/index.js';
-import {createGame,act,face,handName,power,compare,opened,leading,reachable,canAttack,garrisonLimit,seaLanding,isSeaLink,supplyConnected,battleLineLimit,canStrategy,canBuyStrategy,buyStrategyErrorText,aiAction,timeoutAction,validate,upgradeState,resolvedDeckCount,orderForDisplay} from './engine.js';
+import {createGame,act,face,handName,power,compare,opened,leading,reachable,canAttack,garrisonLimit,seaLanding,isSeaLink,supplyConnected,battleLineLimit,canStrategy,canBuyStrategy,buyStrategyErrorText,canRefreshStrategyMarket,strategyRefreshCost,aiAction,timeoutAction,validate,upgradeState,resolvedDeckCount,orderForDisplay} from './engine.js';
 import {Battlefield} from './battlefield.js';
 import {actionEvents} from './events.js';
 import {GEO_BACKDROPS} from './map-geography.js';
@@ -224,15 +224,10 @@ function handTray(){
  const sort='<span class="hand-sort-toggle" role="group" aria-label="'+t('game.hand.sort_label')+'"><button class="'+(handSort==='rank'?'active':'')+'" data-action="hand-sort" data-id="rank" aria-pressed="'+(handSort==='rank')+'">'+t('game.hand.sort_rank')+'</button><button class="'+(handSort==='suit'?'active':'')+'" data-action="hand-sort" data-id="suit" aria-pressed="'+(handSort==='suit')+'">'+t('game.hand.sort_suit')+'</button></span>';
  return '<section class="hand-tray"><div class="hand-top"><div><span class="eyebrow">'+t('game.hand.eyebrow')+'</span><b>'+t('game.hand.count',{n:pl.hand.length})+'</b></div><div>'+sort+'<span class="hand-selection-status">'+(['defend','attack'].includes(s.phase)?t('game.hand.selected',{n:selection.size}):s.phase==='campaign'?t('game.hand.choose_garrison'):t('game.hand.safe'))+'</span></div></div><div class="hand-scroll" style="--hand-count:'+cards.length+'">'+cards.map((c,i)=>'<div class="hand-card-shell" style="--rot:'+((i-(cards.length-1)/2)*1.15)+'deg;--lift:'+(-Math.abs(i-(cards.length-1)/2)*1.15)+'px;--z:'+i+'">'+card(c,{interactive,selected:selection.has(c.id),stance:selection.has(c.id)?selection.get(c.id):null})+'</div>').join('')+'</div></section>';
 }
-function strategyMarketView(){
- if(s.phase!=='campaign'||!s.opt.strategies)return '';
- const p=viewer();
- return '<section class="strategy-market expanded"><div class="market-heading"><div><span class="eyebrow">'+t('game.market.eyebrow')+'</span><h3>'+(s.marketBought?t('game.market.bought'):t('game.market.can_buy'))+'</h3></div><small>'+t('game.market.status',{supply:s.players[p].supply,n:s.players[p].strategies.length})+'</small></div><div class="market-list">'+s.strategyMarket.map((id,index)=>{const c=strategyById(id),st=strategyText(id),reason=canBuyStrategy(s,p,id),label=!reason?t('game.market.buy',{price:c.price}):reason==='need_supply'?t('game.market.need',{price:c.price}):reason==='duplicate_strategy'?t('game.market.owned'):reason==='strategies_full'?t('game.market.full'):reason==='market_bought'?t('game.market.bought_one'):t('game.market.unavailable');return '<article class="market-card"><span class="market-icon">'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div>'+btn(label,'buy-strategy','market-buy',!!reason,'data-id="'+id+'" data-index="'+index+'" title="'+esc(reason?buyStrategyErrorText(reason,id):t('game.market.buy_title',{price:c.price}))+'"')+'</article>'}).join('')+'</div></section>';
-}
 function strategyShopButton(){
  if(s.phase!=='campaign'||!s.opt.strategies)return '';
- const p=viewer(),summary=s.marketBought?t('game.shop.bought'):t('game.shop.view',{n:s.strategyMarket.length});
- return '<button class="strategy-shop-button" data-action="open-market" aria-label="'+esc(t('game.shop.aria',{summary,supply:s.players[p].supply}))+'" title="'+esc(t('game.shop.title',{summary,supply:s.players[p].supply}))+'"><span class="shop-coin">$</span><i>'+s.strategyMarket.length+'</i></button>';
+ const p=viewer(),summary=s.marketBought?t('game.shop.bought'):t('game.shop.view',{n:s.strategyMarkets[p].length});
+ return '<button class="strategy-shop-button" data-action="open-market" aria-label="'+esc(t('game.shop.aria',{summary,supply:s.players[p].supply}))+'" title="'+esc(t('game.shop.title',{summary,supply:s.players[p].supply}))+'"><span class="shop-coin">$</span><i>'+s.strategyMarkets[p].length+'</i></button>';
 }
 function battleLogList(limit=s.log.length){return '<ol class="battle-log">'+s.log.slice(0,limit).map(l=>'<li><span>'+String(l.round).padStart(2,'0')+'</span><p>'+esc(l.text)+'</p></li>').join('')+'</ol>'}
 function strategyDock(){
@@ -304,8 +299,9 @@ function identityView(){
  return '<div class="eyebrow">'+t('modal.identity.eyebrow')+'</div><h2>'+t('modal.identity.title')+'</h2><p class="modal-desc">'+t('modal.identity.desc')+'</p>'+identityFields(0,options.mode==='local'?t('menu.player_local0'):t('menu.player_single'))+(options.mode==='local'?identityFields(1,t('menu.player_local1')):'')+'<div class="modal-actions">'+btn(t('modal.identity.confirm'),'identity-confirm','primary')+'</div>';
 }
 function marketView(){
- const p=viewer();
- return '<div class="eyebrow">'+t('modal.market.eyebrow')+'</div><h2>'+t('modal.market.title')+'</h2><p class="modal-desc">'+t('modal.market.desc',{supply:s.players[p].supply})+'</p><div class="market-list">'+s.strategyMarket.map((id,index)=>{const c=strategyById(id),st=strategyText(id),reason=canBuyStrategy(s,p,id),label=!reason?t('game.market.buy',{price:c.price}):reason==='need_supply'?t('game.market.need',{price:c.price}):reason==='duplicate_strategy'?t('game.market.owned'):reason==='strategies_full'?t('game.market.full'):reason==='market_bought'?t('game.market.bought_one'):t('game.market.unavailable');return '<article class="market-card"><span class="market-icon">'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div>'+btn(label,'buy-strategy','market-buy',!!reason,'data-id="'+id+'" data-index="'+index+'"')+'</article>'}).join('')+'</div>'+btn(t('modal.close'),'close','primary');
+ const p=viewer(),market=s.strategyMarkets[p],cost=strategyRefreshCost(s,p),refreshReason=canRefreshStrategyMarket(s,p);
+ const refreshLabel=cost?t('game.market.refresh',{cost}):t('game.market.refresh_free');
+ return '<div class="eyebrow">'+t('modal.market.eyebrow')+'</div><h2>'+t('modal.market.title')+'</h2><p class="modal-desc">'+t('modal.market.desc',{supply:s.players[p].supply})+'</p><div class="market-list">'+market.map((id,index)=>{const c=strategyById(id),st=strategyText(id),reason=canBuyStrategy(s,p,id),label=!reason?t('game.market.buy',{price:c.price}):reason==='need_supply'?t('game.market.need',{price:c.price}):reason==='duplicate_strategy'?t('game.market.owned'):reason==='strategies_full'?t('game.market.full'):reason==='market_bought'?t('game.market.bought_one'):t('game.market.unavailable');return '<article class="market-card"><span class="market-icon">'+c.icon+'</span><div><b>'+st.name+'</b><small>'+(c.phase==='battle'?t('strategy.phase_battle'):t('strategy.phase_campaign'))+' · '+st.desc+'</small></div>'+btn(label,'buy-strategy','market-buy',!!reason,'data-id="'+id+'" data-index="'+index+'"')+'</article>'}).join('')+'</div><p class="market-refresh-note">'+t('game.market.refresh_note',{next:cost+1})+'</p><div class="modal-actions">'+btn(t('modal.close'),'close','secondary')+btn(refreshLabel,'refresh-strategy-market','primary',!!refreshReason,'title="'+esc(refreshReason||t('game.market.refresh_title',{cost}))+'"')+'</div>';
 }
 function strategyConfirmView(config){
  const id=config.strategyId,c=strategyById(id),st=strategyText(id),target=config.field?s.fields.find(f=>f.id===config.field):null;
@@ -623,6 +619,7 @@ document.addEventListener('click',e=>{
  if(a==='use-strategy'){if(isAI())return;runStrategy(id);return}
  if(a==='strategy-confirm'){confirmStrategy(id);return}
  if(a==='buy-strategy'){modal=null;resume();perform({type:'buy_strategy',id});return}
+ if(a==='refresh-strategy-market'){modal=null;resume();perform({type:'refresh_strategy_market'});if(s?.phase==='campaign'){modal='market';pause();render()}return}
  if(a==='cancel-target'){targeting=null;render();return}
  if(a==='medic-toggle'){const cid=Number(id),set=modal.chosen,limit=strategyById(modal.strategyId).effect.recover;if(set.has(cid))set.delete(cid);else if(set.size<limit)set.add(cid);else toast(t('toast.medic_max'));render();return}
  if(a==='medic-confirm'){medicConfirm(id);return}

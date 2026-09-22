@@ -4,19 +4,35 @@ import {fileURLToPath} from 'node:url';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const sourcePath=path.join(root,'config/maps.yaml');
+const balancePath=path.join(root,'config/game-balance.yaml');
 const outputPath=path.join(root,'src/map-config.js');
 const source=await fs.readFile(sourcePath,'utf8');
+const balanceSource=await fs.readFile(balancePath,'utf8');
 let config;
 try{config=JSON.parse(source)}catch(error){throw new Error('maps.yaml must use YAML 1.2 JSON syntax: '+error.message)}
+let balance;
+try{balance=JSON.parse(balanceSource)}catch(error){throw new Error('game-balance.yaml must use YAML 1.2 JSON syntax: '+error.message)}
 
 const fail=message=>{throw new Error('Invalid map configuration: '+message)};
 const pairKey=pair=>pair.slice().sort().join('\0');
+const strategies=new Map((balance.strategies||[]).map(card=>[card.id,card]));
+const expectedStrategies={classic:[...strategies.values()].filter(card=>card.phase==='battle').map(card=>card.id).sort(),campaign:[...strategies.keys()].sort()};
+const offerSize=Math.max(balance.campaign?.marketSize||0,balance.campaign?.draftSize||0);
 if(config.schemaVersion!==1)fail('unsupported schema version');
 if(!Array.isArray(config.maps)||config.maps.length===0)fail('maps must be a non-empty array');
 const mapIds=new Set();
 for(const map of config.maps){
  if(typeof map.id!=='string'||!map.id||mapIds.has(map.id))fail('map ids must be present and unique: '+map.id);
  mapIds.add(map.id);
+ if(!map.strategyPools||typeof map.strategyPools!=='object')fail(map.id+' must define strategyPools');
+ for(const rules of ['classic','campaign']){
+  const pool=map.strategyPools[rules];
+  if(!pool||typeof pool!=='object'||Array.isArray(pool))fail(map.id+'.strategyPools.'+rules+' must be an object');
+  const ids=Object.keys(pool).sort();
+  if(JSON.stringify(ids)!==JSON.stringify(expectedStrategies[rules]))fail(map.id+'.strategyPools.'+rules+' must list every compatible strategy exactly once');
+  for(const [id,weight] of Object.entries(pool))if(!Number.isInteger(weight)||weight<0)fail(map.id+'.strategyPools.'+rules+'.'+id+' must be a non-negative integer');
+  if(Object.values(pool).filter(weight=>weight>0).length<offerSize)fail(map.id+'.strategyPools.'+rules+' needs at least '+offerSize+' positive weights');
+ }
  if(!Array.isArray(map.fields)||map.fields.length<2)fail(map.id+' must contain at least two fields');
  const fields=new Map();
  for(const field of map.fields){
@@ -44,7 +60,7 @@ for(const map of config.maps){
   if(!control||typeof control!=='object'||Object.keys(control).length!==fields.size)fail(map.id+'.historical.control must cover every field');
   for(const [id,owner] of Object.entries(control))if(!fields.has(id)||(owner!==0&&owner!==1))fail(map.id+'.historical.control contains an invalid field or owner: '+id);
  }
- if(map.historicalStrategies&&(!Array.isArray(map.historicalStrategies)||map.historicalStrategies.length!==2||map.historicalStrategies.some(side=>!Array.isArray(side)||side.some(id=>typeof id!=='string'||!id))))fail(map.id+'.historicalStrategies must contain one strategy list per side');
+ if(map.historicalStrategies&&(!Array.isArray(map.historicalStrategies)||map.historicalStrategies.length!==2||map.historicalStrategies.some(side=>!Array.isArray(side)||side.some(id=>!strategies.has(id)))))fail(map.id+'.historicalStrategies must contain one valid strategy list per side');
  if(map.seaLinks){
   const seen=new Set();
   for(const pair of map.seaLinks){

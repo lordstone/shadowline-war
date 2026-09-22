@@ -4,6 +4,35 @@ export const MAP_CONFIG={
   "maps": [
     {
       "id": "duel",
+      "strategyPools": {
+        "classic": {
+          "spy": 3,
+          "paratrooper": 2,
+          "rank_up": 5,
+          "scouting": 4,
+          "peace_talk": 2,
+          "blitzkrieg": 3
+        },
+        "campaign": {
+          "conscription": 4,
+          "meds_team": 3,
+          "spy": 3,
+          "isr": 3,
+          "paratrooper": 2,
+          "rank_up": 5,
+          "scouting": 4,
+          "peace_talk": 2,
+          "peace_negotiation": 3,
+          "revolution": 2,
+          "blitzkrieg": 3,
+          "international_support": 3,
+          "airborne_raid": 2,
+          "economic_sanctions": 2,
+          "economic_espionage": 2,
+          "scorched_earth": 2,
+          "relocate_capital": 1
+        }
+      },
       "fields": [
         {
           "id": "p1_capital",
@@ -71,6 +100,35 @@ export const MAP_CONFIG={
     },
     {
       "id": "rift",
+      "strategyPools": {
+        "classic": {
+          "spy": 3,
+          "paratrooper": 4,
+          "rank_up": 3,
+          "scouting": 4,
+          "peace_talk": 2,
+          "blitzkrieg": 2
+        },
+        "campaign": {
+          "conscription": 4,
+          "meds_team": 3,
+          "spy": 3,
+          "isr": 4,
+          "paratrooper": 4,
+          "rank_up": 3,
+          "scouting": 4,
+          "peace_talk": 2,
+          "peace_negotiation": 2,
+          "revolution": 3,
+          "blitzkrieg": 2,
+          "international_support": 3,
+          "airborne_raid": 4,
+          "economic_sanctions": 3,
+          "economic_espionage": 2,
+          "scorched_earth": 3,
+          "relocate_capital": 2
+        }
+      },
       "fields": [
         {
           "id": "a",
@@ -164,6 +222,35 @@ export const MAP_CONFIG={
     },
     {
       "id": "ring",
+      "strategyPools": {
+        "classic": {
+          "spy": 4,
+          "paratrooper": 4,
+          "rank_up": 3,
+          "scouting": 5,
+          "peace_talk": 2,
+          "blitzkrieg": 2
+        },
+        "campaign": {
+          "conscription": 3,
+          "meds_team": 3,
+          "spy": 4,
+          "isr": 5,
+          "paratrooper": 4,
+          "rank_up": 3,
+          "scouting": 5,
+          "peace_talk": 2,
+          "peace_negotiation": 3,
+          "revolution": 2,
+          "blitzkrieg": 2,
+          "international_support": 3,
+          "airborne_raid": 4,
+          "economic_sanctions": 2,
+          "economic_espionage": 3,
+          "scorched_earth": 2,
+          "relocate_capital": 2
+        }
+      },
       "fields": [
         {
           "id": "a",
@@ -279,6 +366,35 @@ export const MAP_CONFIG={
     },
     {
       "id": "eastern_front",
+      "strategyPools": {
+        "classic": {
+          "spy": 2,
+          "paratrooper": 2,
+          "rank_up": 3,
+          "scouting": 3,
+          "peace_talk": 2,
+          "blitzkrieg": 5
+        },
+        "campaign": {
+          "conscription": 5,
+          "meds_team": 3,
+          "spy": 2,
+          "isr": 3,
+          "paratrooper": 2,
+          "rank_up": 3,
+          "scouting": 3,
+          "peace_talk": 2,
+          "peace_negotiation": 2,
+          "revolution": 2,
+          "blitzkrieg": 5,
+          "international_support": 5,
+          "airborne_raid": 3,
+          "economic_sanctions": 3,
+          "economic_espionage": 2,
+          "scorched_earth": 5,
+          "relocate_capital": 4
+        }
+      },
       "historical": {
         "control": {
           "berlin": 0,
@@ -493,6 +609,35 @@ export const MAP_CONFIG={
     },
     {
       "id": "korea",
+      "strategyPools": {
+        "classic": {
+          "spy": 3,
+          "paratrooper": 5,
+          "rank_up": 3,
+          "scouting": 4,
+          "peace_talk": 2,
+          "blitzkrieg": 2
+        },
+        "campaign": {
+          "conscription": 4,
+          "meds_team": 4,
+          "spy": 3,
+          "isr": 4,
+          "paratrooper": 5,
+          "rank_up": 3,
+          "scouting": 4,
+          "peace_talk": 2,
+          "peace_negotiation": 3,
+          "revolution": 2,
+          "blitzkrieg": 2,
+          "international_support": 5,
+          "airborne_raid": 5,
+          "economic_sanctions": 4,
+          "economic_espionage": 2,
+          "scorched_earth": 3,
+          "relocate_capital": 2
+        }
+      },
       "historical": {
         "control": {
           "pyongyang": 0,
@@ -665,6 +810,35 @@ export const MAP_CONFIG={
     },
     {
       "id": "western_front",
+      "strategyPools": {
+        "classic": {
+          "spy": 2,
+          "paratrooper": 2,
+          "rank_up": 4,
+          "scouting": 4,
+          "peace_talk": 4,
+          "blitzkrieg": 5
+        },
+        "campaign": {
+          "conscription": 3,
+          "meds_team": 3,
+          "spy": 2,
+          "isr": 3,
+          "paratrooper": 2,
+          "rank_up": 4,
+          "scouting": 4,
+          "peace_talk": 4,
+          "peace_negotiation": 3,
+          "revolution": 2,
+          "blitzkrieg": 5,
+          "international_support": 3,
+          "airborne_raid": 2,
+          "economic_sanctions": 3,
+          "economic_espionage": 2,
+          "scorched_earth": 3,
+          "relocate_capital": 3
+        }
+      },
       "historical": {
         "control": {
           "berlin": 0,
@@ -859,6 +1033,35 @@ export const MAP_CONFIG={
     },
     {
       "id": "hormuz",
+      "strategyPools": {
+        "classic": {
+          "spy": 5,
+          "paratrooper": 3,
+          "rank_up": 2,
+          "scouting": 5,
+          "peace_talk": 2,
+          "blitzkrieg": 2
+        },
+        "campaign": {
+          "conscription": 3,
+          "meds_team": 3,
+          "spy": 5,
+          "isr": 5,
+          "paratrooper": 3,
+          "rank_up": 2,
+          "scouting": 5,
+          "peace_talk": 2,
+          "peace_negotiation": 3,
+          "revolution": 2,
+          "blitzkrieg": 2,
+          "international_support": 3,
+          "airborne_raid": 4,
+          "economic_sanctions": 5,
+          "economic_espionage": 5,
+          "scorched_earth": 3,
+          "relocate_capital": 2
+        }
+      },
       "historical": {
         "control": {
           "oman_hq": 0,
@@ -1025,6 +1228,35 @@ export const MAP_CONFIG={
     },
     {
       "id": "china_civil_war",
+      "strategyPools": {
+        "classic": {
+          "spy": 4,
+          "paratrooper": 3,
+          "rank_up": 3,
+          "scouting": 4,
+          "peace_talk": 3,
+          "blitzkrieg": 2
+        },
+        "campaign": {
+          "conscription": 4,
+          "meds_team": 4,
+          "spy": 4,
+          "isr": 3,
+          "paratrooper": 3,
+          "rank_up": 3,
+          "scouting": 4,
+          "peace_talk": 3,
+          "peace_negotiation": 5,
+          "revolution": 5,
+          "blitzkrieg": 2,
+          "international_support": 5,
+          "airborne_raid": 3,
+          "economic_sanctions": 3,
+          "economic_espionage": 3,
+          "scorched_earth": 4,
+          "relocate_capital": 5
+        }
+      },
       "factionLogos": [
         "☀",
         "★"
