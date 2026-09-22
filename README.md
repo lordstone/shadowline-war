@@ -7,7 +7,7 @@
 [![Release version](https://img.shields.io/badge/release-v1.19.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
 [![Preview version](https://img.shields.io/badge/preview-v1.21.9-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.21.8**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
+[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.21.9**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
