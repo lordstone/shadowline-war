@@ -21,7 +21,9 @@ for(const [id,uri] of Object.entries(imports)){
 await modules.get('shadow/app').link(id=>{
  assert.ok(modules.has(id),'Every dependency is bundled: '+id);return modules.get(id);
 });
-assert.equal(modules.size,12);
+assert.deepEqual([...modules.keys()].sort(),[
+ 'shadow/app','shadow/data','shadow/engine','shadow/events','shadow/game-config','shadow/geography','shadow/i18n','shadow/i18n-en','shadow/i18n-zh','shadow/map-config','shadow/scene','shadow/three','shadow/three-core'
+].sort());
 assert.ok(!/<link[^>]+href="(?!data:)/.test(html));
 assert.ok(!/src="https?:/.test(html));
 console.log('PASS: web app icons and manifest have valid sizes; all '+modules.size+' standalone modules parse and link; images are embedded with no external scripts or styles required.');

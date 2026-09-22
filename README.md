@@ -5,9 +5,9 @@
 [![deploy pages](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20pages)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![pull request checks](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/ci.yml?branch=main&label=PR%20checks)](https://github.com/lordstone/shadowline-war/actions/workflows/ci.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.21.9-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.22.0-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.21.9**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
+[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.22.0**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -79,7 +79,8 @@
 ## 项目结构
 
 - `src/engine.js`：纯状态机、牌力、策略、AI；非法行动不改变原状态。
-- `src/data.js`：地图、策略和选项。
+- `config/maps.yaml`：地图据点、坐标、拓扑、史实态势与地图专属策略的唯一人工维护入口。
+- `src/data.js`：把生成的地图／数值配置适配为运行时数据。
 - `src/app.js`：界面、选牌、暂停、计时、存档。
 - `src/battlefield.js`：Three.js立体战区，故障时降级。
 - `src/style.css`：战术界面与自适应布局。
@@ -100,6 +101,12 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.22.0 地图数据配置解耦
+
+- 将八张地图的据点、坐标、拓扑、跨海路线、史实控制区和史实策略移出 JavaScript，集中到 `config/maps.yaml`。（fixes #137）
+- 新增地图配置生成器与 schema 校验，自动拒绝断图、单向边、悬空边、重复 ID、越界坐标及不完整的史实态势。
+- 浏览器源码与离线单文件继续共用同一份生成数据，并增加源配置、生成模块和运行时地图的一致性测试。
 
 ## 1.21.9 修复桌面手牌与地图状态提示
 
