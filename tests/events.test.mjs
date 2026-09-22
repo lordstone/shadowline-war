@@ -34,6 +34,20 @@ test('concealed cards returned by garrison rotation are marked new only for thei
  const mine=actionEvents(s,r.state,a,0).find(e=>e.kind==='garrison'),other=actionEvents(s,r.state,a,1).find(e=>e.kind==='garrison');
  assert.deepEqual(mine.newIds,[returned.id]);assert.deepEqual(other.newIds,[]);
 });
+test('concealed cards returned by abandoning a field are marked new only for their owner',()=>{
+ const s=createGame({strategies:false,seed:95}),field=s.fields.find(f=>f.owner===null),open=s.players[0].hand.pop(),returned=s.players[0].hand.pop();
+ field.owner=0;field.garrison=[{...open,open:true},{...returned,open:false}];
+ const a={type:'abandon_field',field:field.id},r=act(s,0,a);assert.equal(r.ok,true);
+ const mine=actionEvents(s,r.state,a,0).find(e=>e.kind==='occupation'),other=actionEvents(s,r.state,a,1).find(e=>e.kind==='occupation');
+ assert.deepEqual(mine.newIds,[returned.id]);assert.deepEqual(other.newIds,[]);
+});
+test('concealed cards returned by scorched earth are marked new only for their owner',()=>{
+ const s=createGame({strategies:false,seed:96}),field=s.fields.find(f=>f.owner===null),open=s.players[0].hand.pop(),returned=s.players[0].hand.pop();
+ field.owner=0;field.garrison=[{...open,open:true},{...returned,open:false}];s.players[0].strategies=['scorched_earth'];
+ const a={type:'strategy',id:'scorched_earth',field:field.id},r=act(s,0,a);assert.equal(r.ok,true);
+ const mine=actionEvents(s,r.state,a,0).find(e=>e.kind==='strategy'),other=actionEvents(s,r.state,a,1).find(e=>e.kind==='strategy');
+ assert.deepEqual(mine.newIds,[returned.id]);assert.deepEqual(other.newIds,[]);
+});
 test('negative garrison upkeep reports its ledger and public discard',()=>{
  let s=createGame({strategies:false,map:'duel',seed:94});const capital=s.fields.find(f=>f.owner===0&&f.capital);capital.garrison.forEach(c=>c.open=true);
  s=act(s,0,{type:'pass'}).state;const before=s,a={type:'pass'},r=act(before,1,a);assert.equal(r.ok,true);

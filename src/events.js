@@ -19,14 +19,14 @@ export function actionEvents(before,after,action,perspective){
  const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison,open=old.filter(c=>c.open).length,hidden=old.length-open;add('garrison',t('event.title.reorganize',{name:name(actor)}),t('event.detail.reorganize',{label:label(f),total:f.garrison.length,open,hidden}),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor))});
  }
  if(action.type==='abandon_field'){
- const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison,open=old.filter(c=>c.open).length,hidden=old.length-open;add('occupation',t('event.title.abandon',{name:name(actor),label:label(f)}),t('event.detail.abandon',{open,hidden}),{field:f.id,map:after.fields,owner:null,cards:[]});
+ const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison,returned=old.filter(c=>!c.open),open=old.length-returned.length,hidden=returned.length;add('occupation',t('event.title.abandon',{name:name(actor),label:label(f)}),t('event.detail.abandon',{open,hidden}),{field:f.id,map:after.fields,owner:null,cards:[],newIds:perspective===actor?returned.map(c=>c.id):[]});
  }
  if(action.type==='rotate_garrison'){
  const f=field(action.field),old=before.fields.find(x=>x.id===f.id).garrison.filter(c=>action.outIds.includes(c.id)),returned=old.filter(c=>!c.open),open=old.length-returned.length,hidden=returned.length;add('garrison',t('event.title.rotate_garrison',{name:name(actor)}),t('event.detail.rotate_garrison',{label:label(f),n:old.length,open,hidden}),{field:f.id,map:after.fields,owner:actor,cards:f.garrison.map(c=>visible(c,actor)),newIds:perspective===actor?returned.map(c=>c.id):[]});
  }
  if(action.type==='strategy'){
- const strategy=strategyById(action.id),st=strategyText(action.id);
- add('strategy',t('event.title.strategy',{name:name(actor),strategy:st.name}),st.desc,{field:action.field,owner:actor,cards:action.id==='isr'?field(action.field).garrison.filter(c=>c.open):[]});
+ const strategy=strategyById(action.id),st=strategyText(action.id),returned=action.id==='scorched_earth'?before.fields.find(f=>f.id===action.field)?.garrison.filter(c=>!c.open)||[]:[];
+ add('strategy',t('event.title.strategy',{name:name(actor),strategy:st.name}),st.desc,{field:action.field,owner:actor,cards:action.id==='isr'?field(action.field).garrison.filter(c=>c.open):[],newIds:perspective===actor?returned.map(c=>c.id):[]});
  if(action.id==='spy'){
  const peek=after.battle?.lines[1-actor].filter(c=>after.knowledge[actor][c.id]&&!before.knowledge[actor][c.id])||[];
  if(actor===perspective&&peek.length)add('cards',t('event.title.spy_intel'),t('event.detail.spy_intel'),{cards:peek,owner:actor});
