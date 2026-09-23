@@ -62,6 +62,22 @@ function evaluation(cards){
 }
 export function power(cards){return evaluation(cards).value}
 export function compare(a,b){return compareEvaluation(evaluation(a),evaluation(b))}
+function combinationCount(n,k){let value=1;for(let i=1;i<=k;i++)value=value*(n-k+i)/i;return value}
+function formationCandidates(pool,count,limit){
+ let sampleSize=count;
+ while(sampleSize<pool.length&&combinationCount(sampleSize+1,count)<=limit)sampleSize++;
+ const sample=pool.slice(0,sampleSize),result=[],chosen=[];
+ const visit=start=>{if(chosen.length===count){result.push(chosen.map(index=>sample[index]));return}for(let i=start;i<=sample.length-(count-chosen.length);i++){chosen.push(i);visit(i+1);chosen.pop()}};
+ visit(0);return result;
+}
+export function selectHistoricalFormation(pool,spec){
+ const quantile=BALANCE.campaign.historicalStrengthQuantiles[spec.strength];
+ if(quantile===undefined||!Number.isInteger(spec.count)||spec.count<1||spec.count>pool.length)throw Error('史实驻军配置无效');
+ const candidates=formationCandidates(pool,spec.count,BALANCE.campaign.historicalFormationCandidates).sort((a,b)=>compare(a,b)||a.reduce((sum,c)=>sum+c.rank,0)-b.reduce((sum,c)=>sum+c.rank,0)||a.map(c=>c.id).join(',').localeCompare(b.map(c=>c.id).join(',')));
+ const selected=candidates[Math.round(quantile*(candidates.length-1))],ids=new Set(selected.map(c=>c.id));
+ for(let i=pool.length-1;i>=0;i--)if(ids.has(pool[i].id))pool.splice(i,1);
+ return selected;
+}
 const HAND_NAME_KEYS=['engine.hand.none','engine.hand.high','engine.hand.pair','engine.hand.flush','engine.hand.straight','engine.hand.straight_flush','engine.hand.trips'];
 export function handName(cards){return t(HAND_NAME_KEYS[power(cards)[0]])}
 export function orderForDisplay(cards){
@@ -149,9 +165,13 @@ export function createGame(options={}){
  const deckCount=resolvedDeckCount(opt,s.fields);s.baseDeckSize=54+(deckCount-1)*52;
  s.deck=shuffle(s,makeDeck(deckCount));for(let i=0;i<BALANCE.deck.initialHand;i++)for(let p=0;p<2;p++)s.players[p].hand.push(s.deck.pop());
  if(opt.rules==='campaign'){
-  if(opt.deployment==='historical'&&map.historical)for(const f of s.fields){const side=map.historical.control[f.id];f.owner=side===undefined?null:sides.indexOf(side)}
-  for(const f of s.fields.filter(f=>f.capital))for(let i=0;i<BALANCE.campaign.capitalGarrison;i++)f.garrison.push({...s.players[f.owner].hand.pop(),open:false});
-  if(opt.deployment==='historical'&&map.historical)for(const f of s.fields.filter(f=>f.owner!==null&&!f.capital))for(let i=0;i<Math.min(BALANCE.campaign.historicalGarrison,garrisonLimit(f));i++)f.garrison.push({...clean(s.deck.pop()),open:i===0});
+  const historical=opt.deployment==='historical'&&map.historical;
+  if(historical)for(const f of s.fields){const side=map.historical.control[f.id];f.owner=side===undefined?null:sides.indexOf(side)}
+  if(historical)for(const f of s.fields.filter(f=>f.owner!==null)){
+   const spec=map.historical.garrisons[f.id],source=f.capital?s.players[f.owner].hand:s.deck;
+   f.garrison=selectHistoricalFormation(source,spec).map((card,index)=>({...clean(card),open:index<spec.open}));
+  }
+  else for(const f of s.fields.filter(f=>f.capital))for(let i=0;i<BALANCE.campaign.capitalGarrison;i++)f.garrison.push({...s.players[f.owner].hand.pop(),open:false});
  }
  else s.fields=[];
  if(opt.strategies){

@@ -411,6 +411,78 @@ export const MAP_CONFIG={
           "caucasus": 1,
           "stalingrad": 1,
           "moscow": 1
+        },
+        "garrisons": {
+          "berlin": {
+            "strength": "strong",
+            "count": 3,
+            "open": 0
+          },
+          "prussia": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "warsaw": {
+            "strength": "elite",
+            "count": 3,
+            "open": 1
+          },
+          "krakow": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "baltic": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "lviv": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "minsk": {
+            "strength": "depleted",
+            "count": 3,
+            "open": 1
+          },
+          "smolensk": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "kyiv": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "leningrad": {
+            "strength": "elite",
+            "count": 3,
+            "open": 1
+          },
+          "kharkov": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "caucasus": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "stalingrad": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "moscow": {
+            "strength": "elite",
+            "count": 3,
+            "open": 0
+          }
         }
       },
       "historicalStrategies": [
@@ -651,6 +723,63 @@ export const MAP_CONFIG={
           "daejeon": 1,
           "daegu": 1,
           "busan": 1
+        },
+        "garrisons": {
+          "pyongyang": {
+            "strength": "elite",
+            "count": 3,
+            "open": 0
+          },
+          "sinuiju": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "chosin": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "wonsan": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "kaesong": {
+            "strength": "elite",
+            "count": 3,
+            "open": 1
+          },
+          "incheon": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "seoul": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "chuncheon": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "daejeon": {
+            "strength": "depleted",
+            "count": 3,
+            "open": 1
+          },
+          "daegu": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "busan": {
+            "strength": "strong",
+            "count": 3,
+            "open": 0
+          }
         }
       },
       "historicalStrategies": [
@@ -853,6 +982,68 @@ export const MAP_CONFIG={
           "belgium": 1,
           "reims": 1,
           "paris": 1
+        },
+        "garrisons": {
+          "paris": {
+            "strength": "elite",
+            "count": 3,
+            "open": 0
+          },
+          "reims": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "belgium": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "sedan": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "ardennes": {
+            "strength": "depleted",
+            "count": 2,
+            "open": 1
+          },
+          "alsace": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "luxembourg": {
+            "strength": "depleted",
+            "count": 3,
+            "open": 1
+          },
+          "hamburg": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "ruhr": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "frankfurt": {
+            "strength": "elite",
+            "count": 3,
+            "open": 1
+          },
+          "munich": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "berlin": {
+            "strength": "strong",
+            "count": 3,
+            "open": 0
+          }
         }
       },
       "historicalStrategies": [
@@ -1074,6 +1265,58 @@ export const MAP_CONFIG={
           "bandar": 1,
           "qeshm": 1,
           "island": 1
+        },
+        "garrisons": {
+          "oman_hq": {
+            "strength": "strong",
+            "count": 3,
+            "open": 0
+          },
+          "gulf_port": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "musandam": {
+            "strength": "elite",
+            "count": 3,
+            "open": 1
+          },
+          "offshore": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "desert": {
+            "strength": "depleted",
+            "count": 3,
+            "open": 1
+          },
+          "iran_hq": {
+            "strength": "elite",
+            "count": 3,
+            "open": 0
+          },
+          "iran_coast": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "bandar": {
+            "strength": "elite",
+            "count": 3,
+            "open": 1
+          },
+          "qeshm": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "island": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          }
         }
       },
       "historicalStrategies": [
@@ -1276,6 +1519,73 @@ export const MAP_CONFIG={
           "jinan": 1,
           "yanan": 1,
           "shenyang": 1
+        },
+        "garrisons": {
+          "nanjing": {
+            "strength": "elite",
+            "count": 3,
+            "open": 0
+          },
+          "shanghai": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "hangzhou": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "wuhan": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "changsha": {
+            "strength": "regular",
+            "count": 2,
+            "open": 1
+          },
+          "nanchang": {
+            "strength": "regular",
+            "count": 3,
+            "open": 1
+          },
+          "xuzhou": {
+            "strength": "elite",
+            "count": 3,
+            "open": 1
+          },
+          "jinan": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "tianjin": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "beiping": {
+            "strength": "elite",
+            "count": 3,
+            "open": 1
+          },
+          "zhengzhou": {
+            "strength": "strong",
+            "count": 3,
+            "open": 1
+          },
+          "yanan": {
+            "strength": "elite",
+            "count": 3,
+            "open": 0
+          },
+          "shenyang": {
+            "strength": "elite",
+            "count": 3,
+            "open": 1
+          }
         }
       },
       "historicalStrategies": [
