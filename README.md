@@ -5,9 +5,9 @@
 [![deploy pages](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20pages)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![pull request checks](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/ci.yml?branch=main&label=PR%20checks)](https://github.com/lordstone/shadowline-war/actions/workflows/ci.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.24.0-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.25.0-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.24.0**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
+[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.25.0**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -59,13 +59,13 @@
 
 两张或三张明牌中出现两张同点数即为对子；三张同点数为三条。大小王是万能牌，会自动替代成能组成最强合法牌型的点数和花色。相同牌型与点数时天然组合胜万能牌组合；都使用一张王时大王胜小王。单张大王胜单张小王，但完整牌型仍优先于王的身份。A 不能环绕为 Q-K-A。
 
-原 MVP 不定义地图、资源或特殊能力。战役模式扩展：每方标准开局仅控制首都，首都部署三张暗牌，手中保留九张；四张历史战场也可选择带初始控制区与驻军的史实态势。普通据点容量三张，强化据点四张，首都五张，非首都至少一张明牌，首都可全暗。驻军固定，守住后留守，攻下后由进攻战线接防。战役交锋不再自动把双方补至 12 张；新暗牌来自补给、征召或医疗。主要行动完成后保留当前玩家，由玩家完成其他操作并明确点击结束行动。完整细则见游戏手册。
+原 MVP 不定义地图、资源或特殊能力。战役模式扩展：每方标准开局仅控制首都，首都部署三张暗牌，手中保留九张；五张历史战场也可选择带初始控制区与分级驻军的史实态势。史实配置固定各据点的强度档位、数量和明暗比例，具体牌面仍随随机种子变化。普通据点容量三张，强化据点四张，首都五张，非首都至少一张明牌，首都可全暗。驻军固定，守住后留守，攻下后由进攻战线接防。战役交锋不再自动把双方补至 12 张；新暗牌来自补给、征召或医疗。主要行动完成后保留当前玩家，由玩家完成其他操作并明确点击结束行动。完整细则见游戏手册。
 
 ## 验证
 
 `node tests/engine.test.mjs` 或 `npm test`。
 
-已通过 55 组规则与事件测试：
+已通过 68 组规则测试与 9 组事件测试：
 - 全部24,804种三张牌组合的分类数量；
 - 非法部署、严格比较、平手、防守翻牌、撤退、收牌和临时晋升清除；
 - 13种策略的前置条件和效果，地图邻接、固定驻军、驻军明暗限制、整编、快速换防、首都胜利和牌数守恒；
@@ -101,6 +101,13 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.25.0 史实驻军强度
+
+- 五张史实战场为每个据点配置“残部／常规／强军／精锐”强度档位、驻军数量和明暗比例，体现不同地点的初始部队强弱。（closes #143）
+- 具体牌面仍从洗牌后的牌池按档位选取：相同种子可复现，不同种子会变化，不会把暗牌变成可背诵的固定答案。
+- 地图专属驻军数据集中在 `config/maps.yaml`，全局档位阈值集中在 `config/game-balance.yaml`；生成器会拒绝漏配、非法档位、超容量、非法明牌数和牌库不足。
+- 标准战役开局完全不变；中英文战地手册、配置说明、离线单文件和回归测试同步更新。
 
 ## 1.24.0 战役手牌后勤
 
