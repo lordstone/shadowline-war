@@ -36,6 +36,10 @@ export function actionEvents(before,after,action,perspective){
  const strategy=strategyById(action.id);
  add('purchase',t('event.title.buy_strategy',{name:name(actor),strategy:strategyText(strategy.id).name}),t('event.detail.buy_strategy',{price:strategy.price}),{owner:actor,strategy});
  }
+ if(action.type==='demobilize'){
+ const cards=after.players[actor].demobilized.filter(c=>action.ids.includes(c.id));
+ add('demobilize',t('event.title.demobilize',{name:name(actor),n:cards.length}),t('event.detail.demobilize',{n:cards.length}),{owner:actor,cards:cards.map(c=>visible(c,actor,true))});
+ }
  if(action.type==='deploy'){
  const line=after.battle?.lines[actor]||[];
  add('deployment',t('event.title.deploy',{name:name(actor)}),t('event.detail.deploy',{open:line.filter(c=>c.open).length,hidden:line.filter(c=>!c.open).length}),{owner:actor,cards:line.map(c=>visible(c,actor)),field:before.battle?.field});
@@ -62,6 +66,7 @@ export function actionEvents(before,after,action,perspective){
   const details=report.entries.map(e=>e.label+' '+(e.amount>0?'+':'')+e.amount).join(t('event.list.separator'));
   add('resources',t('event.title.resources.harvest',{name:name(p),net:(report.net>0?'+':'')+report.net}),t('event.detail.resources.harvest',{details,supply:after.players[p].supply,cap:BALANCE.campaign.supplyCap}),{owner:p});
   if(report.discardedId!==null){const discarded=after.players[p].reserve.find(c=>c.id===report.discardedId);if(discarded)add('cards',t('event.title.resources.deficit'),t('event.detail.resources.deficit',{name:name(p)}),{owner:p,cards:[visible(discarded,p,true)]})}
+  if(report.demobilizedIds?.length){const cards=after.players[p].demobilized.filter(c=>report.demobilizedIds.includes(c.id));add('demobilize',t('event.title.hand_upkeep_demobilize',{name:name(p),n:cards.length}),t('event.detail.hand_upkeep_demobilize',{n:cards.length}),{owner:p,cards:cards.map(c=>visible(c,p,true))})}
  }else if(gained>0){
   add('resources',t('event.title.resources.gained',{name:name(p),amount:gained}),t('event.detail.resources.gained',{supply:after.players[p].supply,cap:BALANCE.campaign.supplyCap}),{owner:p});
  }

@@ -7,6 +7,8 @@ import {mapFactions} from '../src/i18n/index.js';
 const c=(rank,suit=0)=>({rank,suit});
 const ids=cs=>cs.map((x,i)=>({id:x.id,open:i===0}));
 function next(s,a,p=s.active){const r=act(s,p,a);assert.equal(r.ok,true,r.error);return r.state}
+function growHand(s,p,size){while(s.players[p].hand.length<size)s.players[p].hand.push(s.deck.pop())}
+function blockOwnedIncome(s,p){for(const f of s.fields.filter(f=>f.owner===p))f.blockedUntil=s.round}
 function fixture(h0,h1){
  const s=createGame({rules:'classic',strategies:false,seed:1});
  const deck=makeDeck(),take=spec=>spec.map(([rank,suit=0])=>deck.find(c=>c.rank===rank&&c.suit===suit));
@@ -110,6 +112,30 @@ test('seed reproducibility; classic deals twelve, campaign accounts for garrison
  assert.equal(b.players[0].hand.length,9);assert.equal(b.fields.flatMap(f=>f.garrison).length,6);
  for(const f of b.fields.filter(f=>f.capital)){assert.equal(f.garrison.length,3);assert.ok(f.garrison.every(c=>!c.open))}
  assert.equal(cardLocations(b).length,54);
+});
+test('campaign hand upkeep has a nine-card safe limit and charges every excess card',()=>{
+ for(const [size,cost] of [[9,0],[10,1],[12,3]]){
+  const s=createGame({rules:'campaign',strategies:false,seed:130+size});growHand(s,0,size);blockOwnedIncome(s,0);s.active=0;s.players[0].supply=10;
+  income(s);assert.equal(s.players[0].supply,10-cost);assert.equal(s.players[0].hand.length,size);assert.equal(s.players[0].demobilized.length,0);
+  const entry=s.supplyLedger[0].entries.find(e=>e.label.includes('手牌维护'));assert.equal(entry?.amount,cost?-cost:undefined);validate(s);
+ }
+});
+test('unpaid hand upkeep publicly demobilizes one random card per missing supply',()=>{
+ const s=createGame({rules:'campaign',strategies:false,seed:151});growHand(s,0,12);blockOwnedIncome(s,0);s.active=0;s.players[0].supply=1;const allBefore=cardLocations(s).length;
+ income(s);assert.equal(s.players[0].supply,0);assert.equal(s.players[0].hand.length,10);assert.equal(s.players[0].demobilized.length,2);assert.equal(s.supplyLedger[0].demobilizedIds.length,2);assert.equal(cardLocations(s).length,allBefore);validate(s);
+});
+test('voluntary demobilization is free, separate from the open pile, non-scoring and not recoverable',()=>{
+ let s=createGame({rules:'campaign',strategies:false,seed:152,maxRounds:1});const id=s.players[0].hand[0].id,beforeSupply=s.players[0].supply;
+ s=next(s,{type:'demobilize',ids:[id]});assert.equal(s.actionSpent,false);assert.equal(s.players[0].supply,beforeSupply);assert.ok(s.players[0].demobilized.some(c=>c.id===id));assert.equal(s.players[0].reserve.length,0);
+ const open=s.players[0].hand.pop();s.players[0].reserve.push(open);s.players[0].strategies=['meds_team'];const medical=act(s,0,{type:'strategy',id:'meds_team',cards:[id]});assert.equal(medical.ok,false);assert.match(medical.error,/公开牌堆/);s.players[0].hand.push(s.players[0].reserve.pop());
+ s.players[1].reserve.push(s.players[1].hand.pop());s=next(s,{type:'pass'});s=next(s,{type:'pass'});assert.equal(s.phase,'over');assert.equal(s.winner,1);validate(s);
+});
+test('invalid demobilization is atomic and old saves gain an empty demobilized pile',()=>{
+ const s=createGame({rules:'campaign',strategies:false,seed:153}),snapshot=structuredClone(s),bad=act(s,0,{type:'demobilize',ids:[s.players[1].hand[0].id]});assert.equal(bad.ok,false);assert.deepEqual(s,snapshot);
+ const old=structuredClone(s);for(const p of old.players)delete p.demobilized;upgradeState(old);assert.deepEqual(old.players.map(p=>p.demobilized),[[],[]]);validate(old);
+});
+test('campaign AI trims unaffordable excess cards before other map actions',()=>{
+ const s=createGame({rules:'campaign',strategies:false,seed:154});growHand(s,0,12);s.players[0].supply=0;const action=aiAction(s,0,'normal');assert.equal(action.type,'demobilize');assert.equal(action.ids.length,3);const r=act(s,0,action);assert.equal(r.ok,true,r.error);validate(r.state);
 });
 test('map-sized decks keep one joker pair and globally unique card ids',()=>{
  const single=createGame({map:'korea',deckCount:'auto',strategies:false});assert.equal(single.baseDeckSize,54);assert.equal(cardLocations(single).length,54);

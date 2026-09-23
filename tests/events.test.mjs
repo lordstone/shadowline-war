@@ -54,3 +54,12 @@ test('negative garrison upkeep reports its ledger and public discard',()=>{
  const events=actionEvents(before,r.state,a,0),resource=events.find(e=>e.kind==='resources'),discard=events.find(e=>e.title==='补给赤字 · 公开弃牌');
  assert.match(resource.detail,/三张以上明牌维护 -1/);assert.equal(discard.cards.length,1);assert.equal(discard.cards[0].hidden,undefined);
 });
+test('voluntary demobilization reveals the same cards to both perspectives',()=>{
+ const s=createGame({strategies:false,seed:155}),ids=s.players[0].hand.slice(0,2).map(c=>c.id),a={type:'demobilize',ids},r=act(s,0,a);assert.equal(r.ok,true,r.error);
+ for(const perspective of [0,1]){const event=actionEvents(s,r.state,a,perspective).find(e=>e.kind==='demobilize');assert.equal(event.cards.length,2);assert.deepEqual(new Set(event.cards.map(c=>c.id)),new Set(ids));assert.match(event.detail,/独立/)}
+});
+test('unpaid hand upkeep emits a public forced-demobilization report',()=>{
+ const s=createGame({strategies:false,seed:156});while(s.players[1].hand.length<12)s.players[1].hand.push(s.deck.pop());s.players[1].supply=0;for(const f of s.fields.filter(f=>f.owner===1))f.blockedUntil=s.round;
+ const a={type:'pass'},r=act(s,0,a);assert.equal(r.ok,true,r.error);
+ for(const perspective of [0,1]){const event=actionEvents(s,r.state,a,perspective).find(e=>e.kind==='demobilize');assert.equal(event.cards.length,3);assert.ok(event.cards.every(c=>c.id!==undefined));assert.match(event.detail,/补给不足/)}
+});

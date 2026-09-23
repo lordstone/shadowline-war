@@ -41,4 +41,6 @@ test('balance limits are internally coherent',()=>{
  assert.ok(campaign.historicalGarrison<=battle.garrisonLimits.default);
  assert.ok(battle.mountainMinOpen<=battle.terrainLineLimits.default);
  assert.ok(campaign.marketSize<=campaign.strategyHandLimit);
+ assert.equal(deck.initialHand-campaign.capitalGarrison,campaign.safeHandSize);
+ assert.ok(campaign.excessHandUpkeep>0);
 });
