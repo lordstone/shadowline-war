@@ -38,9 +38,24 @@ test('balance limits are internally coherent',()=>{
  const {campaign,battle,deck}=GAME_CONFIG;
  assert.ok(deck.initialHand>campaign.capitalGarrison);
  assert.ok(campaign.siegeFrontCards<=campaign.siegeThreshold);
- assert.ok(campaign.historicalGarrison<=battle.garrisonLimits.default);
+ assert.deepEqual(Object.keys(campaign.historicalStrengthQuantiles),['depleted','regular','strong','elite']);
+ assert.ok(Object.values(campaign.historicalStrengthQuantiles).every((value,index,values)=>value>=0&&value<=1&&(index===0||value>values[index-1])));
+ assert.ok(campaign.historicalFormationCandidates>=1);
  assert.ok(battle.mountainMinOpen<=battle.terrainLineLimits.default);
  assert.ok(campaign.marketSize<=campaign.strategyHandLimit);
  assert.equal(deck.initialHand-campaign.capitalGarrison,campaign.safeHandSize);
  assert.ok(campaign.excessHandUpkeep>0);
+});
+
+test('every historical map keeps complete garrison data separate from engine code',()=>{
+ const {battle}=GAME_CONFIG;
+ for(const map of MAPS.filter(map=>map.historical)){
+  assert.deepEqual(Object.keys(map.historical.garrisons).sort(),map.fields.map(field=>field.id).sort());
+  for(const field of map.fields){
+   const spec=map.historical.garrisons[field.id];
+   assert.ok(Object.hasOwn(GAME_CONFIG.campaign.historicalStrengthQuantiles,spec.strength));
+   assert.ok(spec.count>=1&&spec.count<=((field.capital&&battle.garrisonLimits.capital)||(field.fortified&&battle.garrisonLimits.fortified)||battle.garrisonLimits[field.type]||battle.garrisonLimits.default));
+   assert.ok(spec.open>=0&&spec.open<=spec.count);if(!field.capital)assert.ok(spec.open>=1);
+  }
+ }
 });

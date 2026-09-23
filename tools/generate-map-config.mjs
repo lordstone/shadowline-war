@@ -16,6 +16,11 @@ try{balance=JSON.parse(balanceSource)}catch(error){throw new Error('game-balance
 const fail=message=>{throw new Error('Invalid map configuration: '+message)};
 const pairKey=pair=>pair.slice().sort().join('\0');
 const strategies=new Map((balance.strategies||[]).map(card=>[card.id,card]));
+const historicalStrengths=balance.campaign?.historicalStrengthQuantiles;
+if(!historicalStrengths||Array.isArray(historicalStrengths)||Object.keys(historicalStrengths).length<2)fail('game-balance campaign.historicalStrengthQuantiles must define at least two tiers');
+for(const [tier,quantile] of Object.entries(historicalStrengths))if(typeof quantile!=='number'||quantile<0||quantile>1)fail('historical strength quantile must be between 0 and 1: '+tier);
+if(!Number.isInteger(balance.campaign?.historicalFormationCandidates)||balance.campaign.historicalFormationCandidates<1)fail('campaign.historicalFormationCandidates must be a positive integer');
+const garrisonLimit=field=>field.capital||field.type==='capital'?balance.battle.garrisonLimits.capital:field.fortified?balance.battle.garrisonLimits.fortified:balance.battle.garrisonLimits[field.type]??balance.battle.garrisonLimits.default;
 const expectedStrategies={classic:[...strategies.values()].filter(card=>card.phase==='battle').map(card=>card.id).sort(),campaign:[...strategies.keys()].sort()};
 const offerSize=Math.max(balance.campaign?.marketSize||0,balance.campaign?.draftSize||0);
 if(config.schemaVersion!==1)fail('unsupported schema version');
@@ -59,6 +64,22 @@ for(const map of config.maps){
   const control=map.historical.control;
   if(!control||typeof control!=='object'||Object.keys(control).length!==fields.size)fail(map.id+'.historical.control must cover every field');
   for(const [id,owner] of Object.entries(control))if(!fields.has(id)||(owner!==0&&owner!==1))fail(map.id+'.historical.control contains an invalid field or owner: '+id);
+  const garrisons=map.historical.garrisons;
+  if(!garrisons||typeof garrisons!=='object'||Array.isArray(garrisons)||Object.keys(garrisons).length!==fields.size)fail(map.id+'.historical.garrisons must cover every field');
+  let nonCapitalCards=0;
+  for(const [id,spec] of Object.entries(garrisons)){
+   const field=fields.get(id);
+   if(!field||!spec||typeof spec!=='object'||Array.isArray(spec))fail(map.id+'.historical.garrisons contains an invalid field: '+id);
+   if(!Object.hasOwn(historicalStrengths,spec.strength))fail(map.id+'.historical.garrisons.'+id+'.strength is invalid: '+spec.strength);
+   if(!Number.isInteger(spec.count)||spec.count<1||spec.count>garrisonLimit(field))fail(map.id+'.historical.garrisons.'+id+'.count exceeds the field capacity');
+   if(!Number.isInteger(spec.open)||spec.open<0||spec.open>spec.count)fail(map.id+'.historical.garrisons.'+id+'.open must be between 0 and count');
+   if(field.capital&&spec.count>balance.deck.initialHand)fail(map.id+'.historical.garrisons.'+id+'.count exceeds the initial hand');
+   if(!field.capital&&spec.open<1)fail(map.id+'.historical.garrisons.'+id+' must expose at least one card');
+   if(!field.capital)nonCapitalCards+=spec.count;
+  }
+  const deckCount=map.fields.length>=balance.deck.campaignDoubleDeckFieldThreshold?2:1;
+  const remainingDeck=54+(deckCount-1)*52-balance.deck.initialHand*2;
+  if(nonCapitalCards>remainingDeck)fail(map.id+'.historical.garrisons needs '+nonCapitalCards+' deck cards but only '+remainingDeck+' remain after dealing');
  }
  if(map.historicalStrategies&&(!Array.isArray(map.historicalStrategies)||map.historicalStrategies.length!==2||map.historicalStrategies.some(side=>!Array.isArray(side)||side.some(id=>!strategies.has(id)))))fail(map.id+'.historicalStrategies must contain one valid strategy list per side');
  if(map.seaLinks){

@@ -1,7 +1,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,terrainLimit,battleLineLimit,resolvedDeckCount,leading,orderForDisplay,supplyConnected,income} from '../src/engine.js';
+import {makeDeck,power,compare,createGame,act,validate,cardLocations,aiAction,viewFor,canStrategy,timeoutAction,handName,opened,upgradeState,garrisonLimit,terrainLimit,battleLineLimit,resolvedDeckCount,leading,orderForDisplay,supplyConnected,income,selectHistoricalFormation} from '../src/engine.js';
 import {MAPS,STRATEGIES} from '../src/data.js';
 import {mapFactions} from '../src/i18n/index.js';
 const c=(rank,suit=0)=>({rank,suit});
@@ -409,11 +409,25 @@ test('campaign battles do not refill both private hands to twelve',()=>{
  assert.equal(s.phase,'campaign');assert.equal(s.active,0);assert.equal(s.actionSpent,true);assert.equal(s.players[0].hand.length,before);validate(s);
 });
 
-test('historical deployment controls every historical location with one open and two hidden defenders',()=>{
+test('historical strength tiers select stronger formations without fixing exact cards',()=>{
+ const deck=makeDeck();
+ const depleted=selectHistoricalFormation([...deck],{strength:'depleted',count:3});
+ const elite=selectHistoricalFormation([...deck],{strength:'elite',count:3});
+ assert.ok(compare(depleted,elite)<0);
+ const seed61=createGame({strategies:false,map:'korea',deployment:'historical',seed:61});
+ const repeat=createGame({strategies:false,map:'korea',deployment:'historical',seed:61});
+ const seed62=createGame({strategies:false,map:'korea',deployment:'historical',seed:62});
+ const ids=state=>state.fields.flatMap(field=>field.garrison.map(card=>card.id));
+ assert.deepEqual(ids(seed61),ids(repeat));assert.notDeepEqual(ids(seed61),ids(seed62));
+});
+
+test('historical deployment follows every configured garrison count and visibility',()=>{
  const standard=createGame({strategies:false,map:'korea',deployment:'standard',seed:61});assert.equal(standard.fields.filter(f=>f.owner!==null).length,2);
- const historical=createGame({strategies:false,map:'korea',deployment:'historical',seed:61});assert.equal(historical.fields.filter(f=>f.owner!==null).length,historical.fields.length);
- for(const field of historical.fields.filter(f=>!f.capital)){assert.equal(field.garrison.length,Math.min(3,garrisonLimit(field)));assert.equal(field.garrison.filter(c=>c.open).length,1)}
- assert.ok(historical.fields.filter(f=>f.capital).every(f=>f.garrison.length===3&&f.garrison.every(c=>!c.open)));validate(historical);
+ for(const map of MAPS.filter(map=>map.historical)){
+  const historical=createGame({strategies:false,map:map.id,deployment:'historical',seed:61});assert.equal(historical.fields.filter(f=>f.owner!==null).length,historical.fields.length);
+  for(const field of historical.fields){const spec=map.historical.garrisons[field.id];assert.equal(field.garrison.length,spec.count,map.id+' '+field.id);assert.equal(field.garrison.filter(c=>c.open).length,spec.open,map.id+' '+field.id)}
+  validate(historical);
+ }
 });
 
 test('successive counterleads allow both sides to reveal until suppressed line is exhausted',()=>{
