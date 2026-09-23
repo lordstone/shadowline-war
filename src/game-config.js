@@ -41,6 +41,8 @@ export const GAME_CONFIG={
     "marketSize": 3,
     "strategyHandLimit": 3,
     "draftSize": 3,
+    "safeHandSize": 9,
+    "excessHandUpkeep": 1,
     "resupplyCost": 2,
     "resupplyCards": 1,
     "siegeCost": 3,
