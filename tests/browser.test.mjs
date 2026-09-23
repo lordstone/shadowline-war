@@ -276,3 +276,18 @@ export async function headerVisibilityCheck(browser,url='http://127.0.0.1:4173/'
  await page.close();
  return 'header and draft content are visually visible (not covered by 3D background) on menu and draft screens';
 }
+
+export async function handLogisticsCheck(browser,url='http://127.0.0.1:4173/'){
+ const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const s=createGame({rules:'campaign',strategies:false,mode:'ai',seed:135});while(s.players[0].hand.length<12)s.players[0].hand.push(s.deck.pop());validate(s);
+ await page.goto(url);await page.evaluate(state=>localStorage.setItem('shadowline-war-v1',JSON.stringify(state)),s);await page.reload();await page.locator('[data-action="load"]').click();
+ const badge=page.locator('.hand-logistics.warning');assert.match(await badge.getAttribute('title'),/安全手牌上限 9 张.*3 点维护费/);assert.equal(await page.locator('[data-action="open-demobilize"]').isEnabled(),true);
+ await page.locator('[data-action="open-demobilize"]').click();assert.match(await page.locator('.modal').innerText(),/公开裁撤手牌.*剩余 12 张.*维护 3/s);
+ const chosen=await page.locator('[data-action="demobilize-toggle"]').evaluateAll(cards=>cards.slice(0,3).map(card=>card.dataset.id));for(const id of chosen)await page.locator('[data-action="demobilize-toggle"][data-id="'+id+'"]').click();assert.match(await page.locator('.modal').innerText(),/已选 3 张.*剩余 9 张.*维护 0/s);
+ await page.locator('[data-action="demobilize-sort"][data-id="suit"]').click();for(const id of chosen)assert.equal(await page.locator('[data-action="demobilize-toggle"][data-id="'+id+'"]').getAttribute('aria-pressed'),'true');await page.locator('[data-action="demobilize-submit"]').click();
+ assert.match(await page.locator('.event-demobilize').innerText(),/公开裁撤.*3 张手牌进入独立的公开裁撤区/s);await page.locator('[data-action="event-continue"]').click();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-v1')));assert.equal(saved.players[0].hand.length,9);assert.equal(saved.players[0].demobilized.length,3);assert.equal(saved.players[0].reserve.length,0);
+ await page.locator('[data-action="reserve"][data-player="0"]').click();assert.match(await page.locator('.demobilized-pile').innerText(),/公开裁撤区 · 3 张.*不参与得分.*不能回收/s);assert.equal(await page.locator('.demobilized-pile .playing-card').count(),3);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.screenshot({path:fileURLToPath(new URL('../../shadowline-hand-logistics-mobile.png',import.meta.url)),fullPage:true});assert.deepEqual(errors,[]);await page.close();
+ return 'mobile campaign hand upkeep, voluntary public demobilization and the separate non-scoring pile render and behave correctly';
+}
