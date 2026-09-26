@@ -127,7 +127,8 @@ export const TUTORIAL_SCENARIO={
       "cards": [
         10
       ],
-      "target": "c"
+      "target": "c",
+      "nextAi": "defend_reply"
     },
     {
       "id": "defend_second",
@@ -135,7 +136,8 @@ export const TUTORIAL_SCENARIO={
       "cards": [
         38
       ],
-      "target": "c"
+      "target": "c",
+      "nextAi": "after_defense"
     },
     {
       "id": "supply",
@@ -158,7 +160,8 @@ export const TUTORIAL_SCENARIO={
     },
     {
       "id": "end_turn",
-      "action": "pass"
+      "action": "pass",
+      "nextAi": "after_player_turn"
     },
     {
       "id": "attack_center",
@@ -183,7 +186,8 @@ export const TUTORIAL_SCENARIO={
     {
       "id": "tactics_continue",
       "action": "continue",
-      "target": "d"
+      "target": "d",
+      "nextAi": "center_reply"
     },
     {
       "id": "rank_up",
@@ -193,7 +197,8 @@ export const TUTORIAL_SCENARIO={
     },
     {
       "id": "end_turn_center",
-      "action": "pass"
+      "action": "pass",
+      "nextAi": "after_center_turn"
     },
     {
       "id": "airborne_raid",
@@ -218,7 +223,8 @@ export const TUTORIAL_SCENARIO={
           "open": false
         }
       ],
-      "target": "g"
+      "target": "g",
+      "nextAi": "capital_reply"
     },
     {
       "id": "reveal_capital",
@@ -235,7 +241,8 @@ export const TUTORIAL_SCENARIO={
       "action": {
         "type": "attack",
         "field": "c"
-      }
+      },
+      "nextAi": "opening_deploy"
     },
     {
       "at": "opening_deploy",
@@ -260,19 +267,22 @@ export const TUTORIAL_SCENARIO={
         "ids": [
           37
         ]
-      }
+      },
+      "nextStep": 1
     },
     {
       "at": "after_defense",
       "action": {
         "type": "pass"
-      }
+      },
+      "nextStep": 2
     },
     {
       "at": "after_player_turn",
       "action": {
         "type": "pass"
-      }
+      },
+      "nextStep": 5
     },
     {
       "at": "center_reply",
@@ -281,13 +291,15 @@ export const TUTORIAL_SCENARIO={
         "ids": [
           11
         ]
-      }
+      },
+      "nextStep": 8
     },
     {
       "at": "after_center_turn",
       "action": {
         "type": "pass"
-      }
+      },
+      "nextStep": 10
     },
     {
       "at": "capital_reply",
@@ -296,7 +308,8 @@ export const TUTORIAL_SCENARIO={
         "ids": [
           25
         ]
-      }
+      },
+      "nextStep": 13
     }
   ]
 };

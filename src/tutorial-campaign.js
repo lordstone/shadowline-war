@@ -36,24 +36,12 @@ export function tutorialAct(state,player,action){
  const result=act(state,player,action);if(!result.ok)return result;
  const next=result.state;
  if(ai){
-  if(ai==='opening')next.tutorial.ai='opening_deploy';
-  else if(ai==='opening_deploy'||ai==='defend_reply'||ai==='after_defense'||ai==='after_player_turn'||ai==='center_reply'||ai==='after_center_turn'||ai==='capital_reply'){
-   next.tutorial.ai=null;
-   if(ai==='defend_reply')next.tutorial.step=1;
-   if(ai==='after_defense')next.tutorial.step=2;
-   if(ai==='after_player_turn')next.tutorial.step=5;
-   if(ai==='center_reply')next.tutorial.step=8;
-   if(ai==='after_center_turn')next.tutorial.step=10;
-   if(ai==='capital_reply')next.tutorial.step=13;
-  }
+  const transition=scenario.aiActions.find(entry=>entry.at===ai);
+  next.tutorial.ai=transition.nextAi||null;
+  if(transition.nextStep!==undefined)next.tutorial.step=transition.nextStep;
  }else{
   if(next.phase==='over')next.tutorial.completed=true;
-  else if(next.tutorial.step===0)next.tutorial.ai='defend_reply';
-  else if(next.tutorial.step===1)next.tutorial.ai='after_defense';
-  else if(next.tutorial.step===4)next.tutorial.ai='after_player_turn';
-  else if(next.tutorial.step===7)next.tutorial.ai='center_reply';
-  else if(next.tutorial.step===9)next.tutorial.ai='after_center_turn';
-  else if(next.tutorial.step===12)next.tutorial.ai='capital_reply';
+  else if(expected.nextAi)next.tutorial.ai=expected.nextAi;
   else next.tutorial.step++;
  }
  validate(next);return {ok:true,state:next};
