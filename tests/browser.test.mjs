@@ -117,6 +117,46 @@ export async function browserChecks(browser,url='http://127.0.0.1:4173/'){
  assert.deepEqual(errors,[]);await page.close();return {checks,pageErrors:errors};
 }
 
+export async function tutorialCampaignCheck(browser,url='http://127.0.0.1:4173/'){
+ const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
+ page.on('pageerror',error=>errors.push(error.message));
+ const click=(action,id)=>page.locator('[data-action="'+action+'"]'+(id===undefined?'':'[data-id="'+id+'"]')).last().click();
+ const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('shadowline-war-tutorial-v1')));
+ const ready=async step=>{
+  for(let n=0;n<30;n++){
+   if(await page.locator('[data-action="event-continue"]').count())await click('event-continue');
+   else if(await page.locator('.tutorial-director').count()&&(await state())?.active===0&&(await state())?.tutorial?.step===step)return;
+   else await page.waitForTimeout(250);
+  }
+  throw Error('Tutorial did not reach step '+step);
+ };
+ const select=async(id,open)=>{await click('card',id);if(!open)await click('card',id)};
+ try{
+  await page.goto(url);await click('start-tutorial');await ready(0);
+  assert.match(await page.locator('.tutorial-director').innerText(),/油田/);
+  await click('reveal-card',10);await click('reveal');await ready(1);
+  await click('reveal-card',38);await click('reveal');await ready(2);
+  await click('supply');await ready(3);
+  await click('focus','b');await select(30,true);await select(44,false);await click('occupy');await ready(4);
+  assert.equal((await state()).fields.find(field=>field.id==='b').garrison.length,2);
+  await click('pass');await ready(5);
+  await click('focus','d');await click('attack');await ready(6);
+  await select(49,true);await select(7,false);await click('deploy');await ready(7);
+  await click('continue');await ready(8);
+  await click('use-strategy','rank_up');await click('strategy-confirm');await ready(9);
+  await click('pass');await ready(10);
+  await click('use-strategy','airborne_raid');await click('strategy-confirm');await ready(11);
+  await click('focus','g');await click('attack');await ready(12);
+  await select(0,true);await select(39,false);await click('deploy');await ready(13);
+  await click('reveal-card',39);await click('reveal');await page.locator('.event-screen').waitFor();
+  for(let n=0;n<20&&await page.locator('[data-action="event-continue"]').count();n++)await click('event-continue');
+  await page.locator('.result-screen').waitFor();assert.match(await page.locator('.result-screen').innerText(),/教学战役完成/);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('shadowline-war-tutorial-complete-v1')),'true');
+  assert.deepEqual(errors,[]);
+  return {page,errors};
+ }catch(error){await page.close();throw error}
+}
+
 export async function counterplayCheck(browser,url='http://127.0.0.1:4173/'){
  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
