@@ -16,11 +16,11 @@ try{
  const desktop=await browser.newPage({viewport:{width:2048,height:731}});
  await desktop.goto('http://127.0.0.1:4173/');
  await desktop.locator('[data-action="start-tutorial"]').click();
- for(let n=0;n<30&&!await desktop.locator('.hand-tray').count();n++){
+ for(let n=0;n<30&&!await desktop.locator('[data-action="reveal-card"]').count();n++){
   if(await desktop.locator('[data-action="event-continue"]').count())await desktop.locator('[data-action="event-continue"]').click();
   else await desktop.waitForTimeout(250);
  }
- await desktop.locator('.hand-tray').waitFor();
+ await desktop.locator('[data-action="reveal-card"]').first().waitFor();
  await mkdir('artifacts',{recursive:true});
  await desktop.screenshot({path:'artifacts/tutorial-desktop-initial.png'});
  const layout=await desktop.evaluate(()=>{
