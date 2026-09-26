@@ -5,9 +5,9 @@
 [![deploy pages](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20pages)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![pull request checks](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/ci.yml?branch=main&label=PR%20checks)](https://github.com/lordstone/shadowline-war/actions/workflows/ci.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.25.0-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.26.0-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.25.0**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
+[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.26.0**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -34,6 +34,7 @@
 - 玩家可在顶栏编辑名字和徽记；战役高级选项可选择地图双方势力，首都、徽记和对手身份会随之更新。
 - 17 种战役／交锋策略；每张地图的经典、战役模式分别使用加权私人三选一，战役中还能购买或刷新自己的候选。
 - 战役夺取首都模式，以及不含地图、驻军、补给的经典模式。
+- 游戏选择界面可启动独立教学战役：沿固定战局学习防守翻牌、补给、地图明暗部署、进攻与两阶段策略，直到攻占首都；可续玩或重试当前步骤。
 - 沼泽、林地、山地、强化城市、油田和港口具有不同容量、资源或交战规则；部分港口通过跨海路线连接。
 - 30／60／120 秒或无限时、先行军团、随机种子、回合上限、策略开关。
 - 暂停、规则手册、公开牌查询、音效开关、本浏览器自动存档。
@@ -80,6 +81,7 @@
 
 - `src/engine.js`：纯状态机、牌力、策略、AI；非法行动不改变原状态。
 - `config/maps.yaml`：地图据点、坐标、拓扑、史实态势与地图专属策略的唯一人工维护入口。
+- `config/tutorial-scenario.yaml`：教学战役的固定牌序、驻军、AI 行动与引导步骤；生成 `src/tutorial-config.js`，由 `src/tutorial-campaign.js` 执行合法行动。
 - `src/data.js`：把生成的地图／数值配置适配为运行时数据。
 - `src/app.js`：界面、选牌、暂停、计时、存档。
 - `src/battlefield.js`：Three.js立体战区，故障时降级。
@@ -101,6 +103,12 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.26.0 教学战役
+
+- 选择界面新增固定、可完成的裂谷防线教学战役，覆盖据点防守、补给、地图明暗部署、进攻、交锋策略、地图策略及攻占首都。（closes #114）
+- 使用与普通战役相同的规则引擎，训练导演只限制行动顺序；独立存档、进度提示和步骤重试不会覆盖正常对局。
+- 战役数据集中在 `config/tutorial-scenario.yaml`，生成器校验牌面唯一性、驻军容量与策略候选；补齐中英文文本和确定性回归测试。
 
 ## 1.25.0 史实驻军强度
 

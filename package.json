@@ -1,16 +1,18 @@
 {
   "name": "shadowline-war",
-  "version": "1.25.0",
+  "version": "1.26.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
     "config:generate": "node tools/generate-game-config.mjs",
     "maps:generate": "node tools/generate-map-config.mjs",
+    "tutorial:generate": "node tools/generate-tutorial-scenario.mjs",
     "test:config": "node tools/generate-game-config.mjs --check",
     "test:maps": "node tools/generate-map-config.mjs --check",
-    "test": "npm run test:config && npm run test:maps && node --test tests/config.test.mjs tests/pages-deploy.test.mjs && node tests/engine.test.mjs && node tests/events.test.mjs && node --test tests/i18n.test.mjs",
-    "build": "npm run config:generate && npm run maps:generate && node build.mjs",
+    "test:tutorial": "node tools/generate-tutorial-scenario.mjs --check",
+    "test": "npm run test:config && npm run test:maps && npm run test:tutorial && node --test tests/config.test.mjs tests/pages-deploy.test.mjs tests/tutorial-campaign.test.mjs && node tests/engine.test.mjs && node tests/events.test.mjs && node --test tests/i18n.test.mjs",
+    "build": "npm run config:generate && npm run maps:generate && npm run tutorial:generate && node build.mjs",
     "test:bundle": "node --experimental-vm-modules tests/bundle.test.mjs"
   }
 }

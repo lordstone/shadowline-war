@@ -3,6 +3,7 @@ import {t,setLang,getLang,onLangChange,strategyText,mapText,mapFactions,fieldLab
 import {createGame,act,face,handName,power,compare,opened,leading,reachable,canAttack,garrisonLimit,seaLanding,isSeaLink,supplyConnected,battleLineLimit,canStrategy,canBuyStrategy,buyStrategyErrorText,canRefreshStrategyMarket,strategyRefreshCost,aiAction,timeoutAction,validate,upgradeState,resolvedDeckCount,orderForDisplay} from './engine.js';
 import {Battlefield} from './battlefield.js';
 import {actionEvents} from './events.js';
+import {TUTORIAL_ID,createTutorialGame,tutorialAct,tutorialAIAction,tutorialHint,tutorialSteps as campaignSteps} from './tutorial-campaign.js';
 import {GEO_BACKDROPS} from './map-geography.js';
 const app=document.querySelector('#app'),sceneEl=document.querySelector('#scene');
 const scene=new Battlefield(sceneEl);
@@ -14,6 +15,7 @@ let targeting=null;
 let events=[],eventEnd=null,eventRemaining=null,newCards=new Set();
 let mapViewport={x:0,y:0,scale:1},mapDrag=null,mapPointers=new Map(),fittedMap=null,lastMapDragAt=0;
 const STORE='shadowline-war-v1';
+const TUTORIAL_STORE='shadowline-war-tutorial-v1',TUTORIAL_CHECKPOINT='shadowline-war-tutorial-checkpoint-v1',TUTORIAL_DONE='shadowline-war-tutorial-complete-v1';
 const mapSymbol=id=>({duel:'⟁',rift:'⋈',ring:'◎',eastern_front:'⇥',korea:'↕',western_front:'⇆',hormuz:'≋',china_civil_war:'山'}[id]||'◇');
 const LOGOS=['⟐','✣','♜','⚓','▲','✦','◈','☄'];
 const FIELD_TARGET_STRATEGIES=new Set(['isr','revolution','economic_sanctions','scorched_earth','relocate_capital']);
@@ -40,8 +42,9 @@ function sound(type='click'){
  if(muted||!(s?.opt.sound??options.sound))return;
  try{const ctx=sound.ctx||(sound.ctx=new(window.AudioContext||window.webkitAudioContext)());ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(type==='win'?440:220,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(type==='win'?880:130,ctx.currentTime+.14);g.gain.setValueAtTime(.045,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.22);o.start();o.stop(ctx.currentTime+.23)}catch{}
 }
-function save(){try{if(!s)return;if(s.phase!=='over')localStorage.setItem(STORE,JSON.stringify(s));else localStorage.removeItem(STORE)}catch{}}
-function saved(){try{const value=JSON.parse(localStorage.getItem(STORE));if(value?.version===1){upgradeState(value);validate(value);return value}}catch{}return null}
+function save(){try{if(!s)return;const tutorial=s.opt.scenario===TUTORIAL_ID,key=tutorial?TUTORIAL_STORE:STORE;if(s.phase!=='over'){localStorage.setItem(key,JSON.stringify(s));if(tutorial&&s.active===0&&!s.tutorial.ai&&!events.length)localStorage.setItem(TUTORIAL_CHECKPOINT,JSON.stringify(s))}else{localStorage.removeItem(key);if(tutorial){localStorage.removeItem(TUTORIAL_CHECKPOINT);if(s.tutorial.completed)localStorage.setItem(TUTORIAL_DONE,'true')}}}catch{}}
+function saved(key=STORE){try{const value=JSON.parse(localStorage.getItem(key));if(value?.version===1){upgradeState(value);validate(value);return value}}catch{}return null}
+function tutorialCompleted(){try{return localStorage.getItem(TUTORIAL_DONE)==='true'}catch{return false}}
 function pause(){if(deadline!==null){remaining=Math.max(0,deadline-Date.now());deadline=null}if(eventEnd!==null){eventRemaining=Math.max(0,eventEnd-Date.now());eventEnd=null}clearTimeout(aiTask)}
 function resume(){if(events.length){eventEnd=Date.now()+(eventRemaining??3000);eventRemaining=null}else if(remaining!==null){deadline=Date.now()+remaining;remaining=null}}
 function showModal(kind){pause();modal=kind;render()}
@@ -73,6 +76,7 @@ function menu(){
  const map=MAPS.find(m=>m.id===options.map);
  return header(true)+'<section class="command-menu"><div class="setup-panel"><div class="eyebrow"><span></span> '+t('menu.eyebrow')+'</div><h1>'+t('menu.hero_l1')+'<br><em>'+t('menu.hero_l2')+'</em></h1><p class="intro">'+t('menu.intro_l1')+'<br>'+t('menu.intro_l2')+'</p>'+
  '<div class="field-label">'+t('menu.mode_label')+'</div><div class="segmented">'+btn('<b>◈ '+t('menu.mode_ai_title')+'</b><small>'+t('menu.mode_ai_sub')+'</small>','mode-ai',options.mode==='ai'?'active':'')+btn('<b>⧉ '+t('menu.mode_local_title')+'</b><small>'+t('menu.mode_local_sub')+'</small>','mode-local',options.mode==='local'?'active':'')+'</div>'+
+ '<div class="tutorial-launch">'+btn('<b>✦ '+t('tutorial_campaign.menu.title')+'</b><small>'+t('tutorial_campaign.menu.desc')+'</small>','start-tutorial','tutorial-launch-button')+(saved(TUTORIAL_STORE)?btn(t('tutorial_campaign.menu.resume'),'load-tutorial','secondary'): (tutorialCompleted()?'<span>'+t('tutorial_campaign.menu.completed')+'</span>':''))+'</div>'+
  '<div class="field-label">'+t('menu.map_label')+'</div><div class="map-choices">'+MAPS.map(m=>{const mt=mapText(m.id);return '<button class="map-choice '+(m.id===options.map?'active':'')+'" data-action="map" data-id="'+m.id+'"><span class="map-symbol">'+mapSymbol(m.id)+'</span><span><b>'+mt.name+'</b><small>'+mt.subtitle+'</small></span><i>'+(m.id===options.map?'●':'○')+'</i><em class="map-tag'+(m.historical?' hist':'')+'">'+(m.historical?t('menu.map_tag_hist'):t('menu.map_tag_versus'))+'</em></button>'}).join('')+'</div>'+
  '<details class="advanced" '+(advancedOpen?'open':'')+'><summary>'+t('menu.advanced')+' <span>＋</span></summary><div class="advanced-grid">'+
  optionSelect('rules',t('menu.opt.rules_label'),[['campaign',t('menu.opt.rules_campaign')],['classic',t('menu.opt.rules_classic')]],options.rules)+
@@ -227,7 +231,7 @@ function handTray(){
  return '<section class="hand-tray"><div class="hand-top"><div><span class="eyebrow">'+t('game.hand.eyebrow')+'</span><b>'+t('game.hand.count',{n:pl.hand.length})+'</b></div><div>'+sort+logistics+'<span class="hand-selection-status">'+(['defend','attack'].includes(s.phase)?t('game.hand.selected',{n:selection.size}):s.phase==='campaign'?t('game.hand.choose_garrison'):t('game.hand.safe'))+'</span></div></div><div class="hand-scroll" style="--hand-count:'+cards.length+'">'+cards.map((c,i)=>'<div class="hand-card-shell" style="--rot:'+((i-(cards.length-1)/2)*1.15)+'deg;--lift:'+(-Math.abs(i-(cards.length-1)/2)*1.15)+'px;--z:'+i+'">'+card(c,{interactive,selected:selection.has(c.id),stance:selection.has(c.id)?selection.get(c.id):null})+'</div>').join('')+'</div></section>';
 }
 function strategyShopButton(){
- if(s.phase!=='campaign'||!s.opt.strategies)return '';
+ if(s.phase!=='campaign'||!s.opt.strategies||s.opt.scenario===TUTORIAL_ID)return '';
  const p=viewer(),summary=s.marketBought?t('game.shop.bought'):t('game.shop.view',{n:s.strategyMarkets[p].length});
  return '<button class="strategy-shop-button" data-action="open-market" aria-label="'+esc(t('game.shop.aria',{summary,supply:s.players[p].supply}))+'" title="'+esc(t('game.shop.title',{summary,supply:s.players[p].supply}))+'"><span class="shop-coin">$</span><i>'+s.strategyMarkets[p].length+'</i></button>';
 }
@@ -242,11 +246,16 @@ function sidePanel(){
 }
 function game(){
  if(s.phase==='draft')return header()+draft();
- return header()+'<div class="armies">'+playerPanel(0)+'<span class="army-vs">VS</span>'+playerPanel(1)+'</div>'+
+ return header()+tutorialBanner()+'<div class="armies">'+playerPanel(0)+'<span class="army-vs">VS</span>'+playerPanel(1)+'</div>'+
  '<div class="game-layout"><div class="play-column">'+(s.phase==='campaign'?mapView():battleView())+handTray()+'</div>'+sidePanel()+'</div>';
 }
 function result(){
- const win=s.winner,map=MAPS.find(m=>m.id===s.opt.map);return header()+'<section class="result-screen"><div class="result-emblem">'+(win===null?'⟐':s.players[win].logo)+'</div><div class="eyebrow">OPERATION COMPLETE</div><h1>'+(win===null?t('game.result.draw'):t('game.result.win',{name:s.players[win].name}))+'</h1><p>'+s.reason+'</p><div class="result-stats">'+s.players.map((p,i)=>'<div class="army-'+sideOf(i)+'"><h3>'+(p.faction?t('game.result.faction',{name:p.name,faction:p.faction}):p.name)+'</h3><b>'+t('game.result.wins',{n:p.wins})+'</b><span>'+t('game.result.stats',{open:p.reserve.length,fields:s.fields.filter(f=>f.owner===i).length})+'</span></div>').join('')+'</div><div class="result-actions">'+btn(t('game.result.rematch')+' →','rematch','primary')+btn(t('game.result.exit'),'exit','secondary')+'</div><small>'+t('game.result.seed',{seed:s.opt.seed,n:s.skirmish})+'</small></section>';
+ const win=s.winner,map=MAPS.find(m=>m.id===s.opt.map);return header()+'<section class="result-screen"><div class="result-emblem">'+(win===null?'⟐':s.players[win].logo)+'</div><div class="eyebrow">OPERATION COMPLETE</div><h1>'+(s.tutorial?.completed?t('tutorial_campaign.victory'):win===null?t('game.result.draw'):t('game.result.win',{name:s.players[win].name}))+'</h1><p>'+s.reason+'</p><div class="result-stats">'+s.players.map((p,i)=>'<div class="army-'+sideOf(i)+'"><h3>'+(p.faction?t('game.result.faction',{name:p.name,faction:p.faction}):p.name)+'</h3><b>'+t('game.result.wins',{n:p.wins})+'</b><span>'+t('game.result.stats',{open:p.reserve.length,fields:s.fields.filter(f=>f.owner===i).length})+'</span></div>').join('')+'</div><div class="result-actions">'+btn(t(s.opt.scenario===TUTORIAL_ID?'tutorial_campaign.restart_all':'game.result.rematch')+' →','rematch','primary')+btn(t('game.result.exit'),'exit','secondary')+'</div><small>'+t('game.result.seed',{seed:s.opt.seed,n:s.skirmish})+'</small></section>';
+}
+function tutorialBanner(){
+ if(s.opt.scenario!==TUTORIAL_ID)return '';
+ const step=tutorialHint(s),key=step?'tutorial_campaign.step.'+step.id:null;
+ return '<section class="tutorial-director" aria-live="polite"><span>'+t('tutorial_campaign.progress',{n:Math.min(s.tutorial.step+1,campaignSteps.length),total:campaignSteps.length})+'</span><div><b>'+t(key?key+'.title':'tutorial_campaign.ai_wait.title')+'</b><p>'+t(key?key+'.body':'tutorial_campaign.ai_wait.body')+'</p></div>'+(!s.tutorial.ai?btn(t('tutorial_campaign.restart_step'),'tutorial-restart-step','secondary'): '')+'</section>';
 }
 // Built per call (not a module const) so the rules text follows the current language.
 function rulesHTML(){return '<div class="eyebrow">'+t('rules.eyebrow')+'</div><h2>'+t('rules.title')+'</h2><div class="rules-content">'+
@@ -404,13 +413,26 @@ function render(){
  const content=events.length?header()+eventView(events[0])+(modal?modalView():''):gate&&!modal?header()+overlay():(s.phase==='over'?result():game())+overlay();
  app.innerHTML='<div class="game-shell" data-phase="'+s.phase+'">'+content+'</div>';
  mountVisual();
+ if(s.opt.scenario===TUTORIAL_ID)requestAnimationFrame(highlightTutorial);
  requestAnimationFrame(()=>{layoutMapNodes();if(!s||innerWidth<=800)return;document.querySelectorAll('.strategy-token .strategy-tooltip').forEach(el=>{const r=el.getBoundingClientRect();el.style.transform=r.left<160?'translateX(calc(-100% - 18px))':''})});
  if(s.phase==='over'){clockKey='';deadline=null;remaining=null;return}
  const ready=!modal&&!gate&&!events.length,actionKey=s.active+':'+s.phase+':'+s.turn+':'+s.skirmish;
  if(ready&&s.phase!=='draft'&&clockKey!==actionKey){clockKey=actionKey;deadline=s.opt.timer?Date.now()+s.opt.timer*1000:null;remaining=null}
  if(ready&&deadline!==null)tickClock();
  else if(!ready)clearInterval(tickClock.job);
- if(ready&&isAI())queueAI(()=>perform(aiAction(s,1)));
+ if(ready&&isAI())queueAI(()=>perform(s.opt.scenario===TUTORIAL_ID?tutorialAIAction(s):aiAction(s,1)));
+}
+function highlightTutorial(){
+ if(!s||s.opt.scenario!==TUTORIAL_ID||s.tutorial.ai)return;
+ const step=tutorialHint(s);if(!step)return;
+ const selectors=[];
+ if(step.target)selectors.push('[data-action="focus"][data-id="'+step.target+'"]');
+ const action=step.action==='strategy'?'use-strategy':step.action==='reveal'?'reveal-card':step.action;
+ selectors.push('[data-action="'+action+'"]'+(step.strategy?'[data-id="'+step.strategy+'"]':''));
+ for(const c of step.cards||[])selectors.push('[data-action="'+(step.action==='reveal'?'reveal-card':'card')+'"][data-id="'+(typeof c==='number'?c:c.id)+'"]');
+ if(step.action==='reveal')selectors.push('[data-action="reveal"]');
+ if(step.action==='occupy'||step.action==='deploy')selectors.push('[data-action="'+step.action+'"]');
+ for(const selector of selectors)document.querySelectorAll(selector).forEach(el=>el.classList.add('tutorial-highlight'));
 }
 function startRotationPicker(strategyId){showModal({rotation:'rotation',strategyId,picked:new Set()})}
 function startMedicPicker(strategyId){showModal({rotation:'medic',strategyId,chosen:new Set()})}
@@ -434,7 +456,7 @@ function eventQueueToLog(){for(const ev of events.splice(0))s.log.unshift({round
 function advanceEvent(){
  const ev=events.shift();if(ev)s.log.unshift({round:s.round,text:ev.title+' —— '+ev.detail});
  eventEnd=events.length?Date.now()+(s.opt.eventSeconds||3)*1000:null;
- if(!events.length){eventRemaining=null;resume()}render();
+ if(!events.length){eventRemaining=null;resume();save()}render();
 }
 const stripTags=html=>String(html||'').replace(/<[^>]*>/g,'');
 function medicConfirm(strategyId){
@@ -470,7 +492,7 @@ function queueAI(fn){
 function perform(action){
  if(!s||gate||modal||events.length||s.phase==='over')return;
  const before=s,oldActor=s.active;
- try{const res=act(s,s.active,action);if(!res.ok){toast(res.error);return}
+ try{const res=s.opt.scenario===TUTORIAL_ID?tutorialAct(s,s.active,action):act(s,s.active,action);if(!res.ok){toast(res.error==='tutorial.action_only'?t('tutorial_campaign.action_only'):res.error);return}
  const perspective=viewer();if(oldActor===perspective)newCards.clear();
  const incoming=actionEvents(before,res.state,action,perspective);for(const e of incoming)for(const id of e.newIds||[])newCards.add(id);
  pause();events=incoming;eventRemaining=null;eventEnd=events.length?Date.now()+(s.opt.eventSeconds||3)*1000:null;
@@ -508,6 +530,10 @@ function launchGame(){
  if(options.mode==='ai'&&options.first===0&&s.phase==='draft')s.active=1;
  toast(t('toast.game_start',{map:mapText(map.id).name}));
  modal=null;pause();render();
+}
+function launchTutorial(){
+ pause();s=createTutorialGame();events=[];eventEnd=null;eventRemaining=null;deadline=null;remaining=null;clockKey='';modal=null;gate=false;focus=null;selection.clear();reveals.clear();newCards.clear();
+ mapViewport={x:0,y:0,scale:1};fittedMap=null;save();render();
 }
 function mountVisual(){
  const mount=document.querySelector('#visual-mount');
@@ -593,6 +619,8 @@ document.addEventListener('click',e=>{
  if(a==='mode-ai'||a==='mode-local'){options.mode=a==='mode-ai'?'ai':'local';advancedOpen=true;render();return}
  if(a==='map'){options.map=id;const map=MAPS.find(m=>m.id===id);options.factions=[0,1];options.playerLogos=[factionLogo(map,0),factionLogo(map,1)];options.deployment=map.historical?'historical':'standard';options.deckCount='auto';render();return}
  if(a==='start'){launchGame();return}
+ if(a==='start-tutorial'){launchTutorial();return}
+ if(a==='load-tutorial'){const value=saved(TUTORIAL_STORE);if(value){s=value;gate=false;modal=null;focus=null;selection.clear();reveals.clear();events=[];pause();render()}return}
  if(a==='load'){const value=saved();if(value){options=value.opt;gate=value.opt.mode==='local';s=value;focus=null;selection.clear();reveals.clear();toast(t('toast.loaded'))}pause();render();return}
  if(a==='sound'){muted=!muted;render();return}
  if(a==='tutorial'){showModal({tutorial:'tutorial',step:0});return}
@@ -604,8 +632,9 @@ document.addEventListener('click',e=>{
  if(a==='mask'&&e.target.classList.contains('modal-overlay')&&modal!=='event'&&(!modal||!modal.rotation)){modal=null;render();return}
  if(a==='quit'){showModal('quit');return}
  if(a==='save-exit'){save();s=null;modal=null;render();return}
- if(a==='quit-game'){try{localStorage.removeItem(STORE)}catch{}s=null;modal=null;render();return}
- if(a==='rematch'){options.seed=Math.floor(Math.random()*4294967296);launchGame();return}
+ if(a==='quit-game'){try{localStorage.removeItem(s?.opt.scenario===TUTORIAL_ID?TUTORIAL_STORE:STORE);if(s?.opt.scenario===TUTORIAL_ID)localStorage.removeItem(TUTORIAL_CHECKPOINT)}catch{}s=null;modal=null;render();return}
+ if(a==='rematch'){if(s?.opt.scenario===TUTORIAL_ID)launchTutorial();else{options.seed=Math.floor(Math.random()*4294967296);launchGame()}return}
+ if(a==='tutorial-restart-step'){const value=saved(TUTORIAL_CHECKPOINT);if(value&&value.opt.scenario===TUTORIAL_ID){s=value;events=[];eventEnd=null;eventRemaining=null;modal=null;focus=null;selection.clear();reveals.clear();save();render()}return}
  if(a==='exit'){showModal('quit');return}
  if(a==='identity-confirm'){modal=null;render();return}
  if(a==='supply-ledger'){e.stopPropagation();showModal({kind:'ledger',player:Number(el.dataset.player)});return}
