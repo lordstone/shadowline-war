@@ -46,7 +46,7 @@ function save(){try{if(!s)return;const tutorial=s.opt.scenario===TUTORIAL_ID,key
 function saved(key=STORE){try{const value=JSON.parse(localStorage.getItem(key));if(value?.version===1){upgradeState(value);validate(value);return value}}catch{}return null}
 function tutorialCompleted(){try{return localStorage.getItem(TUTORIAL_DONE)==='true'}catch{return false}}
 function pause(){if(deadline!==null){remaining=Math.max(0,deadline-Date.now());deadline=null}if(eventEnd!==null){eventRemaining=Math.max(0,eventEnd-Date.now());eventEnd=null}clearTimeout(aiTask)}
-function resume(){if(events.length){eventEnd=Date.now()+(eventRemaining??3000);eventRemaining=null}else if(remaining!==null){deadline=Date.now()+remaining;remaining=null}}
+function resume(){if(events.length){eventEnd=s?.opt.scenario===TUTORIAL_ID?null:Date.now()+(eventRemaining??3000);eventRemaining=null}else if(remaining!==null){deadline=Date.now()+remaining;remaining=null}}
 function showModal(kind){pause();modal=kind;render()}
 function card(c,{hidden=false,selected=false,stance=null,interactive=false,small=false,action='card',peek=false,revealable=false}={}){
  const color=!hidden?(c.rank===15?'joker-gold':c.rank===14?'joker-silver':c.suit===1||c.suit===3?'red':''):'';
@@ -281,7 +281,8 @@ function eventView(ev){
  const diagram=field?'<div class="event-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+paths+'</svg>'+map.map(f=>'<div class="event-map-node '+(f.id===ev.field?'hit':'')+' owner-'+(f.owner===null?'null':sideOf(f.owner))+'" style="left:'+f.x+'%;top:'+f.y+'%"><i>'+fieldIcon(f)+'</i><b>'+fieldName(s.opt.map,f)+'</b></div>').join('')+'</div>':'';
  const strategy=ev.strategy?'<div class="event-strategy-card"><span>'+ev.strategy.icon+'</span><div><b>'+strategyText(ev.strategy.id).name+'</b><small>'+strategyText(ev.strategy.id).desc+'</small></div><strong>'+ev.strategy.price+' '+t('game.panel.supply')+'</strong></div>':'';
  const cards=(ev.cards||[]).length?'<div class="event-cards">'+ev.cards.map(c=>card(c,{hidden:!!c.hidden,small:ev.cards.length>6})).join('')+'</div>':'';
- return '<section class="event-screen event-'+ev.kind+'" role="status" aria-live="polite"><div class="event-panel"><div class="eyebrow">'+t('modal.event.report',{kind:ev.kind.toUpperCase()})+'</div><h1>'+esc(ev.title)+'</h1><p>'+esc(ev.detail)+'</p>'+diagram+strategy+cards+'<div class="event-progress" style="--duration:'+(s.opt.eventSeconds||3)+'s"><span style="animation-play-state:'+(modal?'paused':'running')+'"></span></div><div class="event-footer"><small>'+t('modal.event.footer',{n:events.length})+'</small>'+btn(t('modal.event.continue'),'event-continue','secondary')+'</div></div></section>';
+ const guided=s.opt.scenario===TUTORIAL_ID;
+ return '<section class="event-screen event-'+ev.kind+'" role="status" aria-live="polite"><div class="event-panel"><div class="eyebrow">'+t('modal.event.report',{kind:ev.kind.toUpperCase()})+'</div><h1>'+esc(ev.title)+'</h1><p>'+esc(ev.detail)+'</p>'+diagram+strategy+cards+(guided?'<p class="tutorial-event-note">'+t('tutorial_campaign.event_read')+'</p>':'<div class="event-progress" style="--duration:'+(s.opt.eventSeconds||3)+'s"><span style="animation-play-state:'+(modal?'paused':'running')+'"></span></div>')+'<div class="event-footer"><small>'+t(guided?'tutorial_campaign.event_paused':'modal.event.footer',{n:events.length})+'</small>'+btn(t(guided?'tutorial_campaign.event_continue':'modal.event.continue'),'event-continue',guided?'primary':'secondary')+'</div></div></section>';
 }
 function supplyLedgerView(){
  const p=modal.player,pl=s.players[p],report=s.supplyLedger?.[p],entries=report?.entries||[];
@@ -455,7 +456,7 @@ function queueEvent(ev){events.push(ev);pause();if(s&&s.phase!=='over')save()}
 function eventQueueToLog(){for(const ev of events.splice(0))s.log.unshift({round:s.round,text:ev.title+' —— '+ev.detail});eventEnd=null;eventRemaining=null}
 function advanceEvent(){
  const ev=events.shift();if(ev)s.log.unshift({round:s.round,text:ev.title+' —— '+ev.detail});
- eventEnd=events.length?Date.now()+(s.opt.eventSeconds||3)*1000:null;
+ eventEnd=events.length&&s.opt.scenario!==TUTORIAL_ID?Date.now()+(s.opt.eventSeconds||3)*1000:null;
  if(!events.length){eventRemaining=null;resume();save()}render();
 }
 const stripTags=html=>String(html||'').replace(/<[^>]*>/g,'');
@@ -495,7 +496,7 @@ function perform(action){
  try{const res=s.opt.scenario===TUTORIAL_ID?tutorialAct(s,s.active,action):act(s,s.active,action);if(!res.ok){toast(res.error==='tutorial.action_only'?t('tutorial_campaign.action_only'):res.error);return}
  const perspective=viewer();if(oldActor===perspective)newCards.clear();
  const incoming=actionEvents(before,res.state,action,perspective);for(const e of incoming)for(const id of e.newIds||[])newCards.add(id);
- pause();events=incoming;eventRemaining=null;eventEnd=events.length?Date.now()+(s.opt.eventSeconds||3)*1000:null;
+ pause();events=incoming;eventRemaining=null;eventEnd=events.length&&s.opt.scenario!==TUTORIAL_ID?Date.now()+(s.opt.eventSeconds||3)*1000:null;
  s=res.state;targeting=null;selection.clear();reveals.clear();sound(s.phase==='over'?'win':'click');
  if(s.opt.mode==='local'&&s.active!==oldActor&&s.phase!=='over'){gate=true;deadline=null;clockKey=''}
  if(s.phase!==before.phase||s.turn!==before.turn)focus=null;
