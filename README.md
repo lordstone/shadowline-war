@@ -5,9 +5,9 @@
 [![deploy pages](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/pages.yml?branch=main&label=deploy%20pages)](https://github.com/lordstone/shadowline-war/actions/workflows/pages.yml)
 [![pull request checks](https://img.shields.io/github/actions/workflow/status/lordstone/shadowline-war/ci.yml?branch=main&label=PR%20checks)](https://github.com/lordstone/shadowline-war/actions/workflows/ci.yml)
 [![Release version](https://img.shields.io/badge/release-v1.19.3-d8bb82)](https://lordstone.github.io/shadowline-war/)
-[![Preview version](https://img.shields.io/badge/preview-v1.26.0-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
+[![Preview version](https://img.shields.io/badge/preview-v1.26.1-8ab4d8)](https://lordstone.github.io/shadowline-war/preview/)
 
-[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.26.0**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
+[**▶ 正式版在线游玩 · v1.19.3**](https://lordstone.github.io/shadowline-war/) · [**▶ 预览版在线游玩 · v1.26.1**](https://lordstone.github.io/shadowline-war/preview/) · [**▶ 历史版本**](https://lordstone.github.io/shadowline-war/versions/)
 
 独立实现的 Three.js 网页卡牌战场游戏。所有运行资源均已包含，运行时不需要互联网，也无需 npm install。
 
@@ -103,6 +103,10 @@ Three.js来源：https://github.com/mrdoob/three.js/tree/r180/build 。许可证
 本项目原创代码、界面和游戏内容采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：允许个人及其他非商业目的使用、修改和再分发，但必须随副本保留许可证及其中的 `Required Notice` 来源声明。任何商业使用需要取得版权所有者的另行书面授权。
 
 这是一份限制商业用途的源码可用许可证，不属于 OSI 定义的开源许可证。`vendor/` 中的 Three.js 继续适用其自身的 MIT 许可证，不受本项目许可证替代。
+
+## 1.26.1 修复桌面教学手牌栏
+
+- 桌面短屏进入教学交锋时，教学指令占用一行后，战场区域会收缩以保留完整手牌栏；新增 2048×731 Chromium 布局与截图回归。
 
 ## 1.26.0 教学战役
 
